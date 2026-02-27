@@ -1,0 +1,552 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useToast } from "@/hooks/use-toast"
+import { SUPER_ADMINS } from "@/lib/constants"
+import { getAllUsers, updateUser, deleteUser, changeStatus, createUser } from "@/services/users.service"
+import type { User } from "@/types"
+import {
+  Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
+  MoreHorizontal, UserPlus, Clock, CheckCircle, XCircle,
+  Building2, Phone, Fingerprint, FileText, Plus, Lock, MapPin,
+  Briefcase, Target, ShieldAlert,
+} from "lucide-react"
+
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "active":
+      return <Badge className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border-emerald-500/20">Aprovado</Badge>
+    case "pending":
+      return <Badge className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border-amber-500/20">Pendente</Badge>
+    case "inactive":
+      return <Badge className="bg-muted text-muted-foreground hover:bg-muted/80 border-muted">Inativo</Badge>
+    default:
+      return <Badge variant="outline">Desconhecido</Badge>
+  }
+}
+
+export default function AdminUsersPage() {
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const [users, setUsers] = useState<User[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [activeTab, setActiveTab] = useState("all")
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<(User & { address?: string; metadata?: Record<string, string> }) | null>(null)
+
+  const [isNewUsersModalOpen, setIsNewUsersModalOpen] = useState(false)
+
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
+  const [newUserData, setNewUserData] = useState({
+    name: "", email: "", password: "", companyName: "", cnpj: "",
+    phone: "", cpf: "", role: "user" as "user" | "admin", status: "active" as "active" | "pending" | "inactive",
+  })
+
+  useEffect(() => {
+    getAllUsers().then(u => setUsers(u))
+  }, [])
+
+  const filteredUsers = users.filter(user => {
+    const term = searchTerm.toLowerCase()
+    const name = (user.name || user.fullName || "").toLowerCase()
+    const email = (user.email || "").toLowerCase()
+    const company = (user.companyName || "").toLowerCase()
+
+    const matchesSearch = name.includes(term) || email.includes(term) || company.includes(term)
+    const matchesTab = activeTab === "all" ? true : activeTab === "pending" ? user.status === "pending" : user.status === "active"
+    return matchesSearch && matchesTab
+  })
+
+  const recentUsers = [...users].sort((a, b) => {
+    const dateA = new Date(a.createdAt || "2000-01-01")
+    const dateB = new Date(b.createdAt || "2000-01-01")
+    return dateB.getTime() - dateA.getTime()
+  }).slice(0, 5)
+
+  const handleDelete = async (id: number) => {
+    const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}")
+    const userToDelete = users.find(u => u.id === id)
+
+    if (userToDelete && userToDelete.email === currentUser.email) {
+      toast({ title: "Ação bloqueada", description: "Você não pode excluir sua própria conta.", variant: "destructive" })
+      return
+    }
+    if (userToDelete && SUPER_ADMINS.includes(userToDelete.email.toLowerCase())) {
+      toast({ title: "Ação bloqueada", description: "Este é um Usuário Mestre e não pode ser excluído.", variant: "destructive" })
+      return
+    }
+
+    if (window.confirm("Tem certeza que deseja excluir este usuário permanentemente?")) {
+      try {
+        await deleteUser(id)
+        setUsers(prev => prev.filter(u => u.id !== id))
+        toast({ title: "Usuário excluído", description: "O usuário foi removido do sistema.", variant: "destructive" })
+      } catch (error) {
+        toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao excluir.", variant: "destructive" })
+      }
+    }
+  }
+
+  const handleStatusChange = async (id: number, newStatus: User["status"]) => {
+    await changeStatus(id, newStatus)
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u))
+    toast({
+      title: newStatus === "active" ? "Usuário Aprovado" : "Usuário Atualizado",
+      description: `O status foi alterado para ${newStatus === "active" ? "Ativo" : newStatus}.`,
+      className: newStatus === "active" ? "bg-green-600 border-green-500 text-white" : "",
+    })
+  }
+
+  const handleEditClick = (user: User) => {
+    setEditingUser({
+      ...user,
+      name: user.name || user.fullName,
+      companyName: user.companyName || "",
+      phone: user.phone || "",
+      cpf: user.cpf || "",
+      cnpj: user.cnpj || "",
+      segment: user.segment || "",
+      address: user.address || "",
+      metadata: user.metadata || {},
+    })
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingUser) return
+
+    if (SUPER_ADMINS.includes(editingUser.email.toLowerCase())) {
+      if (editingUser.role !== "admin" || editingUser.status !== "active") {
+        toast({ title: "Ação Proibida", description: "Não é possível remover privilégios deste usuário.", variant: "destructive" })
+        return
+      }
+    }
+
+    await updateUser(editingUser.id, { ...editingUser, fullName: editingUser.name })
+    setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...editingUser, fullName: editingUser.name } : u))
+    setIsEditModalOpen(false)
+    toast({ title: "Usuário atualizado", description: "As informações foram salvas com sucesso.", className: "bg-green-600 border-green-500 text-white" })
+  }
+
+  const handleCreateUser = async () => {
+    if (!newUserData.name || !newUserData.email || !newUserData.password) {
+      toast({ title: "Erro", description: "Nome, Email e Senha são obrigatórios.", variant: "destructive" })
+      return
+    }
+
+    try {
+      const newUser = await createUser(newUserData)
+      setUsers(prev => [...prev, newUser])
+      setIsCreateUserModalOpen(false)
+      setNewUserData({ name: "", email: "", password: "", companyName: "", cnpj: "", phone: "", cpf: "", role: "user", status: "active" })
+      toast({ title: "Usuário Criado", description: "O usuário foi adicionado com sucesso.", className: "bg-green-600 text-white border-none" })
+    } catch (error) {
+      toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao criar.", variant: "destructive" })
+    }
+  }
+
+  const handleExportCSV = () => {
+    const headers = ["ID", "Nome", "Email", "Empresa", "Segmento", "Regiao", "Telefone", "Status", "Função", "Data Cadastro"]
+    const csvContent = [
+      headers.join(","),
+      ...filteredUsers.map(u =>
+        [u.id, `"${u.name || u.fullName}"`, u.email, `"${u.companyName || ""}"`, `"${u.segment || ""}"`, `"${u.address || ""}"`, u.phone || "", u.status, u.role, u.createdAt].join(",")
+      ),
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `usuarios_admin_full_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <UserCog className="h-8 w-8 text-amber-500" /> Painel Administrativo
+          </h1>
+          <p className="text-muted-foreground">Gerenciamento e aprovação de usuários.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+          <Button onClick={() => setIsCreateUserModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex-1 md:flex-none">
+            <Plus className="mr-2 h-4 w-4" /> Criar Usuário
+          </Button>
+          <Button onClick={() => setIsNewUsersModalOpen(true)} variant="secondary" className="flex-1 md:flex-none">
+            <UserPlus className="mr-2 h-4 w-4" /> Novos Cadastros
+            {users.filter(u => u.status === "pending").length > 0 && (
+              <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
+                {users.filter(u => u.status === "pending").length}
+              </span>
+            )}
+          </Button>
+          <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 text-white shadow-lg flex-1 md:flex-none">
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+          <TabsList>
+            <TabsTrigger value="all">Todos</TabsTrigger>
+            <TabsTrigger value="pending">
+              Pendentes
+              {users.filter(u => u.status === "pending").length > 0 && (
+                <span className="ml-2 w-2 h-2 rounded-full bg-amber-500 inline-block" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="active">Aprovados</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
+          <Search className="ml-2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, email ou empresa..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground">Usuário</TableHead>
+              <TableHead className="text-muted-foreground hidden lg:table-cell">Empresa / Info</TableHead>
+              <TableHead className="text-muted-foreground text-center">Status</TableHead>
+              <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
+              <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map(user => (
+                <TableRow key={user.id || user.email} className="border-border hover:bg-secondary/30 transition-colors">
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-semibold flex items-center gap-2">
+                        {user.name || user.fullName}
+                        {user.role === "admin" && <span className="text-[10px] uppercase bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">Admin</span>}
+                        {user.metadata?.campaignSource && <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">Campanha</span>}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                      <span className="text-xs text-blue-400 lg:hidden mt-1">{user.companyName}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{user.companyName || "—"}</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground bg-secondary px-1.5 rounded">{user.segment || "Sem segmento"}</span>
+                        {user.address && <span className="text-xs text-muted-foreground flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /> {user.address}</span>}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">{getStatusBadge(user.status)}</TableCell>
+                  <TableCell className="text-muted-foreground hidden md:table-cell">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-3 w-3" /> {user.createdAt || "N/A"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                          <span className="sr-only">Abrir menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        {user.status === "pending" && (
+                          <>
+                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="text-emerald-400">
+                              <CheckCircle className="mr-2 h-4 w-4" /> Aprovar Cadastro
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="text-red-400">
+                              <XCircle className="mr-2 h-4 w-4" /> Rejeitar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
+                        <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                          <Edit className="mr-2 h-4 w-4" /> Ver / Editar Dados
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-400">
+                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Usuário
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Nenhum usuário encontrado.</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+          <span>Total: {filteredUsers.length}</span>
+          <span>{users.filter(u => u.status === "pending").length} aguardando aprovação</span>
+        </div>
+      </div>
+
+      {/* Create User Modal */}
+      <Dialog open={isCreateUserModalOpen} onOpenChange={setIsCreateUserModalOpen}>
+        <DialogContent className="sm:max-w-[600px] overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Usuário</DialogTitle>
+            <DialogDescription>Preencha os dados abaixo para cadastrar um novo usuário manualmente.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome Completo *</Label>
+                <Input value={newUserData.name} onChange={e => setNewUserData({ ...newUserData, name: e.target.value })} placeholder="Ex: João Silva" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email *</Label>
+                <Input value={newUserData.email} onChange={e => setNewUserData({ ...newUserData, email: e.target.value })} placeholder="Ex: joao@empresa.com" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Lock className="w-3 h-3" /> Senha Inicial *</Label>
+              <Input type="password" value={newUserData.password} onChange={e => setNewUserData({ ...newUserData, password: e.target.value })} placeholder="Defina uma senha" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Building2 className="w-3 h-3" /> Empresa</Label>
+                <Input value={newUserData.companyName} onChange={e => setNewUserData({ ...newUserData, companyName: e.target.value })} placeholder="Nome da Empresa" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><FileText className="w-3 h-3" /> CNPJ</Label>
+                <Input value={newUserData.cnpj} onChange={e => setNewUserData({ ...newUserData, cnpj: e.target.value })} placeholder="00.000.000/0001-00" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Phone className="w-3 h-3" /> Telefone</Label>
+                <Input value={newUserData.phone} onChange={e => setNewUserData({ ...newUserData, phone: e.target.value })} placeholder="(00) 00000-0000" />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Fingerprint className="w-3 h-3" /> CPF</Label>
+                <Input value={newUserData.cpf} onChange={e => setNewUserData({ ...newUserData, cpf: e.target.value })} placeholder="000.000.000-00" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border">
+              <div className="space-y-2">
+                <Label>Função</Label>
+                <select value={newUserData.role} onChange={e => setNewUserData({ ...newUserData, role: e.target.value as "user" | "admin" })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none">
+                  <option value="user">Usuário Comum</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status Inicial</Label>
+                <select value={newUserData.status} onChange={e => setNewUserData({ ...newUserData, status: e.target.value as "active" | "pending" | "inactive" })} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none">
+                  <option value="active">Ativo (Aprovado)</option>
+                  <option value="pending">Pendente</option>
+                  <option value="inactive">Inativo</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateUserModalOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateUser} className="bg-blue-600 hover:bg-blue-700 text-white">Criar Usuário</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[700px] overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Editar / Visualizar Usuário</DialogTitle>
+            <DialogDescription>Visualize os dados completos do cadastro e edite se necessário.</DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome</Label>
+                  <Input value={editingUser.name} onChange={e => setEditingUser({ ...editingUser, name: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input value={editingUser.email} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Building2 className="w-3 h-3" /> Empresa</Label>
+                  <Input value={editingUser.companyName} onChange={e => setEditingUser({ ...editingUser, companyName: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Briefcase className="w-3 h-3" /> Segmento</Label>
+                  <Input value={editingUser.segment || ""} onChange={e => setEditingUser({ ...editingUser, segment: e.target.value })} placeholder="Ex: Varejo" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><FileText className="w-3 h-3" /> CNPJ</Label>
+                  <Input value={editingUser.cnpj || ""} onChange={e => setEditingUser({ ...editingUser, cnpj: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Região / Endereço</Label>
+                  <Input value={editingUser.address || ""} onChange={e => setEditingUser({ ...editingUser, address: e.target.value })} placeholder="Ex: Nordeste / Rua..." />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Phone className="w-3 h-3" /> Telefone</Label>
+                  <Input value={editingUser.phone} onChange={e => setEditingUser({ ...editingUser, phone: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1"><Fingerprint className="w-3 h-3" /> CPF</Label>
+                  <Input value={editingUser.cpf || ""} onChange={e => setEditingUser({ ...editingUser, cpf: e.target.value })} />
+                </div>
+              </div>
+
+              {editingUser.metadata?.campaignSource && (
+                <div className="bg-purple-900/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-4 h-4 text-purple-400" />
+                    <h4 className="text-sm font-semibold">Dados da Campanha ({editingUser.metadata.campaignName || "N/A"})</h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-muted-foreground block text-xs">Conexão Buscada:</span>
+                      <span>{editingUser.metadata.potentialConnection || "N/A"}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-xs">Faixa Etária:</span>
+                      <span>{editingUser.metadata.ageRange || "N/A"}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {SUPER_ADMINS.includes(editingUser.email.toLowerCase()) && (
+                <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-lg flex items-center gap-2 text-xs text-amber-400">
+                  <ShieldAlert className="w-4 h-4" />
+                  Este é um Usuário Mestre protegido. Permissões não podem ser removidas.
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border">
+                <div className="space-y-2">
+                  <Label>Função</Label>
+                  <select
+                    value={editingUser.role || "user"}
+                    onChange={e => setEditingUser({ ...editingUser, role: e.target.value as "user" | "admin" })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+                    disabled={SUPER_ADMINS.includes(editingUser.email.toLowerCase())}
+                  >
+                    <option value="user">Usuário Comum</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <select
+                    value={editingUser.status || "pending"}
+                    onChange={e => setEditingUser({ ...editingUser, status: e.target.value as "active" | "pending" | "inactive" })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+                    disabled={SUPER_ADMINS.includes(editingUser.email.toLowerCase())}
+                  >
+                    <option value="pending">Pendente</option>
+                    <option value="active">Aprovado (Ativo)</option>
+                    <option value="inactive">Inativo (Bloqueado)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} className="bg-blue-600 hover:bg-blue-700 text-white">Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Users Modal */}
+      <Dialog open={isNewUsersModalOpen} onOpenChange={setIsNewUsersModalOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-full">
+                <UserPlus className="h-6 w-6 text-blue-400" />
+              </div>
+              <div>
+                <DialogTitle>Novos Usuários (Cadastrados Recentemente)</DialogTitle>
+                <DialogDescription>Os 5 cadastros mais recentes na plataforma.</DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="rounded-md border border-border">
+              {recentUsers.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {recentUsers.map((user, index) => (
+                    <div key={user.id || index} className="p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted border border-border">
+                          <span className="font-semibold text-sm">{user.name ? user.name.charAt(0).toUpperCase() : "?"}</span>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium leading-none flex items-center gap-2">
+                            {user.name || user.fullName}
+                            {index === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px] border-green-500/20">Novo</Badge>}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{user.companyName || user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center text-xs text-muted-foreground gap-1">
+                          <Clock className="h-3 w-3" /> {user.createdAt || "Data desc."}
+                        </div>
+                        {getStatusBadge(user.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">Nenhum cadastro recente encontrado.</div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsNewUsersModalOpen(false)} className="w-full">Fechar Lista</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
