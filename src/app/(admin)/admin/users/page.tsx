@@ -54,7 +54,36 @@ export default function AdminUsersPage() {
   })
 
   useEffect(() => {
+    // SUPER_ADMIN permission auto-correction
+    const currentUserStr = localStorage.getItem("current_user")
+    if (currentUserStr) {
+      const currentUser = JSON.parse(currentUserStr)
+      if (SUPER_ADMINS.includes(currentUser.email?.toLowerCase())) {
+        if (currentUser.role !== "admin" || currentUser.status !== "active") {
+          currentUser.role = "admin"
+          currentUser.status = "active"
+          localStorage.setItem("current_user", JSON.stringify(currentUser))
+          // Also sync in users array
+          const allUsersStr = localStorage.getItem("users")
+          if (allUsersStr) {
+            const allUsersArr = JSON.parse(allUsersStr)
+            const idx = allUsersArr.findIndex((u: User) => u.email?.toLowerCase() === currentUser.email?.toLowerCase())
+            if (idx !== -1) {
+              allUsersArr[idx].role = "admin"
+              allUsersArr[idx].status = "active"
+              localStorage.setItem("users", JSON.stringify(allUsersArr))
+            }
+          }
+        }
+      } else if (currentUser.role !== "admin") {
+        toast({ title: "Acesso negado", description: "Você não tem permissão para acessar esta área.", variant: "destructive" })
+        router.push("/dashboard")
+        return
+      }
+    }
+
     getAllUsers().then(u => setUsers(u))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const filteredUsers = users.filter(user => {
@@ -284,10 +313,10 @@ export default function AdminUsersPage() {
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         {user.status === "pending" && (
                           <>
-                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="text-emerald-400">
+                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20">
                               <CheckCircle className="mr-2 h-4 w-4" /> Aprovar Cadastro
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="text-red-400">
+                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20">
                               <XCircle className="mr-2 h-4 w-4" /> Rejeitar
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -524,6 +553,7 @@ export default function AdminUsersPage() {
                           <p className="text-sm font-medium leading-none flex items-center gap-2">
                             {user.name || user.fullName}
                             {index === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px] border-green-500/20">Novo</Badge>}
+                            {user.metadata?.campaignSource && <Badge variant="outline" className="border-purple-500/30 text-purple-400 text-[10px]">Promo</Badge>}
                           </p>
                           <p className="text-xs text-muted-foreground">{user.companyName || user.email}</p>
                         </div>

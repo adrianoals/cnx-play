@@ -95,7 +95,7 @@ export default function SearchPage() {
     const result = addLike(profile.id)
     if (result.status === "match") {
       toast({
-        title: "It's a Match!",
+        title: "It's a Match! 🥂",
         description: "Vocês estão conectados. O chat foi aberto.",
         className: "bg-green-600 text-white",
       })

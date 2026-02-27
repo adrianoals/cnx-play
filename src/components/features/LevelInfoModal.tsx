@@ -16,14 +16,14 @@ export default function LevelInfoModal({ isOpen, onClose }: { isOpen: boolean; o
       <DialogContent className="bg-slate-950 border-slate-800 text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2"><Trophy className="h-6 w-6 text-yellow-500" />Sistema de Níveis e Pontuação</DialogTitle>
-          <DialogDescription className="text-slate-400">Entenda como crescer na plataforma.</DialogDescription>
+          <DialogDescription className="text-slate-400">Entenda como crescer na plataforma e desbloquear benefícios exclusivos.</DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
             <h3 className="font-semibold text-white mb-2 flex items-center gap-2"><Info className="h-4 w-4 text-blue-400" />Como ganhar pontos?</h3>
             <ul className="space-y-2 text-sm text-slate-300">
-              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full" />Confirmar reunião: <strong className="text-white">+10 pontos</strong></li>
-              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full" />Indicar amigo que fechou negócio: <strong className="text-white">Bônus em R$</strong></li>
+              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full" />Confirmar reunião realizada: <strong className="text-white">+10 pontos</strong></li>
+              <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-green-500 rounded-full" />Indicar um amigo que fechou negócio: <strong className="text-white">Bônus em R$</strong></li>
             </ul>
           </div>
           <div className="grid gap-4">

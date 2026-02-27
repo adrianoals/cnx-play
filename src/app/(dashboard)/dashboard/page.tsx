@@ -14,7 +14,7 @@ import type { Deal, DailyMatch } from "@/types"
 import {
   Search, Calendar, Trophy, ArrowRight, Clock, CheckCircle2,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
-  TrendingUp, Gem, Info, Gift, X, Lock, Video,
+  TrendingUp, Gem, Info, Gift, X, Lock, Video, AlertTriangle,
 } from "lucide-react"
 
 import Certificate from "@/components/features/Certificate"
@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [showReferralModal, setShowReferralModal] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
 
+  const [paymentStatus] = useState("active")
   const [stats, setStats] = useState({ meetingsRealized: 0, score: 0 })
   const [dailyMatch, setDailyMatch] = useState<DailyMatch | null>(null)
   const [isConfirmingMatch, setIsConfirmingMatch] = useState(false)
@@ -208,6 +209,28 @@ export default function DashboardPage() {
           </p>
           <Button onClick={() => window.open("https://wa.me/5511950222063", "_blank")} variant="outline" className="w-full">
             Falar com Suporte
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Payment inactive view
+  if (paymentStatus !== "active") {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="max-w-md w-full text-center space-y-6 bg-card p-8 rounded-3xl border border-border shadow-lg">
+          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
+            <AlertTriangle className="h-10 w-10 text-red-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Pagamento Pendente</h1>
+            <p className="text-muted-foreground">
+              Sua assinatura não está ativa. Para continuar acessando a plataforma, regularize seu pagamento.
+            </p>
+          </div>
+          <Button onClick={() => router.push("/payment")} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+            Regularizar Agora
           </Button>
         </div>
       </div>
@@ -422,7 +445,7 @@ export default function DashboardPage() {
             </span>
           </div>
 
-          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {deals.map(deal => (
               <div key={deal.id} className="flex items-center justify-between bg-secondary/30 border border-border p-4 rounded-xl hover:bg-secondary/50 transition-colors">
                 <div className="flex items-center gap-3">

@@ -14,25 +14,38 @@ export default function DailyContactManager() {
   const [dailyContact, setDailyContact] = useState<Company | null>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const userStr = localStorage.getItem("current_user")
-      if (!userStr) return
-      const today = new Date().toLocaleDateString("pt-BR")
-      const lastDate = localStorage.getItem("last_daily_match_date")
-      if (lastDate === today) return
-      if (!companies || companies.length === 0) return
+  const checkDailyContact = () => {
+    const userStr = localStorage.getItem("current_user")
+    if (!userStr) return
+    const today = new Date().toLocaleDateString("pt-BR")
+    const lastDate = localStorage.getItem("last_daily_match_date")
+    if (lastDate === today) return
+    if (!companies || companies.length === 0) return
 
-      const selected = companies[Math.floor(Math.random() * companies.length)]
-      localStorage.setItem("last_daily_match_date", today)
-      localStorage.setItem("current_daily_match", JSON.stringify(selected))
-      setDailyContact(selected)
-      setOpen(true)
-      createMatch(selected.id, "daily")
-      toast({ title: "Nova Conexão Disponível!", description: "Seu contato diário foi gerado e adicionado aos seus Matches.", className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none" })
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [toast])
+    const selected = companies[Math.floor(Math.random() * companies.length)]
+    localStorage.setItem("last_daily_match_date", today)
+    localStorage.setItem("current_daily_match", JSON.stringify(selected))
+
+    // Save to match history
+    const history = JSON.parse(localStorage.getItem("match_history") || "[]")
+    history.push({ date: today, companyId: selected.id })
+    localStorage.setItem("match_history", JSON.stringify(history))
+
+    setDailyContact(selected)
+    setOpen(true)
+    createMatch(selected.id, "daily")
+    toast({ title: "Nova Conexão Disponível! 🚀", description: "Seu contato diário foi gerado e adicionado aos seus Matches.", className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none" })
+  }
+
+  useEffect(() => {
+    const timer = setTimeout(checkDailyContact, 2000)
+    const interval = setInterval(checkDailyContact, 60000)
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!dailyContact) return null
 
@@ -43,7 +56,7 @@ export default function DailyContactManager() {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 mix-blend-overlay z-10" />
           <img src={dailyContact.image} alt={dailyContact.name} className="w-full h-full object-cover opacity-60" />
           <div className="absolute top-4 left-4 z-20">
-            <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/10">
+            <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
               <Calendar className="w-3 h-3 text-blue-400" /><span>CONEXÃO DIÁRIA</span>
             </div>
           </div>
@@ -68,9 +81,11 @@ export default function DailyContactManager() {
               <div><p className="text-xs text-slate-500 uppercase font-semibold mb-0.5">Localização</p><p className="text-sm text-slate-300">{dailyContact.location}</p></div>
             </div>
           </div>
-          <Button onClick={() => setOpen(false)} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg border-0 h-12">
-            Ver no Chat <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+          <div className="grid grid-cols-1 gap-3">
+            <Button onClick={() => setOpen(false)} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-900/20 border-0 h-12 text-md">
+              Ver no Chat <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

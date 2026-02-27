@@ -156,7 +156,7 @@ export default function MeetingsPage() {
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-xs uppercase tracking-widest mb-2">Início da Conexão</p>
                 <div className="bg-card inline-block px-4 py-2 rounded-full text-sm text-foreground border border-border">
-                  Você conectou com {selectedMatch.company.name}. Digam oi!
+                  Você conectou com {selectedMatch.company.name}. Digam oi! 👋
                 </div>
               </div>
 
