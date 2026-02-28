@@ -15,6 +15,7 @@ import {
   Search, Calendar, Trophy, ArrowRight, Clock, CheckCircle2,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
   TrendingUp, Gem, Info, Gift, X, Lock, Video, AlertTriangle,
+  UserCircle,
 } from "lucide-react"
 
 import Certificate from "@/components/features/Certificate"
@@ -22,6 +23,7 @@ import LevelInfoModal from "@/components/features/LevelInfoModal"
 import FirstLoginWelcome from "@/components/features/FirstLoginWelcome"
 import DashboardTutorial from "@/components/features/DashboardTutorial"
 import ReferralSystem from "@/components/features/ReferralSystem"
+import { getCompaniesByUserId } from "@/services/company.service"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -189,27 +191,32 @@ export default function DashboardPage() {
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="max-w-md w-full text-center space-y-6 bg-card p-8 rounded-3xl border border-border shadow-lg">
           <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto">
-            <Lock className="h-10 w-10 text-amber-500" />
+            <Clock className="h-10 w-10 text-amber-500" />
           </div>
           <div>
             <h1 className="text-2xl font-bold mb-2">Aprovação Pendente</h1>
             <p className="text-muted-foreground">
-              Seu cadastro foi recebido com sucesso e está em análise pela nossa equipe administrativa.
+              Seu cadastro foi recebido. Para liberar o acesso, escolha um plano e efetue o pagamento. Após a confirmação, nossa equipe ativará sua conta.
             </p>
           </div>
           <div className="bg-secondary p-4 rounded-xl border border-border text-sm text-left">
             <p className="text-muted-foreground mb-2">Status atual:</p>
             <div className="flex items-center gap-2 text-amber-500 font-semibold">
               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-              Aguardando Liberação
+              Aguardando Pagamento e Ativação
             </div>
           </div>
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => router.push("/payment")} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              Escolher Plano e Pagar
+            </Button>
+            <Button onClick={() => window.open("https://wa.me/5511950222063", "_blank")} variant="outline" className="w-full">
+              Falar com Suporte
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
-            Você receberá uma notificação assim que seu acesso for liberado.
+            Já pagou? Fale com o suporte para agilizar a ativação.
           </p>
-          <Button onClick={() => window.open("https://wa.me/5511950222063", "_blank")} variant="outline" className="w-full">
-            Falar com Suporte
-          </Button>
         </div>
       </div>
     )
@@ -271,6 +278,35 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Complete Profile Banner */}
+      {currentUser && getCompaniesByUserId(currentUser.id).length === 0 && (
+        <motion.div
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-500/20 rounded-xl shrink-0">
+              <UserCircle className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Complete seu perfil</p>
+              <p className="text-muted-foreground text-xs">
+                Preencha os dados da sua empresa para aparecer nas buscas e receber conexões.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => router.push("/account")}
+            size="sm"
+            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shrink-0"
+          >
+            Completar Perfil
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </motion.div>
+      )}
 
       {/* Search */}
       <div className="w-full max-w-full mx-auto relative z-20">

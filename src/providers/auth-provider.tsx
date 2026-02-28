@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@/types"
 import { getCurrentUser, seedCriticalUsers } from "@/services/auth.service"
+import { migrateLocalStorage } from "@/services/migration.service"
 
 interface AuthContextValue {
   user: User | null
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    migrateLocalStorage()
     seedCriticalUsers().then(() => {
       const u = getCurrentUser()
       setUser(u)

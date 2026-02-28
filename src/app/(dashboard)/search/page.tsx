@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
 import { companies } from "@/data/mock-companies"
+import { getAllCompanies } from "@/services/company.service"
 import { startConversation, addLike } from "@/services/messages.service"
 import { Search, MapPin, Mail, MessageCircle, UserPlus, X } from "lucide-react"
 
@@ -33,6 +34,7 @@ export default function SearchPage() {
   const [activeSegment, setActiveSegment] = useState("Todos")
 
   useEffect(() => {
+    // Mock companies
     const mocks: Profile[] = companies.map(c => ({
       id: c.id,
       name: c.name,
@@ -45,22 +47,27 @@ export default function SearchPage() {
       description: c.description,
     }))
 
-    const realUsers: Profile[] = JSON.parse(localStorage.getItem("users") || "[]").map(
-      (u: { id: number; fullName?: string; companyName?: string; email?: string; segment?: string; address?: string; avatar?: string }) => ({
-        id: u.id,
-        name: u.fullName || "",
-        companyName: u.companyName || "",
-        email: u.email || "",
-        segment: u.segment || "Diversos",
-        location: u.address || "Brasil",
-        image: u.avatar || null,
-        type: "user_real" as const,
-        description: u.companyName ? `Empresário na ${u.companyName}` : "Novo membro na plataforma",
-      })
-    )
-
+    // Real companies from localStorage (one card per company)
     const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}")
-    const merged = [...mocks, ...realUsers].filter(p => p.id !== currentUser.id && p.email !== currentUser.email)
+    const allUsers: Record<string, unknown>[] = JSON.parse(localStorage.getItem("users") || "[]")
+    const realCompanies = getAllCompanies()
+      .filter(c => c.userId !== currentUser.id)
+      .map(c => {
+        const owner = allUsers.find((u: Record<string, unknown>) => u.id === c.userId) as Record<string, unknown> | undefined
+        return {
+          id: c.id,
+          name: (owner?.fullName as string) || c.name,
+          companyName: c.name,
+          email: c.contactEmail || (owner?.email as string) || "",
+          segment: c.category || "Diversos",
+          location: c.location || "Brasil",
+          image: c.gallery[0] || (owner?.avatar as string) || null,
+          type: "user_real" as const,
+          description: c.description || `Empresa de ${(owner?.fullName as string) || "membro"}`,
+        }
+      })
+
+    const merged = [...mocks, ...realCompanies]
     setAllProfiles(merged)
   }, [])
 

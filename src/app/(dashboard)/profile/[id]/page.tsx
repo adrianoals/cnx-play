@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
 import { companies } from "@/data/mock-companies"
+import { getAllCompanies } from "@/services/company.service"
 
 interface ProfileUser {
   id: number
@@ -32,17 +33,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Try registered users
-    const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-    const registeredUser = allUsers.find((u: { id: number }) => u.id?.toString() === id)
-
-    if (registeredUser) {
-      setUser(registeredUser)
-      setLoading(false)
-      return
-    }
-
-    // Try mock companies
+    // Try mock companies first
     const mockCompany = companies.find(c => c.id?.toString() === id)
     if (mockCompany) {
       setUser({
@@ -56,6 +47,42 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         gallery: [mockCompany.image],
         isMock: true,
       })
+      setLoading(false)
+      return
+    }
+
+    // Try real companies from localStorage
+    const realCompanies = getAllCompanies()
+    const realCompany = realCompanies.find(c => c.id?.toString() === id)
+    if (realCompany) {
+      const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
+      const owner = allUsers.find((u: { id: number }) => u.id === realCompany.userId)
+      setUser({
+        id: realCompany.id,
+        fullName: realCompany.name,
+        companyName: realCompany.name,
+        segment: realCompany.category,
+        description: realCompany.description,
+        contact: {
+          email: realCompany.contactEmail || "",
+          phone: realCompany.contactPhone || "",
+          linkedin: realCompany.linkedin,
+        },
+        avatar: owner?.avatar || null,
+        gallery: realCompany.gallery,
+        phone: realCompany.contactPhone,
+        email: realCompany.contactEmail,
+        address: realCompany.location,
+      })
+      setLoading(false)
+      return
+    }
+
+    // Fallback: try registered users
+    const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
+    const registeredUser = allUsers.find((u: { id: number }) => u.id?.toString() === id)
+    if (registeredUser) {
+      setUser(registeredUser)
       setLoading(false)
       return
     }

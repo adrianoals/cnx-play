@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { SUPER_ADMINS } from "@/lib/constants"
 import { getAllUsers, updateUser, deleteUser, changeStatus, createUser } from "@/services/users.service"
+import { createCompany as createCompanyService, getPrimaryCompany, updateCompany as updateCompanyService } from "@/services/company.service"
 import type { User } from "@/types"
 import {
   Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
@@ -163,6 +164,26 @@ export default function AdminUsersPage() {
     }
 
     await updateUser(editingUser.id, { ...editingUser, fullName: editingUser.name })
+    // Sync company data
+    const primaryCompany = getPrimaryCompany(editingUser.id)
+    if (primaryCompany && editingUser.companyName) {
+      updateCompanyService(primaryCompany.id, {
+        name: editingUser.companyName,
+        cnpj: editingUser.cnpj || undefined,
+        category: editingUser.segment || undefined,
+        location: editingUser.address || undefined,
+      })
+    } else if (!primaryCompany && editingUser.companyName) {
+      createCompanyService({
+        userId: editingUser.id,
+        name: editingUser.companyName,
+        cnpj: editingUser.cnpj || undefined,
+        category: editingUser.segment || undefined,
+        location: editingUser.address || undefined,
+        isPrimary: true,
+        gallery: [],
+      })
+    }
     setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...editingUser, fullName: editingUser.name } : u))
     setIsEditModalOpen(false)
     toast({ title: "Usuário atualizado", description: "As informações foram salvas com sucesso.", className: "bg-green-600 border-green-500 text-white" })
@@ -176,6 +197,16 @@ export default function AdminUsersPage() {
 
     try {
       const newUser = await createUser(newUserData)
+      // Create company entry if companyName provided
+      if (newUserData.companyName) {
+        createCompanyService({
+          userId: newUser.id,
+          name: newUserData.companyName,
+          cnpj: newUserData.cnpj || undefined,
+          isPrimary: true,
+          gallery: [],
+        })
+      }
       setUsers(prev => [...prev, newUser])
       setIsCreateUserModalOpen(false)
       setNewUserData({ name: "", email: "", password: "", companyName: "", cnpj: "", phone: "", cpf: "", role: "user", status: "active" })

@@ -1,0 +1,146 @@
+import type { LocalCompany } from '@/types'
+
+const STORAGE_KEY = 'companies'
+
+function getAll(): LocalCompany[] {
+  if (typeof window === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+  } catch { return [] }
+}
+
+function saveAll(companies: LocalCompany[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(companies))
+}
+
+export function getAllCompanies(): LocalCompany[] {
+  return getAll()
+}
+
+export function getCompaniesByUserId(userId: number): LocalCompany[] {
+  return getAll().filter(c => c.userId === userId)
+}
+
+export function getPrimaryCompany(userId: number): LocalCompany | null {
+  const userCompanies = getCompaniesByUserId(userId)
+  return userCompanies.find(c => c.isPrimary) || userCompanies[0] || null
+}
+
+export function getCompanyById(id: number): LocalCompany | null {
+  return getAll().find(c => c.id === id) || null
+}
+
+export function createCompany(data: Omit<LocalCompany, 'id' | 'createdAt' | 'updatedAt'>): LocalCompany {
+  const companies = getAll()
+  const now = new Date().toISOString()
+  const newCompany: LocalCompany = {
+    ...data,
+    id: Date.now() + Math.floor(Math.random() * 10000),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  // If this is the first company for user, force isPrimary
+  if (!companies.some(c => c.userId === data.userId)) {
+    newCompany.isPrimary = true
+  }
+
+  // If setting as primary, unset others
+  if (newCompany.isPrimary) {
+    companies.forEach(c => {
+      if (c.userId === data.userId) c.isPrimary = false
+    })
+  }
+
+  companies.push(newCompany)
+  saveAll(companies)
+  syncUserCompanyName(data.userId)
+  return newCompany
+}
+
+export function updateCompany(id: number, data: Partial<LocalCompany>): LocalCompany {
+  const companies = getAll()
+  const idx = companies.findIndex(c => c.id === id)
+  if (idx === -1) throw new Error('Empresa não encontrada.')
+
+  const updated = { ...companies[idx], ...data, updatedAt: new Date().toISOString() }
+
+  // If setting as primary, unset others
+  if (data.isPrimary) {
+    companies.forEach(c => {
+      if (c.userId === updated.userId && c.id !== id) c.isPrimary = false
+    })
+  }
+
+  companies[idx] = updated
+  saveAll(companies)
+  syncUserCompanyName(updated.userId)
+  return updated
+}
+
+export function deleteCompany(id: number): void {
+  const companies = getAll()
+  const company = companies.find(c => c.id === id)
+  if (!company) return
+
+  const filtered = companies.filter(c => c.id !== id)
+
+  // If deleted was primary, promote next one
+  if (company.isPrimary) {
+    const next = filtered.find(c => c.userId === company.userId)
+    if (next) next.isPrimary = true
+  }
+
+  saveAll(filtered)
+  syncUserCompanyName(company.userId)
+}
+
+export function addGalleryImage(companyId: number, imageUrl: string): void {
+  const companies = getAll()
+  const company = companies.find(c => c.id === companyId)
+  if (!company) return
+
+  company.gallery.push(imageUrl)
+  company.updatedAt = new Date().toISOString()
+  saveAll(companies)
+}
+
+export function removeGalleryImage(companyId: number, index: number): void {
+  const companies = getAll()
+  const company = companies.find(c => c.id === companyId)
+  if (!company) return
+
+  company.gallery = company.gallery.filter((_, i) => i !== index)
+  company.updatedAt = new Date().toISOString()
+  saveAll(companies)
+}
+
+/** Backward compat: sync primary company name to user object */
+function syncUserCompanyName(userId: number): void {
+  const primary = getPrimaryCompany(userId)
+
+  // Sync current_user
+  try {
+    const raw = localStorage.getItem('current_user')
+    if (raw) {
+      const user = JSON.parse(raw)
+      if (user.id === userId) {
+        user.companyName = primary?.name || ''
+        localStorage.setItem('current_user', JSON.stringify(user))
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Sync users array
+  try {
+    const raw = localStorage.getItem('users')
+    if (raw) {
+      const users = JSON.parse(raw)
+      const idx = users.findIndex((u: { id: number }) => u.id === userId)
+      if (idx !== -1) {
+        users[idx].companyName = primary?.name || ''
+        localStorage.setItem('users', JSON.stringify(users))
+      }
+    }
+  } catch { /* ignore */ }
+}

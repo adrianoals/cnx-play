@@ -9,16 +9,38 @@ export interface User {
   createdAt: string
   score: number
   totalValue: number
-  companyName: string
   phone: string
   cpf?: string
-  cnpj?: string
   address?: string
   birthDate?: string
-  segment?: string
   avatar?: string | null
-  gallery?: string[]
   metadata?: Record<string, string>
+  /** @deprecated Use company.service instead */
+  companyName?: string
+  /** @deprecated Use company.service instead */
+  cnpj?: string
+  /** @deprecated Use company.service instead */
+  segment?: string
+  /** @deprecated Use company.service instead */
+  gallery?: string[]
+}
+
+export interface LocalCompany {
+  id: number
+  userId: number
+  name: string
+  cnpj?: string
+  category?: string
+  description?: string
+  location?: string
+  contactEmail?: string
+  contactPhone?: string
+  linkedin?: string
+  opportunities?: string[]
+  isPrimary: boolean
+  gallery: string[]
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Company {

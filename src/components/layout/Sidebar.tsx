@@ -39,7 +39,6 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   const baseItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: Search, label: "Pesquisar Empresas", path: "/search" },
-    { icon: CreditCard, label: "Pagamento", path: "/payment" },
     { icon: User, label: "Minha Conta", path: "/account" },
     { icon: Calendar, label: "Reuniões", path: "/meetings" },
   ]

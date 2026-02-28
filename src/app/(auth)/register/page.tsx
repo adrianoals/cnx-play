@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Loader2, User, Building2, Phone } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Loader2, User, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
@@ -21,12 +21,22 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
-    companyName: "",
     phone: "",
   })
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11)
+    if (digits.length <= 2) return digits.length ? `(${digits}` : ""
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    if (name === "phone") {
+      setFormData(prev => ({ ...prev, phone: formatPhone(value) }))
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -44,17 +54,17 @@ export default function RegisterPage() {
         createNotification(
           admin.id,
           "system",
-          `Novo cadastro: ${formData.name} (${formData.companyName}). Aguardando aprovação.`
+          `Novo cadastro: ${formData.name}. Aguardando pagamento e aprovação.`
         )
       })
 
       toast({
-        title: "Solicitação Enviada!",
-        description: "Seu cadastro foi realizado e está sob análise.",
+        title: "Conta criada!",
+        description: "Agora escolha seu plano para ativar o acesso.",
         className: "bg-green-600 text-white border-none",
       })
 
-      router.push("/dashboard")
+      router.push("/payment")
     } catch (error) {
       toast({
         variant: "destructive",
@@ -88,34 +98,18 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground ml-1">Seu Nome</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    name="name"
-                    placeholder="Nome Completo"
-                    required
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="pl-9 bg-secondary/50 border-input"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground ml-1">Empresa</label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    name="companyName"
-                    placeholder="Nome da Empresa"
-                    required
-                    value={formData.companyName}
-                    onChange={handleInputChange}
-                    className="pl-9 bg-secondary/50 border-input"
-                  />
-                </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-foreground ml-1">Seu Nome</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  name="name"
+                  placeholder="Nome Completo"
+                  required
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="pl-9 bg-secondary/50 border-input"
+                />
               </div>
             </div>
 
@@ -125,7 +119,9 @@ export default function RegisterPage() {
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   name="phone"
+                  inputMode="tel"
                   placeholder="(00) 00000-0000"
+                  maxLength={15}
                   required
                   value={formData.phone}
                   onChange={handleInputChange}

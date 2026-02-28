@@ -15,7 +15,7 @@ export function useAuth() {
     return u
   }
 
-  const register = async (data: { name: string; email: string; password: string; companyName: string; phone: string }): Promise<User> => {
+  const register = async (data: { name: string; email: string; password: string; phone: string }): Promise<User> => {
     const u = await registerService(data)
     setUser(u)
     return u

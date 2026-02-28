@@ -13,11 +13,32 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import ReferralSystem from "@/components/features/ReferralSystem"
+import CompanyCard from "@/components/features/CompanyCard"
+import CompanyEditModal from "@/components/features/CompanyEditModal"
+import type { LocalCompany } from "@/types"
+import {
+  getCompaniesByUserId, createCompany, updateCompany, deleteCompany, getPrimaryCompany,
+} from "@/services/company.service"
 import {
   Camera, User, Mail, Save, Loader2, UploadCloud, Trash2,
-  AlertTriangle, Phone, MapPin, Calendar, Building2, FileText,
-  Briefcase, Fingerprint, Image as ImageIcon, Plus, X, Gift,
+  AlertTriangle, Phone, MapPin, Calendar, Fingerprint,
+  Plus, X, Gift, Building2,
 } from "lucide-react"
+
+function formatCPF(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length <= 2) return digits.length ? `(${digits}` : ""
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
 
 function InputGroup({
   label, value, onChange, icon: Icon, type = "text", placeholder = "", readOnly = false,
@@ -50,20 +71,26 @@ export default function AccountPage() {
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [showReferralModal, setShowReferralModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const galleryInputRef = useRef<HTMLInputElement>(null)
 
-  const [profileData, setProfileData] = useState({
-    name: "", email: "", avatar: null as string | null, phone: "", cpf: "",
-    address: "", birthDate: "", companyName: "", cnpj: "", segment: "",
-    gallery: [] as string[],
+  // Personal data
+  const [personalData, setPersonalData] = useState({
+    name: "", email: "", avatar: null as string | null,
+    phone: "", cpf: "", address: "", birthDate: "",
   })
+
+  // Companies
+  const [companies, setCompanies] = useState<LocalCompany[]>([])
+  const [editingCompany, setEditingCompany] = useState<LocalCompany | null>(null)
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<number>(0)
 
   useEffect(() => {
     const currentUserStr = localStorage.getItem("current_user")
     if (currentUserStr) {
       try {
         const user = JSON.parse(currentUserStr)
-        setProfileData({
+        setCurrentUserId(user.id)
+        setPersonalData({
           name: user.fullName || user.name || "",
           email: user.email || "",
           avatar: user.avatar || localStorage.getItem("user_avatar") || null,
@@ -71,11 +98,8 @@ export default function AccountPage() {
           cpf: user.cpf || "",
           address: user.address || "",
           birthDate: user.birthDate || "",
-          companyName: user.companyName || "",
-          cnpj: user.cnpj || "",
-          segment: user.segment || "",
-          gallery: user.gallery || [],
         })
+        setCompanies(getCompaniesByUserId(user.id))
       } catch (e) {
         console.error("Error parsing user data", e)
       }
@@ -94,48 +118,38 @@ export default function AccountPage() {
       return
     }
     const reader = new FileReader()
-    reader.onloadend = () => setProfileData(prev => ({ ...prev, avatar: reader.result as string }))
+    reader.onloadend = () => setPersonalData(prev => ({ ...prev, avatar: reader.result as string }))
     reader.readAsDataURL(file)
-  }
-
-  const handleGalleryUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith("image/")) return
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "Arquivo muito grande", description: "Máximo 2MB." })
-      return
-    }
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const newGallery = [...profileData.gallery, reader.result as string]
-      setProfileData(prev => ({ ...prev, gallery: newGallery }))
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const removeGalleryImage = (index: number) => {
-    setProfileData(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== index) }))
   }
 
   const handleRemovePhoto = () => {
-    setProfileData(prev => ({ ...prev, avatar: null }))
+    setPersonalData(prev => ({ ...prev, avatar: null }))
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  const handleSave = () => {
+  const handleSavePersonal = () => {
     setLoading(true)
     setTimeout(() => {
       const currentUserStr = localStorage.getItem("current_user")
       const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {}
 
+      // Sync companyName from primary company for backward compat
+      const primary = getPrimaryCompany(currentUser.id)
+
       const updatedUser = {
-        ...currentUser, ...profileData,
-        fullName: profileData.name, avatar: profileData.avatar, gallery: profileData.gallery,
+        ...currentUser,
+        fullName: personalData.name,
+        name: personalData.name,
+        avatar: personalData.avatar,
+        phone: personalData.phone,
+        cpf: personalData.cpf,
+        address: personalData.address,
+        birthDate: personalData.birthDate,
+        companyName: primary?.name || currentUser.companyName || "",
       }
 
       localStorage.setItem("current_user", JSON.stringify(updatedUser))
-      localStorage.setItem("user_avatar", profileData.avatar || "")
+      localStorage.setItem("user_avatar", personalData.avatar || "")
 
       const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
       if (allUsers.length > 0) {
@@ -155,6 +169,29 @@ export default function AccountPage() {
     }, 1000)
   }
 
+  const handleSaveCompany = (data: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: number; createdAt?: string; updatedAt?: string }) => {
+    if (data.id) {
+      updateCompany(data.id, data)
+    } else {
+      createCompany(data)
+    }
+    setCompanies(getCompaniesByUserId(currentUserId))
+    toast({
+      title: data.id ? "Empresa atualizada!" : "Empresa adicionada!",
+      description: data.id ? "Dados salvos com sucesso." : "Sua empresa foi cadastrada.",
+      className: "bg-green-600 border-green-500 text-white",
+    })
+  }
+
+  const handleDeleteCompany = (companyId: number) => {
+    deleteCompany(companyId)
+    setCompanies(getCompaniesByUserId(currentUserId))
+    toast({
+      title: "Empresa removida",
+      description: "A empresa foi excluída da sua conta.",
+    })
+  }
+
   const handleDeleteAccount = () => {
     setDeleteLoading(true)
     setTimeout(() => {
@@ -169,7 +206,7 @@ export default function AccountPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Meu Perfil</h1>
-          <p className="text-muted-foreground">Gerencie suas informações pessoais e galeria.</p>
+          <p className="text-muted-foreground">Gerencie suas informações pessoais e empresas.</p>
         </div>
       </div>
 
@@ -180,9 +217,9 @@ export default function AccountPage() {
             <h2 className="font-semibold mb-6">Foto de Perfil</h2>
             <div className="relative group mb-6">
               <Avatar className="w-40 h-40 border-4 border-border shadow-xl">
-                <AvatarImage src={profileData.avatar || undefined} className="object-cover" />
+                <AvatarImage src={personalData.avatar || undefined} className="object-cover" />
                 <AvatarFallback className="bg-secondary text-secondary-foreground text-4xl">
-                  {profileData.name ? profileData.name.charAt(0).toUpperCase() : "U"}
+                  {personalData.name ? personalData.name.charAt(0).toUpperCase() : "U"}
                 </AvatarFallback>
               </Avatar>
               <div
@@ -197,7 +234,7 @@ export default function AccountPage() {
               <Button variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}>
                 <UploadCloud className="h-4 w-4" /> Alterar Foto
               </Button>
-              {profileData.avatar && (
+              {personalData.avatar && (
                 <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2" onClick={handleRemovePhoto}>
                   <Trash2 className="h-4 w-4" /> Remover
                 </Button>
@@ -212,87 +249,80 @@ export default function AccountPage() {
             <Tabs defaultValue="personal" className="w-full">
               <TabsList className="w-full bg-muted/50 p-1 h-12">
                 <TabsTrigger value="personal" className="flex-1">Dados Pessoais</TabsTrigger>
-                <TabsTrigger value="company" className="flex-1">Empresa</TabsTrigger>
-                <TabsTrigger value="portfolio" className="flex-1">Galeria</TabsTrigger>
+                <TabsTrigger value="companies" className="flex-1">Minhas Empresas</TabsTrigger>
               </TabsList>
 
+              {/* Personal Tab */}
               <TabsContent value="personal" className="p-6 md:p-8 space-y-6">
                 <div className="flex items-center gap-2 mb-4">
                   <User className="h-5 w-5 text-blue-500" />
                   <h2 className="text-xl font-bold">Informações Pessoais</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputGroup label="Nome Completo" value={profileData.name} onChange={v => setProfileData({ ...profileData, name: v })} icon={User} />
-                  <InputGroup label="Data de Nascimento" value={profileData.birthDate} onChange={v => setProfileData({ ...profileData, birthDate: v })} icon={Calendar} type="date" />
+                  <InputGroup label="Nome Completo" value={personalData.name} onChange={v => setPersonalData({ ...personalData, name: v })} icon={User} />
+                  <InputGroup label="Data de Nascimento" value={personalData.birthDate} onChange={v => setPersonalData({ ...personalData, birthDate: v })} icon={Calendar} type="date" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputGroup label="CPF" value={profileData.cpf} onChange={v => setProfileData({ ...profileData, cpf: v })} icon={Fingerprint} placeholder="000.000.000-00" />
-                  <InputGroup label="Telefone / WhatsApp" value={profileData.phone} onChange={v => setProfileData({ ...profileData, phone: v })} icon={Phone} placeholder="(00) 90000-0000" />
+                  <InputGroup label="CPF" value={personalData.cpf} onChange={v => setPersonalData({ ...personalData, cpf: formatCPF(v) })} icon={Fingerprint} placeholder="000.000.000-00" />
+                  <InputGroup label="Telefone / WhatsApp" value={personalData.phone} onChange={v => setPersonalData({ ...personalData, phone: formatPhone(v) })} icon={Phone} placeholder="(00) 90000-0000" />
                 </div>
-                <InputGroup label="E-mail" value={profileData.email} readOnly icon={Mail} />
-                <InputGroup label="Endereço Residencial" value={profileData.address} onChange={v => setProfileData({ ...profileData, address: v })} icon={MapPin} placeholder="Rua, Número, Bairro, Cidade - UF" />
+                <InputGroup label="E-mail" value={personalData.email} readOnly icon={Mail} />
+                <InputGroup label="Endereço Residencial" value={personalData.address} onChange={v => setPersonalData({ ...personalData, address: v })} icon={MapPin} placeholder="Rua, Número, Bairro, Cidade - UF" />
                 <div className="pt-4 border-t border-border flex justify-end">
-                  <Button onClick={handleSave} disabled={loading} className="min-w-[140px]">
+                  <Button onClick={handleSavePersonal} disabled={loading} className="min-w-[140px]">
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Salvar Pessoal
                   </Button>
                 </div>
               </TabsContent>
 
-              <TabsContent value="company" className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="h-5 w-5 text-purple-500" />
-                  <h2 className="text-xl font-bold">Informações Corporativas</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputGroup label="Nome da Empresa" value={profileData.companyName} onChange={v => setProfileData({ ...profileData, companyName: v })} icon={Building2} placeholder="Razão Social" />
-                  <InputGroup label="CNPJ" value={profileData.cnpj} onChange={v => setProfileData({ ...profileData, cnpj: v })} icon={FileText} placeholder="00.000.000/0001-00" />
-                </div>
-                <InputGroup label="Segmento / Ramo" value={profileData.segment} onChange={v => setProfileData({ ...profileData, segment: v })} icon={Briefcase} placeholder="Ex: Tecnologia, Consultoria..." />
-                <div className="pt-4 border-t border-border flex justify-end">
-                  <Button onClick={handleSave} disabled={loading} className="min-w-[140px]">
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Empresa
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="portfolio" className="p-6 md:p-8 space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <ImageIcon className="h-5 w-5 text-green-500" />
-                  <h2 className="text-xl font-bold">Galeria e Portfólio</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Adicione fotos de seus produtos, escritório ou equipe. Essas imagens aparecerão no seu perfil público.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {profileData.gallery.map((img, idx) => (
-                    <div key={idx} className="relative group aspect-square bg-muted rounded-xl overflow-hidden border border-border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => removeGalleryImage(idx)}
-                        className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => galleryInputRef.current?.click()}
-                    className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/30 rounded-xl hover:bg-secondary/50 transition-colors gap-2 text-muted-foreground hover:text-foreground"
+              {/* Companies Tab */}
+              <TabsContent value="companies" className="p-6 md:p-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-purple-500" />
+                    <h2 className="text-xl font-bold">Minhas Empresas</h2>
+                  </div>
+                  <Button
+                    onClick={() => { setEditingCompany(null); setIsCompanyModalOpen(true) }}
+                    className="gap-2"
+                    size="sm"
                   >
-                    <Plus className="h-8 w-8" />
-                    <span className="text-xs font-medium">Adicionar Foto</span>
-                  </button>
-                  <input type="file" ref={galleryInputRef} onChange={handleGalleryUpload} accept="image/*" className="hidden" />
-                </div>
-                <div className="pt-4 border-t border-border flex justify-end">
-                  <Button onClick={handleSave} disabled={loading} className="min-w-[140px]">
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Galeria
+                    <Plus className="h-4 w-4" /> Adicionar Empresa
                   </Button>
                 </div>
+
+                {companies.length > 0 ? (
+                  <div className="space-y-3">
+                    {companies.map(company => (
+                      <CompanyCard
+                        key={company.id}
+                        company={company}
+                        onEdit={c => { setEditingCompany(c); setIsCompanyModalOpen(true) }}
+                        onDelete={handleDeleteCompany}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 space-y-4">
+                    <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto">
+                      <Building2 className="h-8 w-8 text-purple-500/50" />
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground font-medium">Nenhuma empresa cadastrada</p>
+                      <p className="text-sm text-muted-foreground/70 mt-1">
+                        Adicione sua empresa para aparecer nas buscas e receber conexões.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => { setEditingCompany(null); setIsCompanyModalOpen(true) }}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" /> Cadastrar Primeira Empresa
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -328,6 +358,16 @@ export default function AccountPage() {
         </motion.div>
       </div>
 
+      {/* Company Edit Modal */}
+      <CompanyEditModal
+        company={editingCompany}
+        isOpen={isCompanyModalOpen}
+        onClose={() => { setIsCompanyModalOpen(false); setEditingCompany(null) }}
+        onSave={handleSaveCompany}
+        userId={currentUserId}
+      />
+
+      {/* Referral Modal */}
       <AnimatePresence>
         {showReferralModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

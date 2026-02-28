@@ -1,4 +1,4 @@
-import type { User } from '@/types'
+import type { User, LocalCompany } from '@/types'
 import { SUPER_ADMINS } from '@/lib/constants'
 import { MOCK_SEED_USERS, criticalUsers } from '@/data/mock-users'
 
@@ -43,6 +43,28 @@ export async function seedCriticalUsers(): Promise<void> {
     }
   })
   if (hasChanges) saveUsers(storedUsers)
+
+  // Seed companies for users that have companyName but no company entry
+  const companies: LocalCompany[] = JSON.parse(localStorage.getItem('companies') || '[]')
+  let companiesChanged = false
+  storedUsers.forEach(user => {
+    if (user.companyName && !companies.some(c => c.userId === user.id)) {
+      const now = new Date().toISOString()
+      companies.push({
+        id: Date.now() + Math.floor(Math.random() * 10000) + user.id,
+        userId: user.id,
+        name: user.companyName,
+        cnpj: user.cnpj || undefined,
+        category: user.segment || undefined,
+        isPrimary: true,
+        gallery: user.gallery || [],
+        createdAt: user.createdAt || now,
+        updatedAt: now,
+      })
+      companiesChanged = true
+    }
+  })
+  if (companiesChanged) localStorage.setItem('companies', JSON.stringify(companies))
 }
 
 export async function login(email: string, password: string): Promise<User> {
@@ -61,7 +83,7 @@ export async function login(email: string, password: string): Promise<User> {
   return user
 }
 
-export async function register(data: { name: string; email: string; password: string; companyName: string; phone: string }): Promise<User> {
+export async function register(data: { name: string; email: string; password: string; phone: string }): Promise<User> {
   await new Promise(r => setTimeout(r, 1500))
   const users = getStoredUsers()
   if (users.some(u => u.email?.toLowerCase() === data.email.toLowerCase().trim())) {
@@ -69,9 +91,9 @@ export async function register(data: { name: string; email: string; password: st
   }
   const newUser: User = {
     id: Date.now(), fullName: data.name, name: data.name, email: data.email,
-    password: data.password, companyName: data.companyName, phone: data.phone,
+    password: data.password, phone: data.phone,
     role: 'user', status: 'pending', score: 0, createdAt: new Date().toLocaleDateString('pt-BR'),
-    totalValue: 0, gallery: [], avatar: null
+    totalValue: 0
   }
   saveUsers([...users, newUser])
   localStorage.setItem('current_user', JSON.stringify(newUser))
