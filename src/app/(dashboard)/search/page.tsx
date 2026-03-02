@@ -13,7 +13,7 @@ import { startConversation, addLike } from "@/services/messages.service"
 import { Search, MapPin, Mail, MessageCircle, UserPlus, X } from "lucide-react"
 
 interface Profile {
-  id: number
+  id: number | string
   name: string
   companyName: string
   email: string
@@ -87,7 +87,7 @@ export default function SearchPage() {
   }, [searchTerm, allProfiles, activeSegment])
 
   const handleStartChat = (profile: Profile) => {
-    startConversation(profile.id)
+    startConversation(String(profile.id))
     setTimeout(() => {
       router.push("/meetings")
       toast({
@@ -99,7 +99,7 @@ export default function SearchPage() {
   }
 
   const handleConnect = (profile: Profile) => {
-    const result = addLike(profile.id)
+    const result = addLike(String(profile.id))
     if (result.status === "match") {
       toast({
         title: "It's a Match! 🥂",

@@ -1,9 +1,8 @@
 export interface User {
-  id: number
+  id: string
   name: string
   fullName: string
   email: string
-  password: string
   role: 'user' | 'admin'
   status: 'active' | 'pending' | 'inactive'
   createdAt: string
@@ -14,6 +13,7 @@ export interface User {
   address?: string
   birthDate?: string
   avatar?: string | null
+  referralCode?: string
   metadata?: Record<string, string>
   /** @deprecated Use company.service instead */
   companyName?: string
@@ -26,8 +26,8 @@ export interface User {
 }
 
 export interface LocalCompany {
-  id: number
-  userId: number
+  id: string
+  userId: string
   name: string
   cnpj?: string
   category?: string
@@ -96,12 +96,12 @@ export interface Meeting {
 
 export interface SocialMatch {
   id: number
-  user1Id: number
-  user2Id: number
+  user1Id: string
+  user2Id: string
   timestamp: string
   source: string
   company?: {
-    id: number
+    id: number | string
     name: string
     image?: string | null
     segment?: string
@@ -111,7 +111,7 @@ export interface SocialMatch {
 export interface Message {
   id: number
   matchId: number
-  senderId: number
+  senderId: string
   text: string
   timestamp: string
   read: boolean
@@ -119,7 +119,7 @@ export interface Message {
 
 export interface Notification {
   id: number
-  userId: number
+  userId: string
   type: 'match' | 'message' | 'like' | 'system'
   content: string
   read: boolean

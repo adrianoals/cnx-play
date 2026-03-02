@@ -11,7 +11,7 @@ import { companies } from "@/data/mock-companies"
 import { getAllCompanies } from "@/services/company.service"
 
 interface ProfileUser {
-  id: number
+  id: number | string
   fullName: string
   companyName: string
   segment?: string
@@ -56,7 +56,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     const realCompany = realCompanies.find(c => c.id?.toString() === id)
     if (realCompany) {
       const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-      const owner = allUsers.find((u: { id: number }) => u.id === realCompany.userId)
+      const owner = allUsers.find((u: { id: string }) => String(u.id) === String(realCompany.userId))
       setUser({
         id: realCompany.id,
         fullName: realCompany.name,
@@ -80,7 +80,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
     // Fallback: try registered users
     const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-    const registeredUser = allUsers.find((u: { id: number }) => u.id?.toString() === id)
+    const registeredUser = allUsers.find((u: { id: string }) => String(u.id) === id)
     if (registeredUser) {
       setUser(registeredUser)
       setLoading(false)

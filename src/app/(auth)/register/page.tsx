@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/use-auth"
-import { createNotification } from "@/services/messages.service"
 import { motion } from "framer-motion"
 
 export default function RegisterPage() {
@@ -46,17 +45,6 @@ export default function RegisterPage() {
 
     try {
       await register(formData)
-
-      // Notify admins
-      const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-      const admins = allUsers.filter((u: { role: string }) => u.role === "admin")
-      admins.forEach((admin: { id: number }) => {
-        createNotification(
-          admin.id,
-          "system",
-          `Novo cadastro: ${formData.name}. Aguardando pagamento e aprovação.`
-        )
-      })
 
       toast({
         title: "Conta criada!",

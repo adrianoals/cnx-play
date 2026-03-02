@@ -17,6 +17,8 @@ export default function DailyContactManager() {
   const checkDailyContact = () => {
     const userStr = localStorage.getItem("current_user")
     if (!userStr) return
+    const user = JSON.parse(userStr)
+    if (user.status !== "active") return
     const today = new Date().toLocaleDateString("pt-BR")
     const lastDate = localStorage.getItem("last_daily_match_date")
     if (lastDate === today) return
@@ -33,7 +35,7 @@ export default function DailyContactManager() {
 
     setDailyContact(selected)
     setOpen(true)
-    createMatch(selected.id, "daily")
+    createMatch(String(selected.id), "daily")
     toast({ title: "Nova Conexão Disponível! 🚀", description: "Seu contato diário foi gerado e adicionado aos seus Matches.", className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none" })
   }
 

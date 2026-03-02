@@ -20,14 +20,14 @@ function migrateV1toV2(): void {
   const now = new Date().toISOString()
 
   users.forEach(user => {
-    const userId = user.id as number
+    const userId = String(user.id)
     const companyName = user.companyName as string | undefined
 
     // Skip if user has no company name or already has a company entry
-    if (!companyName || existingCompanies.some(c => c.userId === userId)) return
+    if (!companyName || existingCompanies.some(c => String(c.userId) === userId)) return
 
     existingCompanies.push({
-      id: Date.now() + Math.floor(Math.random() * 10000) + userId,
+      id: crypto.randomUUID(),
       userId,
       name: companyName,
       cnpj: (user.cnpj as string) || undefined,

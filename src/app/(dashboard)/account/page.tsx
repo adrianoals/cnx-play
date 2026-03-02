@@ -82,7 +82,7 @@ export default function AccountPage() {
   const [companies, setCompanies] = useState<LocalCompany[]>([])
   const [editingCompany, setEditingCompany] = useState<LocalCompany | null>(null)
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState<number>(0)
+  const [currentUserId, setCurrentUserId] = useState<string>("")
 
   useEffect(() => {
     const currentUserStr = localStorage.getItem("current_user")
@@ -153,7 +153,7 @@ export default function AccountPage() {
 
       const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
       if (allUsers.length > 0) {
-        const updatedAllUsers = allUsers.map((u: { id: number; email: string }) => {
+        const updatedAllUsers = allUsers.map((u: { id: string; email: string }) => {
           if (u.id === updatedUser.id || u.email === updatedUser.email) return { ...u, ...updatedUser }
           return u
         })
@@ -169,7 +169,7 @@ export default function AccountPage() {
     }, 1000)
   }
 
-  const handleSaveCompany = (data: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: number; createdAt?: string; updatedAt?: string }) => {
+  const handleSaveCompany = (data: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: string; updatedAt?: string }) => {
     if (data.id) {
       updateCompany(data.id, data)
     } else {
@@ -183,7 +183,7 @@ export default function AccountPage() {
     })
   }
 
-  const handleDeleteCompany = (companyId: number) => {
+  const handleDeleteCompany = (companyId: string) => {
     deleteCompany(companyId)
     setCompanies(getCompaniesByUserId(currentUserId))
     toast({

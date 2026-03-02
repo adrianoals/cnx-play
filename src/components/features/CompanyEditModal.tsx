@@ -32,8 +32,8 @@ interface CompanyEditModalProps {
   company: LocalCompany | null
   isOpen: boolean
   onClose: () => void
-  onSave: (company: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: number; createdAt?: string; updatedAt?: string }) => void
-  userId: number
+  onSave: (company: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: string; updatedAt?: string }) => void
+  userId: string
 }
 
 function Field({

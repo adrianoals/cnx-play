@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 interface CompanyCardProps {
   company: LocalCompany
   onEdit: (company: LocalCompany) => void
-  onDelete: (companyId: number) => void
+  onDelete: (companyId: string) => void
 }
 
 export default function CompanyCard({ company, onEdit, onDelete }: CompanyCardProps) {

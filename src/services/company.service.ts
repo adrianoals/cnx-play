@@ -17,17 +17,17 @@ export function getAllCompanies(): LocalCompany[] {
   return getAll()
 }
 
-export function getCompaniesByUserId(userId: number): LocalCompany[] {
-  return getAll().filter(c => c.userId === userId)
+export function getCompaniesByUserId(userId: string): LocalCompany[] {
+  return getAll().filter(c => String(c.userId) === String(userId))
 }
 
-export function getPrimaryCompany(userId: number): LocalCompany | null {
+export function getPrimaryCompany(userId: string): LocalCompany | null {
   const userCompanies = getCompaniesByUserId(userId)
   return userCompanies.find(c => c.isPrimary) || userCompanies[0] || null
 }
 
-export function getCompanyById(id: number): LocalCompany | null {
-  return getAll().find(c => c.id === id) || null
+export function getCompanyById(id: string): LocalCompany | null {
+  return getAll().find(c => String(c.id) === String(id)) || null
 }
 
 export function createCompany(data: Omit<LocalCompany, 'id' | 'createdAt' | 'updatedAt'>): LocalCompany {
@@ -35,20 +35,20 @@ export function createCompany(data: Omit<LocalCompany, 'id' | 'createdAt' | 'upd
   const now = new Date().toISOString()
   const newCompany: LocalCompany = {
     ...data,
-    id: Date.now() + Math.floor(Math.random() * 10000),
+    id: crypto.randomUUID(),
     createdAt: now,
     updatedAt: now,
   }
 
   // If this is the first company for user, force isPrimary
-  if (!companies.some(c => c.userId === data.userId)) {
+  if (!companies.some(c => String(c.userId) === String(data.userId))) {
     newCompany.isPrimary = true
   }
 
   // If setting as primary, unset others
   if (newCompany.isPrimary) {
     companies.forEach(c => {
-      if (c.userId === data.userId) c.isPrimary = false
+      if (String(c.userId) === String(data.userId)) c.isPrimary = false
     })
   }
 
@@ -58,9 +58,9 @@ export function createCompany(data: Omit<LocalCompany, 'id' | 'createdAt' | 'upd
   return newCompany
 }
 
-export function updateCompany(id: number, data: Partial<LocalCompany>): LocalCompany {
+export function updateCompany(id: string, data: Partial<LocalCompany>): LocalCompany {
   const companies = getAll()
-  const idx = companies.findIndex(c => c.id === id)
+  const idx = companies.findIndex(c => String(c.id) === String(id))
   if (idx === -1) throw new Error('Empresa não encontrada.')
 
   const updated = { ...companies[idx], ...data, updatedAt: new Date().toISOString() }
@@ -68,7 +68,7 @@ export function updateCompany(id: number, data: Partial<LocalCompany>): LocalCom
   // If setting as primary, unset others
   if (data.isPrimary) {
     companies.forEach(c => {
-      if (c.userId === updated.userId && c.id !== id) c.isPrimary = false
+      if (String(c.userId) === String(updated.userId) && String(c.id) !== String(id)) c.isPrimary = false
     })
   }
 
@@ -78,16 +78,16 @@ export function updateCompany(id: number, data: Partial<LocalCompany>): LocalCom
   return updated
 }
 
-export function deleteCompany(id: number): void {
+export function deleteCompany(id: string): void {
   const companies = getAll()
-  const company = companies.find(c => c.id === id)
+  const company = companies.find(c => String(c.id) === String(id))
   if (!company) return
 
-  const filtered = companies.filter(c => c.id !== id)
+  const filtered = companies.filter(c => String(c.id) !== String(id))
 
   // If deleted was primary, promote next one
   if (company.isPrimary) {
-    const next = filtered.find(c => c.userId === company.userId)
+    const next = filtered.find(c => String(c.userId) === String(company.userId))
     if (next) next.isPrimary = true
   }
 
@@ -95,9 +95,9 @@ export function deleteCompany(id: number): void {
   syncUserCompanyName(company.userId)
 }
 
-export function addGalleryImage(companyId: number, imageUrl: string): void {
+export function addGalleryImage(companyId: string, imageUrl: string): void {
   const companies = getAll()
-  const company = companies.find(c => c.id === companyId)
+  const company = companies.find(c => String(c.id) === String(companyId))
   if (!company) return
 
   company.gallery.push(imageUrl)
@@ -105,9 +105,9 @@ export function addGalleryImage(companyId: number, imageUrl: string): void {
   saveAll(companies)
 }
 
-export function removeGalleryImage(companyId: number, index: number): void {
+export function removeGalleryImage(companyId: string, index: number): void {
   const companies = getAll()
-  const company = companies.find(c => c.id === companyId)
+  const company = companies.find(c => String(c.id) === String(companyId))
   if (!company) return
 
   company.gallery = company.gallery.filter((_, i) => i !== index)
@@ -116,7 +116,7 @@ export function removeGalleryImage(companyId: number, index: number): void {
 }
 
 /** Backward compat: sync primary company name to user object */
-function syncUserCompanyName(userId: number): void {
+function syncUserCompanyName(userId: string): void {
   const primary = getPrimaryCompany(userId)
 
   // Sync current_user
@@ -124,22 +124,9 @@ function syncUserCompanyName(userId: number): void {
     const raw = localStorage.getItem('current_user')
     if (raw) {
       const user = JSON.parse(raw)
-      if (user.id === userId) {
+      if (String(user.id) === String(userId)) {
         user.companyName = primary?.name || ''
         localStorage.setItem('current_user', JSON.stringify(user))
-      }
-    }
-  } catch { /* ignore */ }
-
-  // Sync users array
-  try {
-    const raw = localStorage.getItem('users')
-    if (raw) {
-      const users = JSON.parse(raw)
-      const idx = users.findIndex((u: { id: number }) => u.id === userId)
-      if (idx !== -1) {
-        users[idx].companyName = primary?.name || ''
-        localStorage.setItem('users', JSON.stringify(users))
       }
     }
   } catch { /* ignore */ }

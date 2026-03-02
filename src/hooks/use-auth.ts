@@ -21,8 +21,8 @@ export function useAuth() {
     return u
   }
 
-  const logout = () => {
-    logoutService()
+  const logout = async () => {
+    await logoutService()
     setUser(null)
     router.push("/login")
   }

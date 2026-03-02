@@ -11,12 +11,12 @@ import type { Message } from "@/types"
 
 interface MatchWithCompany {
   id: number
-  user1Id: number
-  user2Id: number
+  user1Id: string
+  user2Id: string
   timestamp: string
   source: string
   company: {
-    id: number
+    id: number | string
     name: string
     image?: string | null
     segment?: string

@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Loader2, Sparkles } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, ArrowRight, Loader2, X, CheckCircle2 } from "lucide-react"
+import { AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
@@ -17,14 +18,30 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({ email: "", password: "" })
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [resetEmail, setResetEmail] = useState("")
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const fillTestCredentials = () => {
-    setFormData({ email: "teste@conexao.com", password: "123" })
+  const handleResetPassword = () => {
+    if (!resetEmail.trim()) return
+    setResetLoading(true)
+    // TODO: integrar com backend real (Supabase Auth)
+    setTimeout(() => {
+      setResetLoading(false)
+      setResetSent(true)
+    }, 1500)
+  }
+
+  const openResetModal = () => {
+    setResetEmail(formData.email || "")
+    setResetSent(false)
+    setShowResetModal(true)
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -98,7 +115,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-sm font-medium text-foreground">Senha</label>
-                <span className="text-xs text-primary hover:underline cursor-pointer">Esqueceu a senha?</span>
+                <button type="button" onClick={openResetModal} className="text-xs text-primary hover:underline cursor-pointer">Esqueceu a senha?</button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -135,16 +152,6 @@ export default function LoginPage() {
               )}
             </Button>
 
-            <div className="mt-4 pt-4 border-t border-border">
-              <button
-                type="button"
-                onClick={fillTestCredentials}
-                className="w-full flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors py-2 rounded-lg hover:bg-secondary/50"
-              >
-                <Sparkles className="w-3 h-3" />
-                Usar credenciais de teste (Visitante)
-              </button>
-            </div>
           </form>
 
           <div className="mt-6 text-center">
@@ -162,6 +169,98 @@ export default function LoginPage() {
           <span>Ambiente seguro e criptografado</span>
         </div>
       </motion.div>
+
+      {/* Reset Password Modal */}
+      <AnimatePresence>
+        {showResetModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowResetModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-card border border-border rounded-3xl p-8 w-full max-w-md shadow-2xl relative"
+            >
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              {resetSent ? (
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold mb-2">Link Enviado!</h2>
+                    <p className="text-muted-foreground text-sm">
+                      Enviamos um link de recuperação para <strong className="text-foreground">{resetEmail}</strong>. Verifique sua caixa de entrada e spam.
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">O link expira em 30 minutos.</p>
+                  <Button onClick={() => setShowResetModal(false)} className="w-full rounded-xl">
+                    Voltar ao Login
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Mail className="h-6 w-6 text-primary" />
+                    </div>
+                    <h2 className="text-xl font-bold mb-1">Recuperar Senha</h2>
+                    <p className="text-muted-foreground text-sm">
+                      Informe seu e-mail cadastrado e enviaremos um link para redefinir sua senha.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground ml-1">E-mail</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Input
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={resetEmail}
+                        onChange={e => setResetEmail(e.target.value)}
+                        className="pl-10 h-12 rounded-xl bg-secondary/50 border-input"
+                        onKeyDown={e => e.key === "Enter" && handleResetPassword()}
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleResetPassword}
+                    disabled={resetLoading || !resetEmail.trim()}
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+                  >
+                    {resetLoading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      "Enviar Link de Recuperação"
+                    )}
+                  </Button>
+
+                  <button
+                    onClick={() => setShowResetModal(false)}
+                    className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors text-center"
+                  >
+                    Voltar ao login
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

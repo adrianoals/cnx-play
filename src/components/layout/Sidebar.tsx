@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
+import { useAuth } from "@/hooks/use-auth"
 
 interface SidebarProps {
   isOpen: boolean
@@ -22,19 +23,20 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const { user: authUser, logout } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
   const [currentUser, setCurrentUser] = useState({ name: "Usuário", email: "", avatar: "" })
 
   useEffect(() => {
-    const userStr = localStorage.getItem("current_user")
-    const user = userStr ? JSON.parse(userStr) : {}
-    setIsAdmin(user?.role === "admin")
-    setCurrentUser({
-      name: user.fullName || "Usuário",
-      email: user.email || "Membro",
-      avatar: localStorage.getItem("user_avatar") || "",
-    })
-  }, [isOpen])
+    if (authUser) {
+      setIsAdmin(authUser.role === "admin")
+      setCurrentUser({
+        name: authUser.fullName || "Usuário",
+        email: authUser.email || "Membro",
+        avatar: authUser.avatar || "",
+      })
+    }
+  }, [authUser, isOpen])
 
   const baseItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
@@ -66,9 +68,7 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("current_user")
-    localStorage.removeItem("user_token")
-    router.push("/login")
+    logout()
   }
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark")

@@ -1,104 +1,133 @@
-import type { User, LocalCompany } from '@/types'
-import { SUPER_ADMINS } from '@/lib/constants'
-import { MOCK_SEED_USERS, criticalUsers } from '@/data/mock-users'
+import type { User } from '@/types'
+import { createClient } from '@/lib/supabase'
 
-function getStoredUsers(): User[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem('users')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
-
-function saveUsers(users: User[]) {
-  localStorage.setItem('users', JSON.stringify(users))
-}
-
-export async function seedCriticalUsers(): Promise<void> {
-  let storedUsers = getStoredUsers()
-  if (storedUsers.length === 0) {
-    storedUsers = [...MOCK_SEED_USERS]
-    saveUsers(storedUsers)
-    return
+/** Map Supabase row (snake_case) to frontend User (camelCase) */
+function mapProfile(row: Record<string, unknown>): User {
+  return {
+    id: row.id as string,
+    name: (row.full_name as string) || '',
+    fullName: (row.full_name as string) || '',
+    email: (row.email as string) || '',
+    phone: (row.phone as string) || '',
+    role: (row.role as 'user' | 'admin') || 'user',
+    status: (row.status as 'active' | 'pending' | 'inactive') || 'pending',
+    cpf: (row.cpf as string) || undefined,
+    birthDate: (row.birth_date as string) || undefined,
+    address: (row.address as string) || undefined,
+    avatar: (row.avatar_url as string) || null,
+    referralCode: (row.referral_code as string) || undefined,
+    createdAt: (row.created_at as string) || new Date().toISOString(),
+    score: 0,
+    totalValue: 0,
   }
+}
 
-  let hasChanges = false
-  criticalUsers.forEach(cu => {
-    const idx = storedUsers.findIndex(u => u.email?.toLowerCase() === cu.email.toLowerCase())
-    if (idx === -1) {
-      storedUsers.push({
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        name: cu.name, fullName: cu.name, email: cu.email, password: cu.password,
-        role: cu.role, createdAt: new Date().toISOString().split('T')[0],
-        status: "active", score: cu.role === 'admin' ? 1500 : 500,
-        totalValue: 0, companyName: cu.company, phone: "11999999999"
-      })
-      hasChanges = true
-    } else if (cu.role === 'admin') {
-      const user = storedUsers[idx]
-      if (user.role !== 'admin' || user.status !== 'active') {
-        storedUsers[idx] = { ...user, role: 'admin', status: 'active' }
-        hasChanges = true
-      }
-    }
-  })
-  if (hasChanges) saveUsers(storedUsers)
+/** Fetch user profile from public.users */
+export async function fetchProfile(userId: string): Promise<User | null> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .single()
 
-  // Seed companies for users that have companyName but no company entry
-  const companies: LocalCompany[] = JSON.parse(localStorage.getItem('companies') || '[]')
-  let companiesChanged = false
-  storedUsers.forEach(user => {
-    if (user.companyName && !companies.some(c => c.userId === user.id)) {
-      const now = new Date().toISOString()
-      companies.push({
-        id: Date.now() + Math.floor(Math.random() * 10000) + user.id,
-        userId: user.id,
-        name: user.companyName,
-        cnpj: user.cnpj || undefined,
-        category: user.segment || undefined,
-        isPrimary: true,
-        gallery: user.gallery || [],
-        createdAt: user.createdAt || now,
-        updatedAt: now,
-      })
-      companiesChanged = true
-    }
-  })
-  if (companiesChanged) localStorage.setItem('companies', JSON.stringify(companies))
+  if (error || !data) return null
+  return mapProfile(data)
 }
 
 export async function login(email: string, password: string): Promise<User> {
-  await new Promise(r => setTimeout(r, 800))
-  const users = getStoredUsers()
-  const clean = email.trim().toLowerCase()
-  const user = users.find(u => u.email?.toLowerCase() === clean)
-  if (!user) throw new Error("Usuário não encontrado. Verifique o e-mail ou cadastre-se.")
+  const supabase = createClient()
 
-  const isMasterAccess = SUPER_ADMINS.includes(clean) && password === "admin"
-  if (user.password !== password && !isMasterAccess) throw new Error("Senha incorreta.")
-  if (user.status === 'inactive') throw new Error("Esta conta está desativada. Contate o suporte.")
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  })
 
-  localStorage.setItem('current_user', JSON.stringify(user))
-  localStorage.setItem('user_token', `token_${Date.now()}_${user.id}`)
-  return user
+  if (error) {
+    if (error.message.includes('Invalid login credentials')) {
+      throw new Error('E-mail ou senha incorretos.')
+    }
+    if (error.message.includes('Email not confirmed')) {
+      throw new Error('E-mail não confirmado. Verifique sua caixa de entrada.')
+    }
+    throw new Error(error.message)
+  }
+
+  if (!data.user) throw new Error('Erro ao realizar login.')
+
+  const profile = await fetchProfile(data.user.id)
+  if (!profile) throw new Error('Perfil não encontrado. Contate o suporte.')
+
+  if (profile.status === 'inactive') {
+    await supabase.auth.signOut()
+    throw new Error('Esta conta está desativada. Contate o suporte.')
+  }
+
+  // Backward compat: store in localStorage for components that still read directly
+  localStorage.setItem('current_user', JSON.stringify(profile))
+  localStorage.setItem('user_token', `sb_${data.session?.access_token?.slice(-20)}`)
+
+  return profile
 }
 
-export async function register(data: { name: string; email: string; password: string; phone: string }): Promise<User> {
-  await new Promise(r => setTimeout(r, 1500))
-  const users = getStoredUsers()
-  if (users.some(u => u.email?.toLowerCase() === data.email.toLowerCase().trim())) {
-    throw new Error("Este e-mail já está cadastrado.")
+export async function register(data: {
+  name: string
+  email: string
+  password: string
+  phone: string
+}): Promise<User> {
+  const supabase = createClient()
+
+  const { data: authData, error } = await supabase.auth.signUp({
+    email: data.email.trim().toLowerCase(),
+    password: data.password,
+    options: {
+      data: {
+        full_name: data.name,
+        phone: data.phone,
+      },
+    },
+  })
+
+  if (error) {
+    if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+      throw new Error('Este e-mail já está cadastrado.')
+    }
+    if (error.message.includes('Password should be at least')) {
+      throw new Error('A senha deve ter pelo menos 6 caracteres.')
+    }
+    throw new Error(error.message)
   }
-  const newUser: User = {
-    id: Date.now(), fullName: data.name, name: data.name, email: data.email,
-    password: data.password, phone: data.phone,
-    role: 'user', status: 'pending', score: 0, createdAt: new Date().toLocaleDateString('pt-BR'),
-    totalValue: 0
+
+  if (!authData.user) throw new Error('Erro ao criar conta.')
+
+  // Wait briefly for the trigger to create the profile
+  await new Promise(r => setTimeout(r, 500))
+
+  const profile = await fetchProfile(authData.user.id)
+  if (!profile) {
+    // Trigger may not have fired yet, build profile from auth data
+    const fallback: User = {
+      id: authData.user.id,
+      name: data.name,
+      fullName: data.name,
+      email: data.email,
+      phone: data.phone,
+      role: 'user',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      score: 0,
+      totalValue: 0,
+    }
+    localStorage.setItem('current_user', JSON.stringify(fallback))
+    localStorage.setItem('user_token', `sb_${authData.session?.access_token?.slice(-20) || 'new'}`)
+    return fallback
   }
-  saveUsers([...users, newUser])
-  localStorage.setItem('current_user', JSON.stringify(newUser))
-  localStorage.setItem('user_token', `token_${Date.now()}_${newUser.id}`)
-  return newUser
+
+  localStorage.setItem('current_user', JSON.stringify(profile))
+  localStorage.setItem('user_token', `sb_${authData.session?.access_token?.slice(-20) || 'new'}`)
+
+  return profile
 }
 
 export function getCurrentUser(): User | null {
@@ -109,7 +138,25 @@ export function getCurrentUser(): User | null {
   } catch { return null }
 }
 
-export function logout() {
+export async function getCurrentUserAsync(): Promise<User | null> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    localStorage.removeItem('current_user')
+    localStorage.removeItem('user_token')
+    return null
+  }
+
+  const profile = await fetchProfile(user.id)
+  if (profile) {
+    localStorage.setItem('current_user', JSON.stringify(profile))
+  }
+  return profile
+}
+
+export async function logout() {
+  const supabase = createClient()
+  await supabase.auth.signOut()
   localStorage.removeItem('current_user')
   localStorage.removeItem('user_token')
 }

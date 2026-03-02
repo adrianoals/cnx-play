@@ -18,7 +18,7 @@ import type { User } from "@/types"
 import {
   Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
   MoreHorizontal, UserPlus, Clock, CheckCircle, XCircle,
-  Building2, Phone, Fingerprint, FileText, Plus, Lock, MapPin,
+  Building2, Phone, Fingerprint, FileText, Plus, MapPin,
   Briefcase, Target, ShieldAlert,
 } from "lucide-react"
 
@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
 
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
   const [newUserData, setNewUserData] = useState({
-    name: "", email: "", password: "", companyName: "", cnpj: "",
+    name: "", email: "", companyName: "", cnpj: "",
     phone: "", cpf: "", role: "user" as "user" | "admin", status: "active" as "active" | "pending" | "inactive",
   })
 
@@ -104,7 +104,7 @@ export default function AdminUsersPage() {
     return dateB.getTime() - dateA.getTime()
   }).slice(0, 5)
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}")
     const userToDelete = users.find(u => u.id === id)
 
@@ -128,7 +128,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleStatusChange = async (id: number, newStatus: User["status"]) => {
+  const handleStatusChange = async (id: string, newStatus: User["status"]) => {
     await changeStatus(id, newStatus)
     setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u))
     toast({
@@ -190,8 +190,8 @@ export default function AdminUsersPage() {
   }
 
   const handleCreateUser = async () => {
-    if (!newUserData.name || !newUserData.email || !newUserData.password) {
-      toast({ title: "Erro", description: "Nome, Email e Senha são obrigatórios.", variant: "destructive" })
+    if (!newUserData.name || !newUserData.email) {
+      toast({ title: "Erro", description: "Nome e Email são obrigatórios.", variant: "destructive" })
       return
     }
 
@@ -209,7 +209,7 @@ export default function AdminUsersPage() {
       }
       setUsers(prev => [...prev, newUser])
       setIsCreateUserModalOpen(false)
-      setNewUserData({ name: "", email: "", password: "", companyName: "", cnpj: "", phone: "", cpf: "", role: "user", status: "active" })
+      setNewUserData({ name: "", email: "", companyName: "", cnpj: "", phone: "", cpf: "", role: "user", status: "active" })
       toast({ title: "Usuário Criado", description: "O usuário foi adicionado com sucesso.", className: "bg-green-600 text-white border-none" })
     } catch (error) {
       toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao criar.", variant: "destructive" })
@@ -394,10 +394,6 @@ export default function AdminUsersPage() {
                 <Label>Email *</Label>
                 <Input value={newUserData.email} onChange={e => setNewUserData({ ...newUserData, email: e.target.value })} placeholder="Ex: joao@empresa.com" />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1"><Lock className="w-3 h-3" /> Senha Inicial *</Label>
-              <Input type="password" value={newUserData.password} onChange={e => setNewUserData({ ...newUserData, password: e.target.value })} placeholder="Defina uma senha" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
