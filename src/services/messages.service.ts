@@ -67,6 +67,7 @@ export function sendMessage(matchId: number, text: string): Message {
 export function createMatch(otherUserId: string, source = 'manual'): SocialMatch {
   const user = getCurrentUser()
   if (!user) throw new Error('Not authenticated')
+  if (user.status !== 'active') throw new Error('User not active')
   const matches = getJSON<SocialMatch>(KEYS.MATCHES)
   const existing = matches.find(
     m => (String(m.user1Id) === String(user.id) && String(m.user2Id) === String(otherUserId)) ||
