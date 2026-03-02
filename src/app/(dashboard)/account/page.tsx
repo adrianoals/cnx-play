@@ -1,16 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import ReferralSystem from "@/components/features/ReferralSystem"
 import CompanyCard from "@/components/features/CompanyCard"
@@ -21,7 +15,7 @@ import {
 } from "@/services/company.service"
 import {
   Camera, User, Mail, Save, Loader2, UploadCloud, Trash2,
-  AlertTriangle, Phone, MapPin, Calendar, Fingerprint,
+  Phone, MapPin, Calendar, Fingerprint,
   Plus, X, Gift, Building2,
 } from "lucide-react"
 
@@ -65,10 +59,8 @@ function InputGroup({
 }
 
 export default function AccountPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [deleteLoading, setDeleteLoading] = useState(false)
   const [showReferralModal, setShowReferralModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -190,15 +182,6 @@ export default function AccountPage() {
       title: "Empresa removida",
       description: "A empresa foi excluída da sua conta.",
     })
-  }
-
-  const handleDeleteAccount = () => {
-    setDeleteLoading(true)
-    setTimeout(() => {
-      localStorage.removeItem("current_user")
-      localStorage.removeItem("user_avatar")
-      router.push("/login")
-    }, 2000)
   }
 
   return (
@@ -327,34 +310,6 @@ export default function AccountPage() {
             </Tabs>
           </div>
 
-          {/* Danger Zone */}
-          <div className="bg-destructive/10 border border-destructive/20 rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-destructive mb-4 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" /> Zona de Perigo
-            </h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              Ao excluir sua conta, seus dados locais serão removidos.
-            </p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  <Trash2 className="mr-2 h-4 w-4" /> Excluir Conta Permanentemente
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmação de Exclusão</AlertDialogTitle>
-                  <AlertDialogDescription>Essa ação removerá seus dados de acesso deste dispositivo.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90">
-                    {deleteLoading ? "Excluindo..." : "Sim, excluir"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
         </motion.div>
       </div>
 
