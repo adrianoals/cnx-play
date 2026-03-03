@@ -28,14 +28,21 @@ export default function LoginPage() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!resetEmail.trim()) return
     setResetLoading(true)
-    // TODO: integrar com backend real (Supabase Auth)
-    setTimeout(() => {
+    try {
+      await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      })
+    } catch {
+      // Ignore errors — always show success to not leak info
+    } finally {
       setResetLoading(false)
       setResetSent(true)
-    }, 1500)
+    }
   }
 
   const openResetModal = () => {

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Menu, Gift } from "lucide-react"
+import { useRouter, usePathname } from "next/navigation"
+import { Bell, Menu, Gift, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getNotifications, markNotificationsRead } from "@/services/messages.service"
@@ -10,6 +11,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { Notification } from "@/types"
+import { useAuth } from "@/hooks/use-auth"
 
 interface HeaderProps {
   onMenuToggle: () => void
@@ -18,12 +20,16 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuToggle, userInitials = "US", onOpenReferral }: HeaderProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const { logout } = useAuth()
   const [user, setUser] = useState<{ fullName?: string; companyName?: string; avatar?: string; status?: string }>({})
   const [avatar, setAvatar] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
   const isActive = user.status === "active"
+  const isAdminPanel = pathname.startsWith("/admin")
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("current_user") || "{}")
@@ -106,16 +112,33 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
             </>
           )}
 
-          <div className="flex items-center gap-2 pl-2 border-l border-border">
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-medium leading-none text-foreground">{user.fullName || "Visitante"}</p>
-              <p className="text-xs text-muted-foreground">{user.companyName || "Empresa"}</p>
-            </div>
-            <Avatar className="h-8 w-8 border border-border">
-              <AvatarImage src={avatar || user.avatar || undefined} />
-              <AvatarFallback className="bg-primary/10 text-primary font-medium">{userInitials}</AvatarFallback>
-            </Avatar>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 pl-2 border-l border-border outline-none cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="hidden md:block text-right">
+                  <p className="text-sm font-medium leading-none text-foreground">{user.fullName || "Visitante"}</p>
+                  <p className="text-xs text-muted-foreground">{user.companyName || "Empresa"}</p>
+                </div>
+                <Avatar className="h-8 w-8 border border-border">
+                  <AvatarImage src={avatar || user.avatar || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">{userInitials}</AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {!isAdminPanel && (
+                <>
+                  <DropdownMenuItem onClick={() => router.push("/account")} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" /><span>Minha Conta</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
+                <LogOut className="mr-2 h-4 w-4" /><span>Sair</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

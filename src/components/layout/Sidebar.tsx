@@ -2,14 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, Calendar, MessageCircle, LogOut, ShieldCheck, MoreHorizontal, Sun, Moon } from "lucide-react"
+import { X, Home, User, CreditCard, Search, Calendar, MessageCircle, LogOut, ShieldCheck, Sun, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -25,16 +20,10 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   const { theme, setTheme } = useTheme()
   const { user: authUser, logout } = useAuth()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [currentUser, setCurrentUser] = useState({ name: "Usuário", email: "", avatar: "" })
 
   useEffect(() => {
     if (authUser) {
       setIsAdmin(authUser.role === "admin")
-      setCurrentUser({
-        name: authUser.fullName || "Usuário",
-        email: authUser.email || "Membro",
-        avatar: authUser.avatar || "",
-      })
     }
   }, [authUser, isOpen])
 
@@ -78,8 +67,6 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   }
 
   const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark")
-
-  const getInitials = (name: string) => name ? name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) : "US"
 
   return (
     <>
@@ -130,35 +117,6 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
             <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
             <span className="font-medium text-left">Sair</span>
           </button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-accent border border-transparent hover:border-border transition-all group outline-none">
-                <Avatar className="h-9 w-9 border border-border">
-                  <AvatarImage src={currentUser.avatar} alt={currentUser.name} className="object-cover" />
-                  <AvatarFallback className="bg-secondary text-secondary-foreground font-medium">{getInitials(currentUser.name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 text-left overflow-hidden">
-                  <p className="text-sm font-medium text-foreground truncate">{currentUser.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wider font-semibold">{isAdmin ? "Administrador" : "Membro"}</p>
-                </div>
-                <MoreHorizontal className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-60" align="start" side="top" sideOffset={10}>
-              {!isAdminPanel && (
-                <>
-                  <DropdownMenuItem onClick={() => router.push("/account")} className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" /><span>Minha Conta</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
-                <LogOut className="mr-2 h-4 w-4" /><span>Sair da Plataforma</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </motion.aside>
     </>

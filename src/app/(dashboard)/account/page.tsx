@@ -16,8 +16,9 @@ import {
 import {
   Camera, User, Mail, Save, Loader2, UploadCloud, Trash2,
   Phone, MapPin, Calendar, Fingerprint,
-  Plus, X, Gift, Building2,
+  Plus, X, Gift, Building2, Lock, Eye, EyeOff,
 } from "lucide-react"
+import { createClient } from "@/lib/supabase"
 
 function formatCPF(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11)
@@ -69,6 +70,7 @@ export default function AccountPage() {
     name: "", email: "", avatar: null as string | null,
     phone: "", cpf: "", address: "", birthDate: "",
   })
+  const [avatarLoading, setAvatarLoading] = useState(false)
 
   // Companies
   const [companies, setCompanies] = useState<LocalCompany[]>([])
@@ -98,7 +100,15 @@ export default function AccountPage() {
     }
   }, [])
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const syncLocalStorage = (fields: Record<string, unknown>) => {
+    const currentUserStr = localStorage.getItem("current_user")
+    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {}
+    const updated = { ...currentUser, ...fields }
+    localStorage.setItem("current_user", JSON.stringify(updated))
+    if ("avatar" in fields) localStorage.setItem("user_avatar", (fields.avatar as string) || "")
+  }
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith("image/")) {
@@ -109,56 +119,111 @@ export default function AccountPage() {
       toast({ variant: "destructive", title: "Arquivo muito grande", description: "Máximo 2MB." })
       return
     }
-    const reader = new FileReader()
-    reader.onloadend = () => setPersonalData(prev => ({ ...prev, avatar: reader.result as string }))
-    reader.readAsDataURL(file)
+
+    setAvatarLoading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split(".").pop() || "jpg"
+      const filePath = `${currentUserId}/avatar.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(filePath)
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`
+
+      const { error: dbError } = await supabase
+        .from("users")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", currentUserId)
+
+      if (dbError) throw dbError
+
+      setPersonalData(prev => ({ ...prev, avatar: avatarUrl }))
+      syncLocalStorage({ avatar: avatarUrl })
+      toast({
+        title: "Foto atualizada!",
+        description: "Sua foto de perfil foi salva.",
+        className: "bg-green-600 border-green-500 text-white",
+      })
+    } catch (err) {
+      console.error("Avatar upload error:", err)
+      toast({ variant: "destructive", title: "Erro ao enviar foto", description: "Tente novamente." })
+    } finally {
+      setAvatarLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
   }
 
-  const handleRemovePhoto = () => {
-    setPersonalData(prev => ({ ...prev, avatar: null }))
-    if (fileInputRef.current) fileInputRef.current.value = ""
+  const handleRemovePhoto = async () => {
+    setAvatarLoading(true)
+    try {
+      const supabase = createClient()
+
+      // Remove all files in the user's avatar folder
+      const { data: files } = await supabase.storage.from("avatars").list(currentUserId)
+      if (files && files.length > 0) {
+        await supabase.storage.from("avatars").remove(files.map(f => `${currentUserId}/${f.name}`))
+      }
+
+      await supabase.from("users").update({ avatar_url: null }).eq("id", currentUserId)
+
+      setPersonalData(prev => ({ ...prev, avatar: null }))
+      syncLocalStorage({ avatar: null })
+      if (fileInputRef.current) fileInputRef.current.value = ""
+      toast({ title: "Foto removida", description: "Sua foto de perfil foi removida." })
+    } catch (err) {
+      console.error("Avatar remove error:", err)
+      toast({ variant: "destructive", title: "Erro ao remover foto", description: "Tente novamente." })
+    } finally {
+      setAvatarLoading(false)
+    }
   }
 
-  const handleSavePersonal = () => {
+  const handleSavePersonal = async () => {
     setLoading(true)
-    setTimeout(() => {
-      const currentUserStr = localStorage.getItem("current_user")
-      const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {}
+    try {
+      const supabase = createClient()
 
-      // Sync companyName from primary company for backward compat
-      const primary = getPrimaryCompany(currentUser.id)
+      const { error } = await supabase
+        .from("users")
+        .update({
+          full_name: personalData.name,
+          phone: personalData.phone,
+          cpf: personalData.cpf,
+          address: personalData.address,
+          birth_date: personalData.birthDate || null,
+        })
+        .eq("id", currentUserId)
 
-      const updatedUser = {
-        ...currentUser,
+      if (error) throw error
+
+      // Sync localStorage cache
+      const primary = getPrimaryCompany(currentUserId)
+      syncLocalStorage({
         fullName: personalData.name,
         name: personalData.name,
-        avatar: personalData.avatar,
         phone: personalData.phone,
         cpf: personalData.cpf,
         address: personalData.address,
         birthDate: personalData.birthDate,
-        companyName: primary?.name || currentUser.companyName || "",
-      }
+        companyName: primary?.name || "",
+      })
 
-      localStorage.setItem("current_user", JSON.stringify(updatedUser))
-      localStorage.setItem("user_avatar", personalData.avatar || "")
-
-      const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-      if (allUsers.length > 0) {
-        const updatedAllUsers = allUsers.map((u: { id: string; email: string }) => {
-          if (u.id === updatedUser.id || u.email === updatedUser.email) return { ...u, ...updatedUser }
-          return u
-        })
-        localStorage.setItem("users", JSON.stringify(updatedAllUsers))
-      }
-
-      setLoading(false)
       toast({
         title: "Perfil atualizado!",
         description: "Suas informações foram salvas com sucesso.",
         className: "bg-green-600 border-green-500 text-white",
       })
-    }, 1000)
+    } catch (err) {
+      console.error("Save personal error:", err)
+      toast({ variant: "destructive", title: "Erro ao salvar", description: "Não foi possível salvar suas informações. Tente novamente." })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSaveCompany = (data: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: string; updatedAt?: string }) => {
@@ -182,6 +247,59 @@ export default function AccountPage() {
       title: "Empresa removida",
       description: "A empresa foi excluída da sua conta.",
     })
+  }
+
+  // Change password
+  const [passwordData, setPasswordData] = useState({ current: "", new: "", confirm: "" })
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+
+  const handleChangePassword = async () => {
+    if (passwordData.new.length < 6) {
+      toast({ variant: "destructive", title: "Senha muito curta", description: "A nova senha deve ter no mínimo 6 caracteres." })
+      return
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      toast({ variant: "destructive", title: "Senhas diferentes", description: "A nova senha e a confirmação não coincidem." })
+      return
+    }
+
+    setPasswordLoading(true)
+    try {
+      const supabase = createClient()
+
+      // Verify current password by signing in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: personalData.email,
+        password: passwordData.current,
+      })
+
+      if (signInError) {
+        toast({ variant: "destructive", title: "Senha atual incorreta", description: "Verifique sua senha atual e tente novamente." })
+        return
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.new,
+      })
+
+      if (updateError) {
+        toast({ variant: "destructive", title: "Erro ao alterar senha", description: updateError.message })
+        return
+      }
+
+      setPasswordData({ current: "", new: "", confirm: "" })
+      toast({
+        title: "Senha alterada!",
+        description: "Sua senha foi atualizada com sucesso.",
+        className: "bg-green-600 border-green-500 text-white",
+      })
+    } catch {
+      toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro ao alterar a senha." })
+    } finally {
+      setPasswordLoading(false)
+    }
   }
 
   return (
@@ -214,8 +332,9 @@ export default function AccountPage() {
             </div>
             <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
             <div className="flex flex-col gap-3 w-full">
-              <Button variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}>
-                <UploadCloud className="h-4 w-4" /> Alterar Foto
+              <Button variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()} disabled={avatarLoading}>
+                {avatarLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                {avatarLoading ? "Salvando..." : "Alterar Foto"}
               </Button>
               {personalData.avatar && (
                 <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2" onClick={handleRemovePhoto}>
@@ -256,6 +375,92 @@ export default function AccountPage() {
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Salvar Pessoal
                   </Button>
+                </div>
+
+                {/* Change Password Section */}
+                <div className="pt-6 mt-6 border-t border-border space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-5 w-5 text-amber-500" />
+                    <h2 className="text-xl font-bold">Alterar Senha</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-muted-foreground">Senha Atual</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <input
+                          type={showPasswords.current ? "text" : "password"}
+                          value={passwordData.current}
+                          onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                          placeholder="Digite sua senha atual"
+                          className="w-full bg-secondary/50 border border-input rounded-xl py-3 pl-10 pr-10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPasswords.current ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Nova Senha</label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <input
+                            type={showPasswords.new ? "text" : "password"}
+                            value={passwordData.new}
+                            onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                            placeholder="Mínimo 6 caracteres"
+                            className="w-full bg-secondary/50 border border-input rounded-xl py-3 pl-10 pr-10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showPasswords.new ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Confirmar Nova Senha</label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <input
+                            type={showPasswords.confirm ? "text" : "password"}
+                            value={passwordData.confirm}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                            placeholder="Repita a nova senha"
+                            className="w-full bg-secondary/50 border border-input rounded-xl py-3 pl-10 pr-10 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showPasswords.confirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={passwordLoading || !passwordData.current || !passwordData.new || !passwordData.confirm}
+                      variant="outline"
+                      className="min-w-[160px]"
+                    >
+                      {passwordLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
+                      Alterar Senha
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
 
