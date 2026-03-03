@@ -24,6 +24,7 @@ interface SearchCompany {
   location: string
   description: string
   contactEmail: string
+  gallery: string[]
   score: number
 }
 
@@ -79,6 +80,7 @@ export default function SearchPage() {
               location: (row.location as string) || "Brasil",
               description: (row.description as string) || "",
               contactEmail: (row.contact_email as string) || "",
+              gallery: (row.gallery as string[]) || [],
               score: scoreMap.get(userId) || 0,
             }
           })
@@ -212,7 +214,7 @@ export default function SearchPage() {
               <div className="px-6 relative flex-1 flex flex-col">
                 <div className="absolute -top-12 left-6">
                   <Avatar className="w-24 h-24 border-4 border-card shadow-lg">
-                    <AvatarImage src={company.ownerAvatar || undefined} className="object-cover" />
+                    <AvatarImage src={company.gallery[0] || company.ownerAvatar || undefined} className="object-cover" />
                     <AvatarFallback className="text-2xl font-bold bg-muted text-muted-foreground">
                       {company.name.charAt(0)}
                     </AvatarFallback>
