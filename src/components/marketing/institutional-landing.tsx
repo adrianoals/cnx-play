@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 const entrepreneurs = [
   {
     name: "Lucrecchia",
-    role: "Fundador e visionario",
+    role: "Fundador & Visionário",
     handle: "@lucrecchia",
     image:
       "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/29d9bdc5555dfc55db2ab494e57c4172.jpg",
@@ -27,34 +27,34 @@ const entrepreneurs = [
   },
   {
     name: "Danni Sarturi",
-    role: "Estrategista de imagem",
+    role: "Estrategista de Imagem",
     handle: "@dannisarturi",
     image:
       "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/8d30866ded4524dc56f3aba9d2925168.jpg",
-    quote: "Sua marca pessoal e a moeda mais valiosa do novo mercado.",
+    quote: "Sua marca pessoal é a moeda mais valiosa do novo mercado.",
   },
   {
     name: "Dr. Lucas Luquetti",
-    role: "Referencia em saude",
+    role: "Referência em Saúde",
     handle: "@dr.lucasluquettioficial",
     image:
       "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/81bbf7abd4522a8da73e1b11923ca382.jpg",
-    quote: "Alta performance comeca de dentro para fora. Saude e o pilar do sucesso.",
+    quote: "Alta performance começa de dentro para fora. Saúde é o pilar do sucesso.",
   },
   {
     name: "Greice Marin",
-    role: "Lideranca feminina",
+    role: "Liderança Feminina",
     handle: "@greicemarin",
     image:
       "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/c6c6d39254a72e3ce2c7e2eb75aacac1.jpg",
-    quote: "Empoderamento atraves da acao. Transformando desafios em degraus.",
+    quote: "Empoderamento através da ação. Transformando desafios em degraus.",
   },
   {
-    name: "Sua empresa aqui",
-    role: "Seja um parceiro",
+    name: "Sua Empresa Aqui!",
+    role: "Seja um Parceiro",
     handle: "@companyconexaoplay",
     image: "",
-    quote: "Expanda sua rede, conecte-se com lideres e multiplique suas oportunidades.",
+    quote: "Expanda sua rede, conecte-se com líderes e multiplique suas oportunidades.",
     isPartnership: true,
   },
 ]
@@ -62,18 +62,18 @@ const entrepreneurs = [
 const features = [
   {
     icon: Users2,
-    title: "Conexoes curadas",
-    desc: "Perfis verificados e selecionados para gerar mais sinergia e menos ruido.",
+    title: "Conexões Curadas",
+    desc: "Perfis verificados e selecionados para gerar mais sinergia e menos ruído.",
   },
   {
     icon: Building2,
-    title: "Oportunidades reais",
-    desc: "Um ambiente focado em negocios, parcerias e relacionamento comercial consistente.",
+    title: "Oportunidades Reais",
+    desc: "Um ambiente focado em negócios, parcerias e relacionamento comercial consistente.",
   },
   {
     icon: ShieldCheck,
     title: "Exclusividade",
-    desc: "Uma experiencia pensada para decisores, fundadores e liderancas de mercado.",
+    desc: "Uma experiência pensada para decisores, fundadores e lideranças de mercado.",
   },
 ]
 
@@ -106,9 +106,9 @@ function BrandLockup() {
         <Network className="h-5 w-5 text-white" />
       </motion.div>
       <div className="flex items-center gap-2">
-        <span className="text-xl font-bold tracking-tight text-white">Company Conexao Play</span>
+        <span className="text-xl font-bold tracking-tight text-white">Company Conexão Play</span>
         <span className="text-xl font-bold text-slate-500">|</span>
-        <span className="text-lg font-semibold tracking-tight text-white">365conexoes</span>
+        <span className="text-lg font-semibold tracking-tight text-white">365conexões</span>
       </div>
     </div>
   )
@@ -190,7 +190,7 @@ export function InstitutionalLanding() {
             asChild
             className="h-10 border border-white/10 bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 font-semibold text-white shadow-lg hover:from-blue-700 hover:to-purple-700"
           >
-            <Link href="#visionarios">Os 55 empresarios</Link>
+            <Link href="#visionarios">Os 55 Empresários</Link>
           </Button>
           <Button asChild variant="ghost" className="text-slate-300 hover:bg-white/5 hover:text-white">
             <Link href="/register">Planos</Link>
@@ -227,11 +227,11 @@ export function InstitutionalLanding() {
 
           <h2 className="text-xl font-semibold text-white md:text-2xl">
             <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Conecte-se com mais intencao.
+              Conecte-se com mais intenção.
             </span>
             <br />
             <span className="mt-2 block text-3xl font-bold tracking-tight text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.15)] md:text-4xl">
-              O melhor networking e aquele que gera proximo passo.
+              O melhor networking é aquele que gera próximo passo.
             </span>
           </h2>
 
@@ -239,12 +239,12 @@ export function InstitutionalLanding() {
             <span className="bg-300% block animate-gradient bg-gradient-to-r from-blue-400 via-white to-pink-400 bg-clip-text text-transparent">
               80% dos resultados
             </span>
-            <span className="mt-1 block">vem de quem nos conecta</span>
+            <span className="mt-1 block">vêm de quem nos conecta</span>
           </h1>
 
           <p className="mx-auto max-w-2xl text-lg font-light leading-relaxed text-slate-400 md:text-xl">
-            A Conecta Play eleva o padrao das conexoes corporativas para empresarios, lideres e
-            visionarios que querem acelerar relacionamento, prospeccao e parcerias.
+            A Conecta Play eleva o padrão das conexões corporativas para empresários, líderes e
+            visionários que querem acelerar relacionamento, prospecção e parcerias.
           </p>
 
           <div className="mt-6 mb-12 flex w-full flex-col items-center justify-center gap-4 sm:w-auto sm:flex-row">
@@ -303,12 +303,12 @@ export function InstitutionalLanding() {
           <div className="mb-12 text-center">
             <span className="mb-2 flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-wider text-amber-500">
               <Star className="h-4 w-4" />
-              Top 55 visionarios
+              Top 55 Visionários
               <Star className="h-4 w-4" />
             </span>
-            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">Empresarios para conhecer</h2>
+            <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">Empresários para conhecer</h2>
             <p className="mx-auto max-w-2xl text-slate-400">
-              Conheca lideres que ja estao moldando novas oportunidades de negocio dentro da
+              Conheça líderes que já estão moldando novas oportunidades de negócio dentro da
               comunidade.
             </p>
           </div>
@@ -385,7 +385,7 @@ export function InstitutionalLanding() {
       </main>
 
       <footer className="relative z-10 mt-auto py-6 text-center text-xs text-slate-600">
-        <p>&copy; {new Date().getFullYear()} Conecta Empresarios. Todos os direitos reservados.</p>
+        <p>&copy; {new Date().getFullYear()} Conecta Empresários. Todos os direitos reservados.</p>
         <p className="mt-1 text-slate-700">Networking profissional inteligente.</p>
       </footer>
     </div>
