@@ -8,17 +8,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthContext } from "@/providers/auth-provider"
 import { SUPER_ADMINS } from "@/lib/constants"
-import { fetchAllUsers, updateUserProfile, deleteUserProfile, changeUserStatus, createUserViaApi } from "@/services/admin.service"
-import type { User } from "@/types"
+import {
+  fetchAllUsers, updateUserProfile, deleteUserProfile, changeUserStatus, createUserViaApi,
+  fetchAllCompanies, createCompanyForUser, updateCompanyAdmin, deleteCompanyAdmin,
+} from "@/services/admin.service"
+import type { User, AdminCompany } from "@/types"
 import {
   Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
   MoreHorizontal, UserPlus, Clock, CheckCircle, XCircle,
   Phone, Fingerprint, Plus, MapPin,
-  ShieldAlert, Lock, Loader2,
+  ShieldAlert, Lock, Loader2, Building2, Users, Mail, Linkedin, Star,
 } from "lucide-react"
 
 function getStatusBadge(status: string) {
@@ -34,10 +37,25 @@ function getStatusBadge(status: string) {
   }
 }
 
+const emptyCompanyForm = {
+  name: "",
+  cnpj: "",
+  description: "",
+  location: "",
+  contactEmail: "",
+  contactPhone: "",
+  linkedin: "",
+  isPrimary: true,
+  userId: "",
+}
+
 export default function AdminUsersPage() {
   const { toast } = useToast()
   const { user: currentUser } = useAuthContext()
 
+  const [mainTab, setMainTab] = useState("users")
+
+  // ── Users state ──
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
@@ -56,6 +74,17 @@ export default function AdminUsersPage() {
     phone: "", cpf: "", role: "user" as "user" | "admin", status: "active" as "active" | "pending" | "inactive",
   })
 
+  // ── Companies state ──
+  const [companies, setCompanies] = useState<AdminCompany[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [companySearch, setCompanySearch] = useState("")
+
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
+  const [companyForm, setCompanyForm] = useState(emptyCompanyForm)
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null)
+  const [savingCompany, setSavingCompany] = useState(false)
+
+  // ── Load data ──
   useEffect(() => {
     fetchAllUsers()
       .then(u => setUsers(u))
@@ -66,6 +95,19 @@ export default function AdminUsersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (mainTab === "companies" && loadingCompanies) {
+      fetchAllCompanies()
+        .then(c => setCompanies(c))
+        .catch(err => {
+          toast({ title: "Erro ao carregar empresas", description: err.message, variant: "destructive" })
+        })
+        .finally(() => setLoadingCompanies(false))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mainTab])
+
+  // ── Users logic ──
   const filteredUsers = users.filter(user => {
     const term = searchTerm.toLowerCase()
     const name = (user.name || user.fullName || "").toLowerCase()
@@ -221,6 +263,98 @@ export default function AdminUsersPage() {
     document.body.removeChild(link)
   }
 
+  // ── Companies logic ──
+  const filteredCompanies = companies.filter(c => {
+    const term = companySearch.toLowerCase()
+    return (
+      c.name.toLowerCase().includes(term) ||
+      c.ownerName.toLowerCase().includes(term) ||
+      (c.cnpj || "").toLowerCase().includes(term)
+    )
+  })
+
+  const openCreateCompany = () => {
+    setEditingCompanyId(null)
+    setCompanyForm(emptyCompanyForm)
+    setIsCompanyModalOpen(true)
+  }
+
+  const openEditCompany = (company: AdminCompany) => {
+    setEditingCompanyId(company.id)
+    setCompanyForm({
+      name: company.name,
+      cnpj: company.cnpj || "",
+      description: company.description || "",
+      location: company.location || "",
+      contactEmail: company.contactEmail || "",
+      contactPhone: company.contactPhone || "",
+      linkedin: company.linkedin || "",
+      isPrimary: company.isPrimary,
+      userId: company.userId,
+    })
+    setIsCompanyModalOpen(true)
+  }
+
+  const handleSaveCompany = async () => {
+    if (!companyForm.name) {
+      toast({ title: "Erro", description: "O nome da empresa é obrigatório.", variant: "destructive" })
+      return
+    }
+    if (!editingCompanyId && !companyForm.userId) {
+      toast({ title: "Erro", description: "Selecione o usuário responsável.", variant: "destructive" })
+      return
+    }
+
+    setSavingCompany(true)
+    try {
+      if (editingCompanyId) {
+        const updated = await updateCompanyAdmin(editingCompanyId, {
+          name: companyForm.name,
+          cnpj: companyForm.cnpj,
+          description: companyForm.description,
+          location: companyForm.location,
+          contactEmail: companyForm.contactEmail,
+          contactPhone: companyForm.contactPhone,
+          linkedin: companyForm.linkedin,
+          isPrimary: companyForm.isPrimary,
+        })
+        setCompanies(prev => prev.map(c => c.id === editingCompanyId ? updated : c))
+        toast({ title: "Empresa atualizada", description: "Os dados foram salvos com sucesso.", className: "bg-green-600 border-green-500 text-white" })
+      } else {
+        const created = await createCompanyForUser({
+          userId: companyForm.userId,
+          name: companyForm.name,
+          cnpj: companyForm.cnpj || undefined,
+          description: companyForm.description || undefined,
+          location: companyForm.location || undefined,
+          contactEmail: companyForm.contactEmail || undefined,
+          contactPhone: companyForm.contactPhone || undefined,
+          linkedin: companyForm.linkedin || undefined,
+          isPrimary: companyForm.isPrimary,
+        })
+        setCompanies(prev => [created, ...prev])
+        toast({ title: "Empresa cadastrada", description: "A empresa foi adicionada com sucesso.", className: "bg-green-600 text-white border-none" })
+      }
+      setIsCompanyModalOpen(false)
+    } catch (error) {
+      toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao salvar empresa.", variant: "destructive" })
+    } finally {
+      setSavingCompany(false)
+    }
+  }
+
+  const handleDeleteCompany = async (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta empresa permanentemente?")) {
+      try {
+        await deleteCompanyAdmin(id)
+        setCompanies(prev => prev.filter(c => c.id !== id))
+        toast({ title: "Empresa excluída", description: "A empresa foi removida do sistema.", variant: "destructive" })
+      } catch (error) {
+        toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao excluir.", variant: "destructive" })
+      }
+    }
+  }
+
   const formatDate = (dateStr: string) => {
     try { return new Date(dateStr).toLocaleDateString("pt-BR") } catch { return "N/A" }
   }
@@ -233,161 +367,304 @@ export default function AdminUsersPage() {
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
             <UserCog className="h-8 w-8 text-amber-500" /> Painel Administrativo
           </h1>
-          <p className="text-muted-foreground">Gerenciamento e aprovação de usuários.</p>
+          <p className="text-muted-foreground">Gerenciamento de usuários e empresas.</p>
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-          <Button onClick={() => setIsCreateUserModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg flex-1 md:flex-none transition-all cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" /> Criar Usuário
-          </Button>
-          <Button onClick={() => setIsNewUsersModalOpen(true)} variant="secondary" className="hover:bg-secondary/80 hover:scale-[1.02] active:scale-[0.98] flex-1 md:flex-none transition-all cursor-pointer border border-border">
-            <UserPlus className="mr-2 h-4 w-4" /> Novos Cadastros
-            {users.filter(u => u.status === "pending").length > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
-                {users.filter(u => u.status === "pending").length}
-              </span>
+      {/* Main Tabs */}
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="users" className="gap-2">
+            <Users className="h-4 w-4" /> Usuários
+          </TabsTrigger>
+          <TabsTrigger value="companies" className="gap-2">
+            <Building2 className="h-4 w-4" /> Empresas
+            {companies.length > 0 && (
+              <span className="ml-1 text-[10px] bg-muted-foreground/20 px-1.5 rounded-full">{companies.length}</span>
             )}
-          </Button>
-          <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg flex-1 md:flex-none transition-all cursor-pointer">
-            <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
-          </Button>
-        </div>
-      </div>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-          <TabsList>
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="pending">
-              Pendentes
+        {/* ════════════════ USERS TAB ════════════════ */}
+        <TabsContent value="users" className="space-y-6">
+          {/* Users actions bar */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => setIsCreateUserModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg flex-1 md:flex-none transition-all cursor-pointer">
+              <Plus className="mr-2 h-4 w-4" /> Criar Usuário
+            </Button>
+            <Button onClick={() => setIsNewUsersModalOpen(true)} variant="secondary" className="hover:bg-secondary/80 hover:scale-[1.02] active:scale-[0.98] flex-1 md:flex-none transition-all cursor-pointer border border-border">
+              <UserPlus className="mr-2 h-4 w-4" /> Novos Cadastros
               {users.filter(u => u.status === "pending").length > 0 && (
-                <span className="ml-2 w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
+                  {users.filter(u => u.status === "pending").length}
+                </span>
               )}
-            </TabsTrigger>
-            <TabsTrigger value="active">Aprovados</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
-          <Search className="ml-2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou email..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
-          />
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-        {loadingUsers ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <span className="ml-3 text-muted-foreground">Carregando usuários...</span>
+            </Button>
+            <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg flex-1 md:flex-none transition-all cursor-pointer">
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
+            </Button>
           </div>
-        ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-muted-foreground">Usuário</TableHead>
-                  <TableHead className="text-muted-foreground hidden lg:table-cell">Contato</TableHead>
-                  <TableHead className="text-muted-foreground text-center">Status</TableHead>
-                  <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
-                  <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map(user => (
-                    <TableRow key={user.id} className="border-border hover:bg-secondary/30 transition-colors">
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-semibold flex items-center gap-2">
-                            {user.name || user.fullName}
-                            {user.role === "admin" && <span className="text-[10px] uppercase bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">Admin</span>}
-                          </span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <div className="flex flex-col">
-                          <span className="text-sm">{user.phone || "—"}</span>
-                          {user.address && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-0.5 mt-1"><MapPin className="w-2.5 h-2.5" /> {user.address}</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">{getStatusBadge(user.status)}</TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-3 w-3" /> {formatDate(user.createdAt)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                              <span className="sr-only">Abrir menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                            {user.status === "pending" && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20">
-                                  <CheckCircle className="mr-2 h-4 w-4" /> Aprovar Cadastro
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20">
-                                  <XCircle className="mr-2 h-4 w-4" /> Rejeitar
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                              </>
-                            )}
-                            {user.status === "active" && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-amber-600 dark:text-amber-400">
-                                  <XCircle className="mr-2 h-4 w-4" /> Desativar
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                              </>
-                            )}
-                            {user.status === "inactive" && (
-                              <>
-                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400">
-                                  <CheckCircle className="mr-2 h-4 w-4" /> Reativar
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                              </>
-                            )}
-                            <DropdownMenuItem onClick={() => handleEditClick(user)}>
-                              <Edit className="mr-2 h-4 w-4" /> Ver / Editar Dados
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-400">
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Usuário
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Nenhum usuário encontrado.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-              <span>Total: {filteredUsers.length}</span>
-              <span>{users.filter(u => u.status === "pending").length} aguardando aprovação</span>
+
+          {/* Users filters */}
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+              <TabsList>
+                <TabsTrigger value="all">Todos</TabsTrigger>
+                <TabsTrigger value="pending">
+                  Pendentes
+                  {users.filter(u => u.status === "pending").length > 0 && (
+                    <span className="ml-2 w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="active">Aprovados</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
+              <Search className="ml-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
+              />
             </div>
-          </>
-        )}
-      </div>
+          </div>
+
+          {/* Users table */}
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            {loadingUsers ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-muted-foreground">Carregando usuários...</span>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">Usuário</TableHead>
+                      <TableHead className="text-muted-foreground hidden lg:table-cell">Contato</TableHead>
+                      <TableHead className="text-muted-foreground text-center">Status</TableHead>
+                      <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
+                      <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map(user => (
+                        <TableRow key={user.id} className="border-border hover:bg-secondary/30 transition-colors">
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-semibold flex items-center gap-2">
+                                {user.name || user.fullName}
+                                {user.role === "admin" && <span className="text-[10px] uppercase bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">Admin</span>}
+                              </span>
+                              <span className="text-xs text-muted-foreground">{user.email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            <div className="flex flex-col">
+                              <span className="text-sm">{user.phone || "—"}</span>
+                              {user.address && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-0.5 mt-1"><MapPin className="w-2.5 h-2.5" /> {user.address}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{getStatusBadge(user.status)}</TableCell>
+                          <TableCell className="text-muted-foreground hidden md:table-cell">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-3 w-3" /> {formatDate(user.createdAt)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                  <span className="sr-only">Abrir menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                {user.status === "pending" && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20">
+                                      <CheckCircle className="mr-2 h-4 w-4" /> Aprovar Cadastro
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20">
+                                      <XCircle className="mr-2 h-4 w-4" /> Rejeitar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                  </>
+                                )}
+                                {user.status === "active" && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-amber-600 dark:text-amber-400">
+                                      <XCircle className="mr-2 h-4 w-4" /> Desativar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                  </>
+                                )}
+                                {user.status === "inactive" && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400">
+                                      <CheckCircle className="mr-2 h-4 w-4" /> Reativar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                  </>
+                                )}
+                                <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                                  <Edit className="mr-2 h-4 w-4" /> Ver / Editar Dados
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-400">
+                                  <Trash2 className="mr-2 h-4 w-4" /> Excluir Usuário
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Nenhum usuário encontrado.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Total: {filteredUsers.length}</span>
+                  <span>{users.filter(u => u.status === "pending").length} aguardando aprovação</span>
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ════════════════ COMPANIES TAB ════════════════ */}
+        <TabsContent value="companies" className="space-y-6">
+          {/* Companies actions bar */}
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <Button onClick={openCreateCompany} className="bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg transition-all cursor-pointer w-full md:w-auto">
+              <Plus className="mr-2 h-4 w-4" /> Cadastrar Empresa
+            </Button>
+
+            <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
+              <Search className="ml-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar empresa ou responsável..."
+                value={companySearch}
+                onChange={e => setCompanySearch(e.target.value)}
+                className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
+              />
+            </div>
+          </div>
+
+          {/* Companies table */}
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            {loadingCompanies ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-muted-foreground">Carregando empresas...</span>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">Empresa</TableHead>
+                      <TableHead className="text-muted-foreground hidden lg:table-cell">CNPJ</TableHead>
+                      <TableHead className="text-muted-foreground hidden md:table-cell">Responsável</TableHead>
+                      <TableHead className="text-muted-foreground hidden lg:table-cell">Localização</TableHead>
+                      <TableHead className="text-muted-foreground text-center hidden sm:table-cell">Tipo</TableHead>
+                      <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
+                      <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCompanies.length > 0 ? (
+                      filteredCompanies.map(company => (
+                        <TableRow key={company.id} className="border-border hover:bg-secondary/30 transition-colors">
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-semibold">{company.name}</span>
+                              {company.contactEmail && (
+                                <span className="text-xs text-muted-foreground">{company.contactEmail}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell text-sm">
+                            {company.cnpj || "—"}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <div className="flex flex-col">
+                              <span className="text-sm">{company.ownerName || "—"}</span>
+                              <span className="text-xs text-muted-foreground">{company.ownerEmail}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {company.location ? (
+                              <span className="text-sm flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-muted-foreground" /> {company.location}
+                              </span>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-center hidden sm:table-cell">
+                            {company.isPrimary ? (
+                              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/20">
+                                <Star className="w-3 h-3 mr-1" /> Principal
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground">Secundária</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground hidden md:table-cell">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-3 w-3" /> {formatDate(company.createdAt)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                  <span className="sr-only">Abrir menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => openEditCompany(company)}>
+                                  <Edit className="mr-2 h-4 w-4" /> Editar Empresa
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleDeleteCompany(company.id)} className="text-red-400">
+                                  <Trash2 className="mr-2 h-4 w-4" /> Excluir Empresa
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                          {companySearch ? "Nenhuma empresa encontrada." : "Nenhuma empresa cadastrada."}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Total: {filteredCompanies.length}</span>
+                  <span>{companies.filter(c => c.isPrimary).length} principal(is)</span>
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* ════════════════ MODALS ════════════════ */}
 
       {/* Create User Modal */}
       <Dialog open={isCreateUserModalOpen} onOpenChange={setIsCreateUserModalOpen}>
@@ -582,6 +859,127 @@ export default function AdminUsersPage() {
           </div>
           <DialogFooter>
             <Button onClick={() => setIsNewUsersModalOpen(false)} className="w-full">Fechar Lista</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create/Edit Company Modal */}
+      <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
+        <DialogContent className="sm:max-w-[650px] overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{editingCompanyId ? "Editar Empresa" : "Cadastrar Nova Empresa"}</DialogTitle>
+            <DialogDescription>
+              {editingCompanyId
+                ? "Altere os dados da empresa abaixo."
+                : "Preencha os dados para cadastrar uma nova empresa vinculada a um usuário."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* User select (only for creation) */}
+            {!editingCompanyId && (
+              <div className="space-y-2">
+                <Label>Usuário Responsável *</Label>
+                <select
+                  value={companyForm.userId}
+                  onChange={e => setCompanyForm({ ...companyForm, userId: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+                >
+                  <option value="">Selecione um usuário...</option>
+                  {users
+                    .filter(u => u.status === "active")
+                    .map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.name || u.fullName} ({u.email})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome da Empresa *</Label>
+                <Input
+                  value={companyForm.name}
+                  onChange={e => setCompanyForm({ ...companyForm, name: e.target.value })}
+                  placeholder="Ex: Acme Corp"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>CNPJ</Label>
+                <Input
+                  value={companyForm.cnpj}
+                  onChange={e => setCompanyForm({ ...companyForm, cnpj: e.target.value })}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input
+                value={companyForm.description}
+                onChange={e => setCompanyForm({ ...companyForm, description: e.target.value })}
+                placeholder="Breve descrição da empresa"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Localização</Label>
+              <Input
+                value={companyForm.location}
+                onChange={e => setCompanyForm({ ...companyForm, location: e.target.value })}
+                placeholder="Ex: São Paulo, SP"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Mail className="w-3 h-3" /> Email de Contato</Label>
+                <Input
+                  value={companyForm.contactEmail}
+                  onChange={e => setCompanyForm({ ...companyForm, contactEmail: e.target.value })}
+                  placeholder="contato@empresa.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Phone className="w-3 h-3" /> Telefone</Label>
+                <Input
+                  value={companyForm.contactPhone}
+                  onChange={e => setCompanyForm({ ...companyForm, contactPhone: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Linkedin className="w-3 h-3" /> LinkedIn</Label>
+              <Input
+                value={companyForm.linkedin}
+                onChange={e => setCompanyForm({ ...companyForm, linkedin: e.target.value })}
+                placeholder="https://linkedin.com/company/..."
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2 border-t border-border">
+              <input
+                type="checkbox"
+                id="isPrimary"
+                checked={companyForm.isPrimary}
+                onChange={e => setCompanyForm({ ...companyForm, isPrimary: e.target.checked })}
+                className="h-4 w-4 rounded border-input"
+              />
+              <Label htmlFor="isPrimary" className="cursor-pointer flex items-center gap-1">
+                <Star className="w-3 h-3" /> Empresa Principal
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCompanyModalOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveCompany} disabled={savingCompany} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {savingCompany ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {editingCompanyId ? "Salvar Alterações" : "Cadastrar Empresa"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

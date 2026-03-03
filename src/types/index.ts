@@ -58,6 +58,25 @@ export interface Company {
   opportunities?: string[]
 }
 
+export interface AdminCompany {
+  id: string
+  userId: string
+  name: string
+  cnpj?: string
+  categoryId?: string
+  description?: string
+  location?: string
+  contactEmail?: string
+  contactPhone?: string
+  linkedin?: string
+  opportunities: string[]
+  isPrimary: boolean
+  createdAt: string
+  updatedAt: string
+  ownerName: string
+  ownerEmail: string
+}
+
 export interface Deal {
   id: number
   companyName: string
