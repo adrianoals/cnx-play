@@ -60,7 +60,7 @@ export async function registerDeal(input: {
       value_brl: input.value,
       deal_date: new Date().toISOString().slice(0, 10),
     })
-    .select('*, users(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name)')
     .single()
 
   if (error) throw new Error(error.message)
@@ -72,7 +72,7 @@ export async function fetchRecentDeals(limit = 10): Promise<SupabaseDeal[]> {
 
   const { data, error } = await supabase
     .from('deals')
-    .select('*, users(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name)')
     .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -86,7 +86,7 @@ export async function fetchMyDeals(): Promise<SupabaseDeal[]> {
 
   const { data, error } = await supabase
     .from('deals')
-    .select('*, users(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name)')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
