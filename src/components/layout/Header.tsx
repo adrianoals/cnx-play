@@ -34,7 +34,7 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("current_user") || "{}")
     setUser(u)
-    setAvatar(localStorage.getItem("user_avatar"))
+    setAvatar(u.avatar || null)
 
     if (u.status !== "active") return
 
@@ -60,7 +60,7 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-4 md:px-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="lg:hidden -ml-2" onClick={onMenuToggle}>
+          <Button variant="ghost" size="icon" className="lg:hidden -ml-2 text-foreground" onClick={onMenuToggle}>
             <Menu className="h-6 w-6" />
           </Button>
           <div className="hidden md:flex items-center gap-2 font-bold text-xl tracking-tight">
@@ -70,7 +70,7 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
         </div>
 
         <div className="ml-auto flex items-center gap-2 md:gap-4">
-          {isActive && (
+          {isActive && !isAdminPanel && (
             <>
               <Button onClick={onOpenReferral} className="hidden md:flex bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-none shadow-sm gap-2 h-9" size="sm">
                 <Gift className="h-4 w-4" />
@@ -115,17 +115,19 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 pl-2 border-l border-border outline-none cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium leading-none text-foreground">{user.fullName || "Visitante"}</p>
-                  <p className="text-xs text-muted-foreground">{user.companyName || "Empresa"}</p>
-                </div>
+                {!isAdminPanel && (
+                  <div className="hidden md:block text-right">
+                    <p className="text-sm font-medium leading-none text-foreground">{user.fullName || "Visitante"}</p>
+                    <p className="text-xs text-muted-foreground">{user.companyName || "Empresa"}</p>
+                  </div>
+                )}
                 <Avatar className="h-8 w-8 border border-border">
                   <AvatarImage src={avatar || user.avatar || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">{userInitials}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-medium text-xs">{userInitials}</AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-48 shadow-lg dark:shadow-black/40 dark:border-white/10">
               {!isAdminPanel && (
                 <>
                   <DropdownMenuItem onClick={() => router.push("/account")} className="cursor-pointer">
@@ -134,7 +136,7 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
                   <DropdownMenuSeparator />
                 </>
               )}
-              <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:text-destructive cursor-pointer">
+              <DropdownMenuItem onClick={() => logout()} className="text-red-500 focus:text-red-500 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" /><span>Sair</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

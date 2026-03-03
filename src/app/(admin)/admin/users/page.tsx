@@ -237,10 +237,10 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-          <Button onClick={() => setIsCreateUserModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex-1 md:flex-none">
+          <Button onClick={() => setIsCreateUserModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg flex-1 md:flex-none transition-all cursor-pointer">
             <Plus className="mr-2 h-4 w-4" /> Criar Usuário
           </Button>
-          <Button onClick={() => setIsNewUsersModalOpen(true)} variant="secondary" className="flex-1 md:flex-none">
+          <Button onClick={() => setIsNewUsersModalOpen(true)} variant="secondary" className="hover:bg-secondary/80 hover:scale-[1.02] active:scale-[0.98] flex-1 md:flex-none transition-all cursor-pointer border border-border">
             <UserPlus className="mr-2 h-4 w-4" /> Novos Cadastros
             {users.filter(u => u.status === "pending").length > 0 && (
               <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
@@ -248,7 +248,7 @@ export default function AdminUsersPage() {
               </span>
             )}
           </Button>
-          <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 text-white shadow-lg flex-1 md:flex-none">
+          <Button onClick={handleExportCSV} className="bg-green-600 hover:bg-green-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg flex-1 md:flex-none transition-all cursor-pointer">
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar
           </Button>
         </div>

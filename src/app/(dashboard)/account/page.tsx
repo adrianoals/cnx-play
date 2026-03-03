@@ -87,7 +87,7 @@ export default function AccountPage() {
         setPersonalData({
           name: user.fullName || user.name || "",
           email: user.email || "",
-          avatar: user.avatar || localStorage.getItem("user_avatar") || null,
+          avatar: user.avatar || null,
           phone: user.phone || "",
           cpf: user.cpf || "",
           address: user.address || "",
@@ -105,7 +105,6 @@ export default function AccountPage() {
     const currentUser = currentUserStr ? JSON.parse(currentUserStr) : {}
     const updated = { ...currentUser, ...fields }
     localStorage.setItem("current_user", JSON.stringify(updated))
-    if ("avatar" in fields) localStorage.setItem("user_avatar", (fields.avatar as string) || "")
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -337,7 +336,7 @@ export default function AccountPage() {
                 {avatarLoading ? "Salvando..." : "Alterar Foto"}
               </Button>
               {personalData.avatar && (
-                <Button variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 gap-2" onClick={handleRemovePhoto}>
+                <Button variant="ghost" className="w-full text-red-500 hover:text-red-400 hover:bg-red-500/10 gap-2" onClick={handleRemovePhoto}>
                   <Trash2 className="h-4 w-4" /> Remover
                 </Button>
               )}

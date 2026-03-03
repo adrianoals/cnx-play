@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const status = user.status === "pending" ? "pending" : "active"
 
   const userInitials = user.fullName
-    ? user.fullName.substring(0, 2).toUpperCase()
+    ? user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
     : "US"
 
   return (

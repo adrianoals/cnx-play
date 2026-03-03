@@ -51,7 +51,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header onMenuToggle={() => setMenuOpen(!menuOpen)} />
+      <Header
+        onMenuToggle={() => setMenuOpen(!menuOpen)}
+        userInitials={user?.fullName ? user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) : "AD"}
+      />
       <Sidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} status="active" />
       <main className={`transition-all duration-300 p-4 md:p-8 lg:p-12 ${menuOpen ? "lg:ml-72" : ""}`}>
         {children}
