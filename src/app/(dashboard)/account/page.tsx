@@ -246,6 +246,7 @@ export default function AccountPage() {
           contactPhone: data.contactPhone,
           linkedin: data.linkedin,
           isPrimary: data.isPrimary,
+          gallery: data.gallery,
         })
         setCompanies(prev => prev.map(c => c.id === data.id ? updated : c))
       } else {
@@ -259,6 +260,7 @@ export default function AccountPage() {
           contactPhone: data.contactPhone,
           linkedin: data.linkedin,
           isPrimary: data.isPrimary,
+          gallery: data.gallery,
         })
         setCompanies(prev => [created, ...prev])
       }
@@ -536,7 +538,7 @@ export default function AccountPage() {
                             contactPhone: c.contactPhone,
                             linkedin: c.linkedin,
                             isPrimary: c.isPrimary,
-                            gallery: [],
+                            gallery: c.gallery || [],
                           })
                           setIsCompanyModalOpen(true)
                         }}

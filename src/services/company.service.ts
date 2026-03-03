@@ -163,6 +163,7 @@ export async function createMyCompany(input: {
   contactPhone?: string
   linkedin?: string
   isPrimary?: boolean
+  gallery?: string[]
 }): Promise<AdminCompany> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -181,6 +182,7 @@ export async function createMyCompany(input: {
       contact_phone: input.contactPhone || null,
       linkedin: input.linkedin || null,
       is_primary: input.isPrimary ?? true,
+      gallery: input.gallery || [],
     })
     .select(COMPANY_SELECT)
     .single()
@@ -201,6 +203,7 @@ export async function updateMyCompany(
     contactPhone?: string
     linkedin?: string
     isPrimary?: boolean
+    gallery?: string[]
   }
 ): Promise<AdminCompany> {
   const supabase = createClient()
@@ -215,6 +218,7 @@ export async function updateMyCompany(
   if (updates.contactPhone !== undefined) payload.contact_phone = updates.contactPhone || null
   if (updates.linkedin !== undefined) payload.linkedin = updates.linkedin || null
   if (updates.isPrimary !== undefined) payload.is_primary = updates.isPrimary
+  if (updates.gallery !== undefined) payload.gallery = updates.gallery
 
   const { data, error } = await supabase
     .from('companies')

@@ -70,6 +70,7 @@ export interface AdminCompany {
   contactPhone?: string
   linkedin?: string
   opportunities: string[]
+  gallery: string[]
   isPrimary: boolean
   createdAt: string
   updatedAt: string

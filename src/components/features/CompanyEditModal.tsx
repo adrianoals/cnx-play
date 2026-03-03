@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import type { Category } from "@/types"
+import { createClient } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -80,6 +81,7 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
   const { toast } = useToast()
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const [form, setForm] = useState({
     name: "", cnpj: "", categoryId: "", description: "",
@@ -112,7 +114,7 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
     }
   }, [isOpen, company])
 
-  const handleGalleryUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith("image/")) {
@@ -127,16 +129,45 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
       toast({ variant: "destructive", title: "Limite atingido", description: `Máximo ${MAX_GALLERY} fotos por empresa.` })
       return
     }
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setForm(prev => ({ ...prev, gallery: [...prev.gallery, reader.result as string] }))
+
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split(".").pop() || "jpg"
+      const filePath = `${userId}/${Date.now()}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from("gallery")
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = supabase.storage.from("gallery").getPublicUrl(filePath)
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+
+      setForm(prev => ({ ...prev, gallery: [...prev.gallery, publicUrl] }))
+      toast({ title: "Foto adicionada!", className: "bg-green-600 border-green-500 text-white" })
+    } catch (err) {
+      console.error("Gallery upload error:", err)
+      toast({ variant: "destructive", title: "Erro ao enviar foto", description: "Tente novamente." })
+    } finally {
+      setUploading(false)
+      if (galleryInputRef.current) galleryInputRef.current.value = ""
     }
-    reader.readAsDataURL(file)
-    if (galleryInputRef.current) galleryInputRef.current.value = ""
   }
 
-  const removeGalleryImage = (index: number) => {
+  const removeGalleryImage = async (index: number) => {
+    const url = form.gallery[index]
     setForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== index) }))
+
+    // Try to remove from storage
+    try {
+      const supabase = createClient()
+      const match = url.match(/\/gallery\/(.+?)(\?|$)/)
+      if (match) {
+        await supabase.storage.from("gallery").remove([decodeURIComponent(match[1])])
+      }
+    } catch { /* best-effort */ }
   }
 
   const handleSubmit = () => {
@@ -243,8 +274,9 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
                 Galeria ({form.gallery.length}/{MAX_GALLERY})
               </label>
               {form.gallery.length < MAX_GALLERY && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => galleryInputRef.current?.click()}>
-                  <Plus className="h-3 w-3" /> Adicionar
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => galleryInputRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                  {uploading ? "Enviando..." : "Adicionar"}
                 </Button>
               )}
             </div>
@@ -279,7 +311,7 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={saving} className="min-w-[120px]">
+          <Button onClick={handleSubmit} disabled={saving || uploading} className="min-w-[120px]">
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             {company ? "Salvar" : "Adicionar"}
           </Button>

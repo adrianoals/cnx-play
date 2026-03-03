@@ -17,6 +17,7 @@ export function mapCompany(row: Record<string, unknown>): AdminCompany {
     contactPhone: (row.contact_phone as string) || undefined,
     linkedin: (row.linkedin as string) || undefined,
     opportunities: (row.opportunities as string[]) || [],
+    gallery: (row.gallery as string[]) || [],
     isPrimary: (row.is_primary as boolean) ?? true,
     createdAt: (row.created_at as string) || new Date().toISOString(),
     updatedAt: (row.updated_at as string) || new Date().toISOString(),
