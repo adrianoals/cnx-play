@@ -1,8 +1,9 @@
-import type { User, AdminCompany, SupabaseReferral } from '@/types'
+import type { User, AdminCompany, SupabaseReferral, SupabaseDeal } from '@/types'
 import { createClient } from '@/lib/supabase'
 import { mapProfile } from '@/lib/map-profile'
 import { mapCompany } from '@/lib/map-company'
 import { mapReferral } from '@/lib/map-referral'
+import { mapDeal } from '@/lib/map-deal'
 
 export async function fetchAllUsers(): Promise<User[]> {
   const supabase = createClient()
@@ -172,6 +173,41 @@ export async function deleteCompanyAdmin(id: string): Promise<void> {
   const { error } = await supabase
     .from('companies')
     .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
+// ── Deals ─────────────────────────────────────────────────
+
+export async function fetchAllDeals(): Promise<SupabaseDeal[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('deals')
+    .select('*, users(full_name)')
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data || []).map(mapDeal)
+}
+
+export async function updateDealStatus(
+  id: string,
+  status: 'pending' | 'approved' | 'rejected',
+  adminId: string
+): Promise<void> {
+  const supabase = createClient()
+  const payload: Record<string, unknown> = { status }
+  if (status === 'approved' || status === 'rejected') {
+    payload.admin_approved_by = adminId
+    payload.admin_approved_at = new Date().toISOString()
+  } else {
+    payload.admin_approved_by = null
+    payload.admin_approved_at = null
+  }
+  const { error } = await supabase
+    .from('deals')
+    .update(payload)
     .eq('id', id)
 
   if (error) throw new Error(error.message)

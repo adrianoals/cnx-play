@@ -13,9 +13,9 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase"
 import { fetchCategories } from "@/services/category.service"
-import { fetchConnectionsMap, requestConnection, respondConnection, deleteConnection } from "@/services/connection.service"
+import { fetchConnectionsMap, requestConnection, deleteConnection } from "@/services/connection.service"
 import type { Category, Connection } from "@/types"
-import { Search, MapPin, Mail, MessageCircle, UserPlus, X, Loader2, Building2, Clock, Check, XIcon } from "lucide-react"
+import { Search, MapPin, Mail, MessageCircle, UserPlus, X, Loader2, Building2, Clock, Users } from "lucide-react"
 
 interface SearchCompany {
   id: string
@@ -158,46 +158,6 @@ export default function SearchPage() {
     }
   }
 
-  const handleAccept = async (company: SearchCompany) => {
-    const info = connectionsMap.get(company.userId)
-    if (!info) return
-    setConnecting(company.userId)
-    try {
-      await respondConnection(info.connectionId, true)
-      setConnectionsMap(prev => {
-        const next = new Map(prev)
-        next.set(company.userId, { ...info, status: 'accepted' })
-        return next
-      })
-      toast({ title: "Conexão aceita!", description: `Você e ${company.name} agora estão conectados.`, className: "bg-green-600 text-white" })
-    } catch (err) {
-      console.error(err)
-      toast({ title: "Erro", description: "Não foi possível aceitar.", variant: "destructive" })
-    } finally {
-      setConnecting(null)
-    }
-  }
-
-  const handleReject = async (company: SearchCompany) => {
-    const info = connectionsMap.get(company.userId)
-    if (!info) return
-    setConnecting(company.userId)
-    try {
-      await respondConnection(info.connectionId, false)
-      setConnectionsMap(prev => {
-        const next = new Map(prev)
-        next.set(company.userId, { ...info, status: 'rejected' })
-        return next
-      })
-      toast({ title: "Solicitação recusada", description: `Você recusou a conexão com ${company.name}.` })
-    } catch (err) {
-      console.error(err)
-      toast({ title: "Erro", description: "Não foi possível recusar.", variant: "destructive" })
-    } finally {
-      setConnecting(null)
-    }
-  }
-
   const handleReconnect = async (company: SearchCompany) => {
     const info = connectionsMap.get(company.userId)
     if (!info) return
@@ -251,25 +211,14 @@ export default function SearchPage() {
 
     if (info.status === 'pending' && !info.iRequested) {
       return (
-        <>
-          <Button
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
-            onClick={() => handleAccept(company)}
-            disabled={isProcessing}
-          >
-            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Aceitar
-          </Button>
-          <Button
-            variant="outline"
-            className="flex-1 gap-2"
-            onClick={() => handleReject(company)}
-            disabled={isProcessing}
-          >
-            <XIcon className="h-4 w-4" />
-            Recusar
-          </Button>
-        </>
+        <Button
+          variant="outline"
+          className="flex-1 gap-2"
+          onClick={() => router.push("/conexoes")}
+        >
+          <Users className="h-4 w-4" />
+          Solicitação Recebida
+        </Button>
       )
     }
 
@@ -277,7 +226,7 @@ export default function SearchPage() {
       return (
         <Button
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white gap-2"
-          onClick={() => router.push(`/meetings?chat=${company.userId}`)}
+          onClick={() => router.push(`/conexoes?chat=${company.userId}`)}
         >
           <MessageCircle className="h-4 w-4" />
           Mensagem

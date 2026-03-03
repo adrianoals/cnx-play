@@ -12,5 +12,8 @@ export function mapDeal(row: Record<string, unknown>): SupabaseDeal {
     description: (row.description as string) || null,
     createdAt: (row.created_at as string) || new Date().toISOString(),
     authorName: user ? ((user.full_name as string) || '') : undefined,
+    status: (row.status as SupabaseDeal['status']) || 'pending',
+    adminApprovedBy: (row.admin_approved_by as string) || null,
+    adminApprovedAt: (row.admin_approved_at as string) || null,
   }
 }

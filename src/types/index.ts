@@ -221,6 +221,9 @@ export interface SupabaseDeal {
   description: string | null
   createdAt: string
   authorName?: string
+  status: 'pending' | 'approved' | 'rejected'
+  adminApprovedBy?: string | null
+  adminApprovedAt?: string | null
 }
 
 export interface SupabaseReferral {

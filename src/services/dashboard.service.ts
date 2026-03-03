@@ -73,6 +73,7 @@ export async function fetchRecentDeals(limit = 10): Promise<SupabaseDeal[]> {
   const { data, error } = await supabase
     .from('deals')
     .select('*, users(full_name)')
+    .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(limit)
 

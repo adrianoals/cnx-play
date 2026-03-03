@@ -81,6 +81,25 @@ export async function fetchPendingReceived(): Promise<Connection[]> {
   return enrichConnections(data || [], userIds)
 }
 
+export async function fetchPendingSent(): Promise<Connection[]> {
+  const me = await getMyId()
+  const { data, error } = await supabase()
+    .from('connections')
+    .select(SIMPLE_SELECT)
+    .eq('requester_id', me)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  const userIds = new Set<string>()
+  for (const row of data || []) {
+    userIds.add(row.requester_id)
+    userIds.add(row.requested_id)
+  }
+  return enrichConnections(data || [], userIds)
+}
+
 export async function requestConnection(targetId: string): Promise<Connection> {
   const me = await getMyId()
   const { data, error } = await supabase()

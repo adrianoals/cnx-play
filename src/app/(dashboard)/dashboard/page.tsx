@@ -170,16 +170,15 @@ export default function DashboardPage() {
     if (!newDeal.companyName || !newDeal.value) return
 
     try {
-      const deal = await registerDeal({
+      await registerDeal({
         companyName: newDeal.companyName,
         value: parseFloat(newDeal.value),
       })
-      setDeals(prev => [deal, ...prev])
       setNewDeal({ companyName: "", value: "" })
       toast({
-        title: "Negócio Registrado!",
-        description: "Parabéns pelo fechamento. O valor foi adicionado ao mural.",
-        className: "bg-green-600 text-white",
+        title: "Negócio enviado para validação",
+        description: "Seu negócio foi enviado e está pendente de validação pelo administrador.",
+        className: "bg-blue-600 text-white",
       })
       // Reload stats
       loadDashboardData()

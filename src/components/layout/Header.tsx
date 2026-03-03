@@ -2,18 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { Bell, Menu, Gift, User, LogOut, Check, X as XIcon, Loader2 } from "lucide-react"
+import { Bell, Menu, Gift, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { fetchNotifications, markAllRead } from "@/services/notification.service"
-import { respondConnection } from "@/services/connection.service"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { Notification } from "@/types"
 import { useAuth } from "@/hooks/use-auth"
-import { createClient } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 
 interface HeaderProps {
@@ -30,8 +28,6 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
   const [avatar, setAvatar] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [pendingConnectionIds, setPendingConnectionIds] = useState<Set<string>>(new Set())
-  const [respondingTo, setRespondingTo] = useState<string | null>(null)
 
   const isActive = user.status === "active"
   const isAdminPanel = pathname.startsWith("/admin")
@@ -41,22 +37,6 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
       const notifs = await fetchNotifications()
       setNotifications(notifs)
       setUnreadCount(notifs.filter(n => !n.read).length)
-
-      // Discover which connection notifications are still pending
-      const supabase = createClient()
-      const connRefIds = notifs
-        .filter(n => n.referenceType === 'connection' && n.referenceId)
-        .map(n => n.referenceId as string)
-
-      if (connRefIds.length > 0) {
-        const { data: conns } = await supabase
-          .from('connections')
-          .select('id, status')
-          .in('id', connRefIds)
-          .eq('status', 'pending')
-
-        setPendingConnectionIds(new Set((conns || []).map(c => c.id)))
-      }
     } catch (err) {
       console.error("Error loading notifications:", err)
     }
@@ -83,44 +63,6 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
       } catch (err) {
         console.error(err)
       }
-    }
-  }
-
-  const handleAcceptConnection = async (notif: Notification) => {
-    if (!notif.referenceId) return
-    setRespondingTo(notif.referenceId)
-    try {
-      await respondConnection(notif.referenceId, true)
-      setPendingConnectionIds(prev => {
-        const next = new Set(prev)
-        next.delete(notif.referenceId!)
-        return next
-      })
-      toast({ title: "Conexão aceita!", className: "bg-green-600 text-white" })
-    } catch (err) {
-      console.error(err)
-      toast({ title: "Erro", description: "Não foi possível aceitar.", variant: "destructive" })
-    } finally {
-      setRespondingTo(null)
-    }
-  }
-
-  const handleRejectConnection = async (notif: Notification) => {
-    if (!notif.referenceId) return
-    setRespondingTo(notif.referenceId)
-    try {
-      await respondConnection(notif.referenceId, false)
-      setPendingConnectionIds(prev => {
-        const next = new Set(prev)
-        next.delete(notif.referenceId!)
-        return next
-      })
-      toast({ title: "Solicitação recusada" })
-    } catch (err) {
-      console.error(err)
-      toast({ title: "Erro", description: "Não foi possível recusar.", variant: "destructive" })
-    } finally {
-      setRespondingTo(null)
     }
   }
 
@@ -160,9 +102,7 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
                   <DropdownMenuSeparator />
                   <div className="max-h-[300px] overflow-y-auto">
                     {notifications.length > 0 ? notifications.map((notif) => {
-                      const isPendingConnection = notif.referenceType === 'connection'
-                        && notif.referenceId
-                        && pendingConnectionIds.has(notif.referenceId)
+                      const isConnectionNotif = notif.referenceType === 'connection'
                         && notif.title === 'Solicitação de Conexão'
 
                       return (
@@ -176,28 +116,15 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
                             </span>
                           </div>
                           <p className={`text-sm ${notif.read ? "text-muted-foreground" : "text-foreground"}`}>{notif.content}</p>
-                          {isPendingConnection && (
-                            <div className="flex gap-2 mt-1 w-full">
-                              <Button
-                                size="sm"
-                                className="h-7 flex-1 bg-green-600 hover:bg-green-700 text-white text-xs gap-1"
-                                onClick={() => handleAcceptConnection(notif)}
-                                disabled={respondingTo === notif.referenceId}
-                              >
-                                {respondingTo === notif.referenceId ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                                Aceitar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 flex-1 text-xs gap-1"
-                                onClick={() => handleRejectConnection(notif)}
-                                disabled={respondingTo === notif.referenceId}
-                              >
-                                <XIcon className="h-3 w-3" />
-                                Recusar
-                              </Button>
-                            </div>
+                          {isConnectionNotif && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 mt-1 text-xs w-full"
+                              onClick={() => router.push("/conexoes")}
+                            >
+                              Ver solicitação
+                            </Button>
                           )}
                         </DropdownMenuItem>
                       )

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { companies } from "@/data/mock-companies"
@@ -9,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { Company } from "@/types"
 
 export default function DailyContactManager() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [dailyContact, setDailyContact] = useState<Company | null>(null)
   const { toast } = useToast()
@@ -82,7 +84,7 @@ export default function DailyContactManager() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3">
-            <Button onClick={() => setOpen(false)} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-900/20 border-0 h-12 text-md">
+            <Button onClick={() => { setOpen(false); router.push('/conexoes') }} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-900/20 border-0 h-12 text-md">
               Ver no Chat <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
