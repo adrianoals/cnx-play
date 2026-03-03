@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useCurrentUser } from "@/hooks/use-current-user"
-import { getUserLevel } from "@/lib/constants"
-import { companies } from "@/data/mock-companies"
-import type { DailyMatch, UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal } from "@/types"
+import type { UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal } from "@/types"
 import {
   fetchMyStats,
   fetchPlatformTotals,
@@ -18,14 +16,12 @@ import {
   fetchRecentDeals,
 } from "@/services/dashboard.service"
 import {
-  Search, Calendar, Trophy, ArrowRight, Clock, CheckCircle2,
+  Search, Trophy, ArrowRight, Clock,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
-  TrendingUp, Gem, Info, Gift, X, Lock, Video, AlertTriangle,
+  TrendingUp, Video, AlertTriangle,
   UserCircle, Crown,
 } from "lucide-react"
 
-import Certificate from "@/components/features/Certificate"
-import LevelInfoModal from "@/components/features/LevelInfoModal"
 import FirstLoginWelcome from "@/components/features/FirstLoginWelcome"
 import DashboardTutorial from "@/components/features/DashboardTutorial"
 import { getCompaniesByUserId } from "@/services/company.service"
@@ -36,9 +32,6 @@ export default function DashboardPage() {
   const { user: currentUser } = useCurrentUser()
 
   const [dashboardSearch, setDashboardSearch] = useState("")
-  const [showCertificate, setShowCertificate] = useState(false)
-  const [certificateLevel, setCertificateLevel] = useState("")
-  const [showLevelInfo, setShowLevelInfo] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
 
   const [paymentStatus] = useState("active")
@@ -46,20 +39,17 @@ export default function DashboardPage() {
   const [platformTotals, setPlatformTotals] = useState<PlatformTotals | null>(null)
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([])
   const [deals, setDeals] = useState<SupabaseDeal[]>([])
-  const [dailyMatch, setDailyMatch] = useState<DailyMatch | null>(null)
-  const [isConfirmingMatch, setIsConfirmingMatch] = useState(false)
   const [newDeal, setNewDeal] = useState({ companyName: "", value: "" })
   const [loadingData, setLoadingData] = useState(true)
 
   const currentScore = stats?.score ?? 0
-  const currentLevel = getUserLevel(currentScore)
 
   const loadDashboardData = useCallback(async () => {
     try {
       const [myStats, totals, board, recentDeals] = await Promise.all([
         fetchMyStats(),
         fetchPlatformTotals(),
-        fetchLeaderboard(10),
+        fetchLeaderboard(5),
         fetchRecentDeals(10),
       ])
       setStats(myStats)
@@ -78,92 +68,8 @@ export default function DashboardPage() {
     if (currentUser.status === "pending") { setLoadingData(false); return }
 
     loadDashboardData()
-
-    // Level-up certificate
-    const hasSeenOnboarding = localStorage.getItem("has_seen_onboarding")
-    const lastSeenLevel = localStorage.getItem("last_seen_certificate_level")
-
-    if (stats && hasSeenOnboarding) {
-      const calculatedLevel = getUserLevel(stats.score).name
-      if (calculatedLevel !== lastSeenLevel) {
-        setCertificateLevel(calculatedLevel)
-        setTimeout(() => setShowCertificate(true), 2000)
-        localStorage.setItem("last_seen_certificate_level", calculatedLevel)
-      }
-    }
-
-    // Daily match (still from mock companies for now)
-    const today = new Date().toDateString()
-    const storedMatch = JSON.parse(localStorage.getItem("daily_match_v2") || "null")
-
-    if (storedMatch && storedMatch.date === today) {
-      let matchData = storedMatch.match
-      if (!matchData.phone) {
-        const originalCompany = companies.find(c => c.id === matchData.id)
-        if (originalCompany) {
-          matchData.phone = originalCompany.contact.phone
-          storedMatch.match = matchData
-          localStorage.setItem("daily_match_v2", JSON.stringify(storedMatch))
-        }
-      }
-      setDailyMatch(matchData)
-    } else {
-      const userSegment = currentUser.segment || "Tecnologia"
-      const candidates = companies.filter(c => c.segment !== userSegment)
-      const pool = candidates.length > 0 ? candidates : companies
-
-      const randomCompany = pool[Math.floor(Math.random() * pool.length)]
-      const newMatchObj: DailyMatch = {
-        id: randomCompany.id,
-        name: randomCompany.name,
-        segment: randomCompany.segment,
-        contact: randomCompany.contact.email.split("@")[0],
-        phone: randomCompany.contact.phone,
-        time: "15:00",
-        status: "pending",
-        image: randomCompany.image,
-      }
-
-      localStorage.setItem("daily_match_v2", JSON.stringify({ date: today, match: newMatchObj }))
-      setDailyMatch(newMatchObj)
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser])
-
-  // Check level-up after stats load
-  useEffect(() => {
-    if (!stats) return
-    const hasSeenOnboarding = localStorage.getItem("has_seen_onboarding")
-    const lastSeenLevel = localStorage.getItem("last_seen_certificate_level")
-    const calculatedLevel = getUserLevel(stats.score).name
-
-    if (hasSeenOnboarding && calculatedLevel !== lastSeenLevel) {
-      setCertificateLevel(calculatedLevel)
-      setTimeout(() => setShowCertificate(true), 2000)
-      localStorage.setItem("last_seen_certificate_level", calculatedLevel)
-    } else if (!lastSeenLevel) {
-      localStorage.setItem("last_seen_certificate_level", calculatedLevel)
-    }
-  }, [stats])
-
-  const handleConfirmMeeting = () => {
-    setIsConfirmingMatch(true)
-    setTimeout(() => {
-      if (!dailyMatch) return
-      const updatedMatch = { ...dailyMatch, status: "completed" as const }
-      setDailyMatch(updatedMatch)
-      localStorage.setItem("daily_match_v2", JSON.stringify({ date: new Date().toDateString(), match: updatedMatch }))
-
-      setIsConfirmingMatch(false)
-      toast({
-        title: "Reunião Confirmada!",
-        description: "Sua reunião foi registrada. A pontuação será atualizada em breve.",
-        className: "bg-green-600 text-white",
-      })
-      // Reload stats to pick up new meeting
-      loadDashboardData()
-    }, 2500)
-  }
 
   const handleRegisterDeal = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -261,18 +167,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold">Olá, {currentUser?.fullName?.split(" ")[0] || "Empresário"}</h1>
-            <div className="flex items-center gap-2">
-              <div className={`px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${currentLevel.bg} ${currentLevel.color} ${currentLevel.border} shadow-sm backdrop-blur-md`}>
-                <Gem className="w-3 h-3" />
-                {currentLevel.name}
-              </div>
-              <button onClick={() => setShowLevelInfo(true)} className="text-muted-foreground hover:text-foreground transition-colors">
-                <Info className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          <h1 className="text-3xl font-bold mb-2">Olá, {currentUser?.fullName?.split(" ")[0] || "Empresário"}</h1>
           <p className="text-muted-foreground">Bem-vindo ao seu hub de conexões estratégicas.</p>
         </div>
 
@@ -348,7 +243,7 @@ export default function DashboardPage() {
           <p className="text-3xl font-bold">{stats?.meetingsCompleted ?? 0}</p>
         </motion.div>
 
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="bg-card border border-border p-6 rounded-2xl shadow-sm cursor-pointer hover:border-purple-500/50 transition-colors" onClick={() => setShowLevelInfo(true)}>
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="bg-card border border-border p-6 rounded-2xl shadow-sm">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-purple-500/10 rounded-lg"><Trophy className="h-5 w-5 text-purple-500" /></div>
             <p className="text-muted-foreground text-sm font-medium">Pontuação</p>
@@ -374,74 +269,6 @@ export default function DashboardPage() {
           </p>
         </motion.div>
       </div>
-
-      {/* Daily Match */}
-      {dailyMatch && (
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="relative overflow-hidden bg-gradient-to-br from-blue-900/10 to-purple-900/10 border border-primary/20 rounded-3xl p-8 dark:from-blue-900/20 dark:to-purple-900/20">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-bold">Reunião do Dia</h2>
-              </div>
-              <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded border border-primary/20">
-                Segmento: {dailyMatch.segment}
-              </span>
-            </div>
-
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="space-y-4 cursor-pointer" onClick={() => router.push(`/profile/${dailyMatch.id}`)}>
-                <div>
-                  <p className="text-muted-foreground text-sm mb-1">Empresa Parceira</p>
-                  <h3 className="text-2xl font-bold hover:text-primary transition-colors hover:underline decoration-primary underline-offset-4">
-                    {dailyMatch.name}
-                  </h3>
-                </div>
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex items-center gap-2 text-muted-foreground bg-background/50 px-3 py-1.5 rounded-lg border border-border">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span>{dailyMatch.time}</span>
-                  </div>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
-                    dailyMatch.status === "completed"
-                      ? "bg-green-500/10 border-green-500/20 text-green-500"
-                      : "bg-yellow-500/10 border-yellow-500/20 text-yellow-500"
-                  }`}>
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>{dailyMatch.status === "completed" ? "Realizada" : "Pendente"}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 w-full md:w-auto min-w-[200px]">
-                {dailyMatch.status !== "completed" ? (
-                  <>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold h-11 rounded-xl shadow-lg transition-all" onClick={() => router.push(`/profile/${dailyMatch.id}`)}>
-                      Ver Perfil & Contato
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                    <Button onClick={handleConfirmMeeting} disabled={isConfirmingMatch} variant="outline" className="border-primary text-primary hover:bg-primary/10 font-semibold h-11 rounded-xl">
-                      {isConfirmingMatch ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Validando...</>
-                      ) : (
-                        <>Confirmar Realização<CheckCircle2 className="ml-2 h-4 w-4" /></>
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center">
-                    <p className="text-green-500 font-bold flex items-center justify-center gap-2">
-                      <Handshake className="h-5 w-5" />
-                      Reunião Confirmada
-                    </p>
-                    <p className="text-muted-foreground text-xs mt-1">Pontuação atualizada</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* Deals Wall & Register */}
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -561,10 +388,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-sm">
-                    R$ {entry.totalDealValue.toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 } as Intl.NumberFormatOptions)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{entry.score} pts</p>
+                  <p className="font-bold text-sm">{entry.score} pts</p>
                 </div>
               </div>
             ))}
@@ -575,8 +399,6 @@ export default function DashboardPage() {
       {/* Feature Modals */}
       <FirstLoginWelcome userName={currentUser?.fullName?.split(" ")[0] || "Empresário"} onClose={() => setShowTutorial(true)} />
       <DashboardTutorial isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
-      <Certificate isOpen={showCertificate} onClose={() => setShowCertificate(false)} userName={currentUser?.fullName || "Empresário"} level={certificateLevel} date={new Date().toLocaleDateString()} />
-      <LevelInfoModal isOpen={showLevelInfo} onClose={() => setShowLevelInfo(false)} />
     </div>
   )
 }
