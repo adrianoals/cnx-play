@@ -1,4 +1,6 @@
-import type { LocalCompany } from '@/types'
+import type { LocalCompany, AdminCompany } from '@/types'
+import { createClient } from '@/lib/supabase'
+import { mapCompany } from '@/lib/map-company'
 
 const STORAGE_KEY = 'companies'
 
@@ -130,4 +132,107 @@ function syncUserCompanyName(userId: string): void {
       }
     }
   } catch { /* ignore */ }
+}
+
+// ── Supabase-backed functions ─────────────────────────────
+
+const COMPANY_SELECT = '*, categories(name), users(full_name, email)'
+
+export async function fetchMyCompanies(): Promise<AdminCompany[]> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuário não autenticado.')
+
+  const { data, error } = await supabase
+    .from('companies')
+    .select(COMPANY_SELECT)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data || []).map(mapCompany)
+}
+
+export async function createMyCompany(input: {
+  name: string
+  cnpj?: string
+  categoryId?: string
+  description?: string
+  location?: string
+  contactEmail?: string
+  contactPhone?: string
+  linkedin?: string
+  isPrimary?: boolean
+}): Promise<AdminCompany> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuário não autenticado.')
+
+  const { data, error } = await supabase
+    .from('companies')
+    .insert({
+      user_id: user.id,
+      name: input.name,
+      cnpj: input.cnpj || null,
+      category_id: input.categoryId || null,
+      description: input.description || null,
+      location: input.location || null,
+      contact_email: input.contactEmail || null,
+      contact_phone: input.contactPhone || null,
+      linkedin: input.linkedin || null,
+      is_primary: input.isPrimary ?? true,
+    })
+    .select(COMPANY_SELECT)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return mapCompany(data)
+}
+
+export async function updateMyCompany(
+  id: string,
+  updates: {
+    name?: string
+    cnpj?: string
+    categoryId?: string
+    description?: string
+    location?: string
+    contactEmail?: string
+    contactPhone?: string
+    linkedin?: string
+    isPrimary?: boolean
+  }
+): Promise<AdminCompany> {
+  const supabase = createClient()
+
+  const payload: Record<string, unknown> = {}
+  if (updates.name !== undefined) payload.name = updates.name
+  if (updates.cnpj !== undefined) payload.cnpj = updates.cnpj || null
+  if (updates.categoryId !== undefined) payload.category_id = updates.categoryId || null
+  if (updates.description !== undefined) payload.description = updates.description || null
+  if (updates.location !== undefined) payload.location = updates.location || null
+  if (updates.contactEmail !== undefined) payload.contact_email = updates.contactEmail || null
+  if (updates.contactPhone !== undefined) payload.contact_phone = updates.contactPhone || null
+  if (updates.linkedin !== undefined) payload.linkedin = updates.linkedin || null
+  if (updates.isPrimary !== undefined) payload.is_primary = updates.isPrimary
+
+  const { data, error } = await supabase
+    .from('companies')
+    .update(payload)
+    .eq('id', id)
+    .select(COMPANY_SELECT)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return mapCompany(data)
+}
+
+export async function deleteMyCompany(id: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('companies')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
 }

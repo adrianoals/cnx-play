@@ -75,6 +75,7 @@ export interface AdminCompany {
   updatedAt: string
   ownerName: string
   ownerEmail: string
+  categoryName?: string
 }
 
 export interface Deal {
@@ -159,6 +160,13 @@ export interface LeaderboardEntry {
   company: string
   value: number
   meetings: number
+}
+
+export interface Category {
+  id: string
+  name: string
+  slug: string
+  sortOrder: number
 }
 
 // ── Supabase-backed types ──────────────────────────────────

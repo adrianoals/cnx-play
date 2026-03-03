@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import type { LocalCompany } from "@/types"
+import type { Category } from "@/types"
 import { Button } from "@/components/ui/button"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -28,12 +28,27 @@ function formatPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
+export interface CompanyFormData {
+  id?: string
+  name: string
+  cnpj?: string
+  categoryId?: string
+  description?: string
+  location?: string
+  contactEmail?: string
+  contactPhone?: string
+  linkedin?: string
+  isPrimary: boolean
+  gallery: string[]
+}
+
 interface CompanyEditModalProps {
-  company: LocalCompany | null
+  company: CompanyFormData | null
   isOpen: boolean
   onClose: () => void
-  onSave: (company: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: string; updatedAt?: string }) => void
+  onSave: (data: CompanyFormData) => void
   userId: string
+  categories?: Category[]
 }
 
 function Field({
@@ -61,13 +76,13 @@ function Field({
 
 const MAX_GALLERY = 5
 
-export default function CompanyEditModal({ company, isOpen, onClose, onSave, userId }: CompanyEditModalProps) {
+export default function CompanyEditModal({ company, isOpen, onClose, onSave, userId, categories = [] }: CompanyEditModalProps) {
   const { toast } = useToast()
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
 
   const [form, setForm] = useState({
-    name: "", cnpj: "", category: "", description: "",
+    name: "", cnpj: "", categoryId: "", description: "",
     location: "", contactEmail: "", contactPhone: "", linkedin: "",
     isPrimary: true, gallery: [] as string[],
   })
@@ -78,18 +93,18 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
         setForm({
           name: company.name,
           cnpj: company.cnpj || "",
-          category: company.category || "",
+          categoryId: company.categoryId || "",
           description: company.description || "",
           location: company.location || "",
           contactEmail: company.contactEmail || "",
           contactPhone: company.contactPhone || "",
           linkedin: company.linkedin || "",
           isPrimary: company.isPrimary,
-          gallery: [...company.gallery],
+          gallery: [...(company.gallery || [])],
         })
       } else {
         setForm({
-          name: "", cnpj: "", category: "", description: "",
+          name: "", cnpj: "", categoryId: "", description: "",
           location: "", contactEmail: "", contactPhone: "", linkedin: "",
           isPrimary: true, gallery: [],
         })
@@ -131,24 +146,21 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
     }
 
     setSaving(true)
-    setTimeout(() => {
-      onSave({
-        ...(company ? { id: company.id, createdAt: company.createdAt, updatedAt: company.updatedAt } : {}),
-        userId,
-        name: form.name.trim(),
-        cnpj: form.cnpj.trim() || undefined,
-        category: form.category.trim() || undefined,
-        description: form.description.trim() || undefined,
-        location: form.location.trim() || undefined,
-        contactEmail: form.contactEmail.trim() || undefined,
-        contactPhone: form.contactPhone.trim() || undefined,
-        linkedin: form.linkedin.trim() || undefined,
-        isPrimary: form.isPrimary,
-        gallery: form.gallery,
-      })
-      setSaving(false)
-      onClose()
-    }, 500)
+    onSave({
+      ...(company?.id ? { id: company.id } : {}),
+      name: form.name.trim(),
+      cnpj: form.cnpj.trim() || undefined,
+      categoryId: form.categoryId || undefined,
+      description: form.description.trim() || undefined,
+      location: form.location.trim() || undefined,
+      contactEmail: form.contactEmail.trim() || undefined,
+      contactPhone: form.contactPhone.trim() || undefined,
+      linkedin: form.linkedin.trim() || undefined,
+      isPrimary: form.isPrimary,
+      gallery: form.gallery,
+    })
+    setSaving(false)
+    onClose()
   }
 
   return (
@@ -171,7 +183,22 @@ export default function CompanyEditModal({ company, isOpen, onClose, onSave, use
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Categoria" value={form.category} onChange={v => setForm({ ...form, category: v })} icon={Tag} placeholder="Ex: Tecnologia, Saúde..." />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Categoria</label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <select
+                  value={form.categoryId}
+                  onChange={e => setForm({ ...form, categoryId: e.target.value })}
+                  className="w-full bg-secondary/50 border border-input rounded-xl py-2.5 pl-9 pr-3 text-sm text-foreground focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all appearance-none"
+                >
+                  <option value="">Selecione uma categoria...</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <Field label="Localização" value={form.location} onChange={v => setForm({ ...form, location: v })} icon={MapPin} placeholder="Cidade - UF" />
           </div>
 

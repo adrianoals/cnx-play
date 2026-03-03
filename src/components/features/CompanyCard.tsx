@@ -1,12 +1,12 @@
 "use client"
 
-import type { LocalCompany } from "@/types"
-import { Building2, MapPin, Image as ImageIcon, Pencil, Trash2, Star } from "lucide-react"
+import type { AdminCompany } from "@/types"
+import { Building2, MapPin, Pencil, Trash2, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface CompanyCardProps {
-  company: LocalCompany
-  onEdit: (company: LocalCompany) => void
+  company: AdminCompany
+  onEdit: (company: AdminCompany) => void
   onDelete: (companyId: string) => void
 }
 
@@ -31,17 +31,12 @@ export default function CompanyCard({ company, onEdit, onDelete }: CompanyCardPr
               <p className="text-xs text-muted-foreground mt-0.5">CNPJ: {company.cnpj}</p>
             )}
             <div className="flex items-center gap-3 mt-2 flex-wrap">
-              {company.category && (
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{company.category}</span>
+              {company.categoryName && (
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{company.categoryName}</span>
               )}
               {company.location && (
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3 w-3" /> {company.location}
-                </span>
-              )}
-              {company.gallery.length > 0 && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <ImageIcon className="h-3 w-3" /> {company.gallery.length} foto{company.gallery.length > 1 ? "s" : ""}
                 </span>
               )}
             </div>

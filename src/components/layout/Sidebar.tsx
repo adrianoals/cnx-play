@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, Calendar, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift } from "lucide-react"
+import { X, Home, User, CreditCard, Search, Calendar, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -42,7 +42,10 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   let currentMenu: typeof baseItems & { external?: boolean }[]
   if (isAdminPanel) {
     currentMenu = [
-      { icon: ShieldCheck, label: "Gestão de Usuários", path: "/admin/users" },
+      { icon: Home, label: "Dashboard", path: "/dashboard" },
+      { icon: Users, label: "Usuários", path: "/admin/users" },
+      { icon: Building2, label: "Empresas", path: "/admin/empresas" },
+      { icon: Gift, label: "Indicações", path: "/admin/indicacoes" },
     ] as typeof baseItems
   } else if (status === "pending") {
     currentMenu = [

@@ -1,0 +1,441 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
+import { usePagination } from "@/hooks/use-pagination"
+import { Pagination } from "@/components/ui/pagination"
+import {
+  fetchAllCompanies, createCompanyForUser, updateCompanyAdmin, deleteCompanyAdmin,
+  fetchAllUsers,
+} from "@/services/admin.service"
+import { fetchCategories } from "@/services/category.service"
+import type { User, AdminCompany, Category } from "@/types"
+import {
+  Search, Trash2, Edit, Calendar, MoreHorizontal, Plus, MapPin,
+  Loader2, Building2, Mail, Phone, Linkedin, Star,
+} from "lucide-react"
+
+const emptyCompanyForm = {
+  name: "",
+  cnpj: "",
+  categoryId: "",
+  description: "",
+  location: "",
+  contactEmail: "",
+  contactPhone: "",
+  linkedin: "",
+  isPrimary: true,
+  userId: "",
+}
+
+export default function AdminEmpresasPage() {
+  const { toast } = useToast()
+
+  const [companies, setCompanies] = useState<AdminCompany[]>([])
+  const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [companySearch, setCompanySearch] = useState("")
+
+  const [users, setUsers] = useState<User[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
+  const [companyForm, setCompanyForm] = useState(emptyCompanyForm)
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null)
+  const [savingCompany, setSavingCompany] = useState(false)
+
+  useEffect(() => {
+    fetchAllCompanies()
+      .then(c => setCompanies(c))
+      .catch(err => {
+        toast({ title: "Erro ao carregar empresas", description: err.message, variant: "destructive" })
+      })
+      .finally(() => setLoadingCompanies(false))
+
+    fetchAllUsers()
+      .then(u => setUsers(u))
+      .catch(() => {})
+
+    fetchCategories()
+      .then(c => setCategories(c))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const filteredCompanies = companies.filter(c => {
+    const term = companySearch.toLowerCase()
+    return (
+      c.name.toLowerCase().includes(term) ||
+      c.ownerName.toLowerCase().includes(term) ||
+      (c.cnpj || "").toLowerCase().includes(term)
+    )
+  })
+
+  const { paginatedItems: paginatedCompanies, currentPage, totalPages, setCurrentPage } = usePagination(filteredCompanies)
+
+  const openCreateCompany = () => {
+    setEditingCompanyId(null)
+    setCompanyForm(emptyCompanyForm)
+    setIsCompanyModalOpen(true)
+  }
+
+  const openEditCompany = (company: AdminCompany) => {
+    setEditingCompanyId(company.id)
+    setCompanyForm({
+      name: company.name,
+      cnpj: company.cnpj || "",
+      categoryId: company.categoryId || "",
+      description: company.description || "",
+      location: company.location || "",
+      contactEmail: company.contactEmail || "",
+      contactPhone: company.contactPhone || "",
+      linkedin: company.linkedin || "",
+      isPrimary: company.isPrimary,
+      userId: company.userId,
+    })
+    setIsCompanyModalOpen(true)
+  }
+
+  const handleSaveCompany = async () => {
+    if (!companyForm.name) {
+      toast({ title: "Erro", description: "O nome da empresa é obrigatório.", variant: "destructive" })
+      return
+    }
+    if (!editingCompanyId && !companyForm.userId) {
+      toast({ title: "Erro", description: "Selecione o usuário responsável.", variant: "destructive" })
+      return
+    }
+
+    setSavingCompany(true)
+    try {
+      if (editingCompanyId) {
+        const updated = await updateCompanyAdmin(editingCompanyId, {
+          name: companyForm.name,
+          cnpj: companyForm.cnpj,
+          categoryId: companyForm.categoryId || undefined,
+          description: companyForm.description,
+          location: companyForm.location,
+          contactEmail: companyForm.contactEmail,
+          contactPhone: companyForm.contactPhone,
+          linkedin: companyForm.linkedin,
+          isPrimary: companyForm.isPrimary,
+        })
+        setCompanies(prev => prev.map(c => c.id === editingCompanyId ? updated : c))
+        toast({ title: "Empresa atualizada", description: "Os dados foram salvos com sucesso.", className: "bg-green-600 border-green-500 text-white" })
+      } else {
+        const created = await createCompanyForUser({
+          userId: companyForm.userId,
+          name: companyForm.name,
+          cnpj: companyForm.cnpj || undefined,
+          categoryId: companyForm.categoryId || undefined,
+          description: companyForm.description || undefined,
+          location: companyForm.location || undefined,
+          contactEmail: companyForm.contactEmail || undefined,
+          contactPhone: companyForm.contactPhone || undefined,
+          linkedin: companyForm.linkedin || undefined,
+          isPrimary: companyForm.isPrimary,
+        })
+        setCompanies(prev => [created, ...prev])
+        toast({ title: "Empresa cadastrada", description: "A empresa foi adicionada com sucesso.", className: "bg-green-600 text-white border-none" })
+      }
+      setIsCompanyModalOpen(false)
+    } catch (error) {
+      toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao salvar empresa.", variant: "destructive" })
+    } finally {
+      setSavingCompany(false)
+    }
+  }
+
+  const handleDeleteCompany = async (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir esta empresa permanentemente?")) {
+      try {
+        await deleteCompanyAdmin(id)
+        setCompanies(prev => prev.filter(c => c.id !== id))
+        toast({ title: "Empresa excluída", description: "A empresa foi removida do sistema.", variant: "destructive" })
+      } catch (error) {
+        toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao excluir.", variant: "destructive" })
+      }
+    }
+  }
+
+  const formatDate = (dateStr: string) => {
+    try { return new Date(dateStr).toLocaleDateString("pt-BR") } catch { return "N/A" }
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+          <Building2 className="h-8 w-8 text-amber-500" /> Empresas
+        </h1>
+        <p className="text-muted-foreground">Gerenciamento de empresas cadastradas.</p>
+      </div>
+
+      {/* Actions bar */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <Button onClick={openCreateCompany} className="bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg transition-all cursor-pointer w-full md:w-auto">
+          <Plus className="mr-2 h-4 w-4" /> Cadastrar Empresa
+        </Button>
+
+        <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
+          <Search className="ml-2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar empresa ou responsável..."
+            value={companySearch}
+            onChange={e => setCompanySearch(e.target.value)}
+            className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
+          />
+        </div>
+      </div>
+
+      {/* Companies table */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        {loadingCompanies ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-3 text-muted-foreground">Carregando empresas...</span>
+          </div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">Empresa</TableHead>
+                  <TableHead className="text-muted-foreground hidden lg:table-cell">CNPJ</TableHead>
+                  <TableHead className="text-muted-foreground hidden md:table-cell">Categoria</TableHead>
+                  <TableHead className="text-muted-foreground hidden md:table-cell">Responsável</TableHead>
+                  <TableHead className="text-muted-foreground hidden lg:table-cell">Localização</TableHead>
+                  <TableHead className="text-muted-foreground text-center hidden sm:table-cell">Tipo</TableHead>
+                  <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
+                  <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedCompanies.length > 0 ? (
+                  paginatedCompanies.map(company => (
+                    <TableRow key={company.id} className="border-border hover:bg-secondary/30 transition-colors">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold">{company.name}</span>
+                          {company.contactEmail && (
+                            <span className="text-xs text-muted-foreground">{company.contactEmail}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm">
+                        {company.cnpj || "—"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">
+                        {company.categoryName || "—"}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex flex-col">
+                          <span className="text-sm">{company.ownerName || "—"}</span>
+                          <span className="text-xs text-muted-foreground">{company.ownerEmail}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {company.location ? (
+                          <span className="text-sm flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-muted-foreground" /> {company.location}
+                          </span>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="text-center hidden sm:table-cell">
+                        {company.isPrimary ? (
+                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/20">
+                            <Star className="w-3 h-3 mr-1" /> Principal
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">Secundária</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-3 w-3" /> {formatDate(company.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                              <span className="sr-only">Abrir menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => openEditCompany(company)}>
+                              <Edit className="mr-2 h-4 w-4" /> Editar Empresa
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleDeleteCompany(company.id)} className="text-red-400">
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Empresa
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                      {companySearch ? "Nenhuma empresa encontrada." : "Nenhuma empresa cadastrada."}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
+              <span>
+                Mostrando {filteredCompanies.length === 0 ? 0 : (currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, filteredCompanies.length)} de {filteredCompanies.length}
+                {" · "}{companies.filter(c => c.isPrimary).length} principal(is)
+              </span>
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Create/Edit Company Modal */}
+      <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
+        <DialogContent className="sm:max-w-[650px] overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{editingCompanyId ? "Editar Empresa" : "Cadastrar Nova Empresa"}</DialogTitle>
+            <DialogDescription>
+              {editingCompanyId
+                ? "Altere os dados da empresa abaixo."
+                : "Preencha os dados para cadastrar uma nova empresa vinculada a um usuário."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {!editingCompanyId && (
+              <div className="space-y-2">
+                <Label>Usuário Responsável *</Label>
+                <select
+                  value={companyForm.userId}
+                  onChange={e => setCompanyForm({ ...companyForm, userId: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+                >
+                  <option value="">Selecione um usuário...</option>
+                  {users
+                    .filter(u => u.status === "active")
+                    .map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.name || u.fullName} ({u.email})
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nome da Empresa *</Label>
+                <Input
+                  value={companyForm.name}
+                  onChange={e => setCompanyForm({ ...companyForm, name: e.target.value })}
+                  placeholder="Ex: Acme Corp"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>CNPJ</Label>
+                <Input
+                  value={companyForm.cnpj}
+                  onChange={e => setCompanyForm({ ...companyForm, cnpj: e.target.value })}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <select
+                value={companyForm.categoryId}
+                onChange={e => setCompanyForm({ ...companyForm, categoryId: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+              >
+                <option value="">Selecione uma categoria...</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input
+                value={companyForm.description}
+                onChange={e => setCompanyForm({ ...companyForm, description: e.target.value })}
+                placeholder="Breve descrição da empresa"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Localização</Label>
+              <Input
+                value={companyForm.location}
+                onChange={e => setCompanyForm({ ...companyForm, location: e.target.value })}
+                placeholder="Ex: São Paulo, SP"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Mail className="w-3 h-3" /> Email de Contato</Label>
+                <Input
+                  value={companyForm.contactEmail}
+                  onChange={e => setCompanyForm({ ...companyForm, contactEmail: e.target.value })}
+                  placeholder="contato@empresa.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><Phone className="w-3 h-3" /> Telefone</Label>
+                <Input
+                  value={companyForm.contactPhone}
+                  onChange={e => setCompanyForm({ ...companyForm, contactPhone: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Linkedin className="w-3 h-3" /> LinkedIn</Label>
+              <Input
+                value={companyForm.linkedin}
+                onChange={e => setCompanyForm({ ...companyForm, linkedin: e.target.value })}
+                placeholder="https://linkedin.com/company/..."
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2 border-t border-border">
+              <input
+                type="checkbox"
+                id="isPrimary"
+                checked={companyForm.isPrimary}
+                onChange={e => setCompanyForm({ ...companyForm, isPrimary: e.target.checked })}
+                className="h-4 w-4 rounded border-input"
+              />
+              <Label htmlFor="isPrimary" className="cursor-pointer flex items-center gap-1">
+                <Star className="w-3 h-3" /> Empresa Principal
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCompanyModalOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSaveCompany} disabled={savingCompany} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {savingCompany ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {editingCompanyId ? "Salvar Alterações" : "Cadastrar Empresa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

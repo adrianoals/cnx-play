@@ -84,7 +84,7 @@ export async function fetchAllCompanies(): Promise<AdminCompany[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('companies')
-    .select('*, users(full_name, email)')
+    .select('*, categories(name), users(full_name, email)')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -95,6 +95,7 @@ export async function createCompanyForUser(input: {
   userId: string
   name: string
   cnpj?: string
+  categoryId?: string
   description?: string
   location?: string
   contactEmail?: string
@@ -109,6 +110,7 @@ export async function createCompanyForUser(input: {
       user_id: input.userId,
       name: input.name,
       cnpj: input.cnpj || null,
+      category_id: input.categoryId || null,
       description: input.description || null,
       location: input.location || null,
       contact_email: input.contactEmail || null,
@@ -116,7 +118,7 @@ export async function createCompanyForUser(input: {
       linkedin: input.linkedin || null,
       is_primary: input.isPrimary ?? true,
     })
-    .select('*, users(full_name, email)')
+    .select('*, categories(name), users(full_name, email)')
     .single()
 
   if (error) throw new Error(error.message)
@@ -128,6 +130,7 @@ export async function updateCompanyAdmin(
   updates: {
     name?: string
     cnpj?: string
+    categoryId?: string
     description?: string
     location?: string
     contactEmail?: string
@@ -141,6 +144,7 @@ export async function updateCompanyAdmin(
   const payload: Record<string, unknown> = {}
   if (updates.name !== undefined) payload.name = updates.name
   if (updates.cnpj !== undefined) payload.cnpj = updates.cnpj || null
+  if (updates.categoryId !== undefined) payload.category_id = updates.categoryId || null
   if (updates.description !== undefined) payload.description = updates.description || null
   if (updates.location !== undefined) payload.location = updates.location || null
   if (updates.contactEmail !== undefined) payload.contact_email = updates.contactEmail || null
@@ -152,7 +156,7 @@ export async function updateCompanyAdmin(
     .from('companies')
     .update(payload)
     .eq('id', id)
-    .select('*, users(full_name, email)')
+    .select('*, categories(name), users(full_name, email)')
     .single()
 
   if (error) throw new Error(error.message)
@@ -175,7 +179,7 @@ export async function fetchAllReferrals(): Promise<SupabaseReferral[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('referrals')
-    .select('*, users(full_name)')
+    .select('*, users!referrals_referrer_id_fkey(full_name)')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)

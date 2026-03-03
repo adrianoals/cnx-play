@@ -9,10 +9,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import ReferralSystem from "@/components/features/ReferralSystem"
 import CompanyCard from "@/components/features/CompanyCard"
 import CompanyEditModal from "@/components/features/CompanyEditModal"
-import type { LocalCompany } from "@/types"
-import {
-  getCompaniesByUserId, createCompany, updateCompany, deleteCompany, getPrimaryCompany,
-} from "@/services/company.service"
+import type { CompanyFormData } from "@/components/features/CompanyEditModal"
+import type { AdminCompany, Category } from "@/types"
+import { fetchMyCompanies, createMyCompany, updateMyCompany, deleteMyCompany } from "@/services/company.service"
+import { fetchCategories } from "@/services/category.service"
 import {
   Camera, User, Mail, Save, Loader2, UploadCloud, Trash2,
   Phone, MapPin, Calendar, Fingerprint,
@@ -73,8 +73,9 @@ export default function AccountPage() {
   const [avatarLoading, setAvatarLoading] = useState(false)
 
   // Companies
-  const [companies, setCompanies] = useState<LocalCompany[]>([])
-  const [editingCompany, setEditingCompany] = useState<LocalCompany | null>(null)
+  const [companies, setCompanies] = useState<AdminCompany[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [editingCompany, setEditingCompany] = useState<CompanyFormData | null>(null)
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>("")
 
@@ -93,11 +94,18 @@ export default function AccountPage() {
           address: user.address || "",
           birthDate: user.birthDate || "",
         })
-        setCompanies(getCompaniesByUserId(user.id))
       } catch (e) {
         console.error("Error parsing user data", e)
       }
     }
+
+    fetchMyCompanies()
+      .then(setCompanies)
+      .catch(err => console.error("Error loading companies", err))
+
+    fetchCategories()
+      .then(setCategories)
+      .catch(err => console.error("Error loading categories", err))
   }, [])
 
   const syncLocalStorage = (fields: Record<string, unknown>) => {
@@ -201,7 +209,7 @@ export default function AccountPage() {
       if (error) throw error
 
       // Sync localStorage cache
-      const primary = getPrimaryCompany(currentUserId)
+      const primary = companies.find(c => c.isPrimary) || companies[0]
       syncLocalStorage({
         fullName: personalData.name,
         name: personalData.name,
@@ -225,27 +233,58 @@ export default function AccountPage() {
     }
   }
 
-  const handleSaveCompany = (data: Omit<LocalCompany, "id" | "createdAt" | "updatedAt"> & { id?: string; createdAt?: string; updatedAt?: string }) => {
-    if (data.id) {
-      updateCompany(data.id, data)
-    } else {
-      createCompany(data)
+  const handleSaveCompany = async (data: CompanyFormData) => {
+    try {
+      if (data.id) {
+        const updated = await updateMyCompany(data.id, {
+          name: data.name,
+          cnpj: data.cnpj,
+          categoryId: data.categoryId,
+          description: data.description,
+          location: data.location,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          linkedin: data.linkedin,
+          isPrimary: data.isPrimary,
+        })
+        setCompanies(prev => prev.map(c => c.id === data.id ? updated : c))
+      } else {
+        const created = await createMyCompany({
+          name: data.name,
+          cnpj: data.cnpj,
+          categoryId: data.categoryId,
+          description: data.description,
+          location: data.location,
+          contactEmail: data.contactEmail,
+          contactPhone: data.contactPhone,
+          linkedin: data.linkedin,
+          isPrimary: data.isPrimary,
+        })
+        setCompanies(prev => [created, ...prev])
+      }
+      toast({
+        title: data.id ? "Empresa atualizada!" : "Empresa adicionada!",
+        description: data.id ? "Dados salvos com sucesso." : "Sua empresa foi cadastrada.",
+        className: "bg-green-600 border-green-500 text-white",
+      })
+    } catch (err) {
+      console.error("Save company error:", err)
+      toast({ variant: "destructive", title: "Erro ao salvar empresa", description: err instanceof Error ? err.message : "Tente novamente." })
     }
-    setCompanies(getCompaniesByUserId(currentUserId))
-    toast({
-      title: data.id ? "Empresa atualizada!" : "Empresa adicionada!",
-      description: data.id ? "Dados salvos com sucesso." : "Sua empresa foi cadastrada.",
-      className: "bg-green-600 border-green-500 text-white",
-    })
   }
 
-  const handleDeleteCompany = (companyId: string) => {
-    deleteCompany(companyId)
-    setCompanies(getCompaniesByUserId(currentUserId))
-    toast({
-      title: "Empresa removida",
-      description: "A empresa foi excluída da sua conta.",
-    })
+  const handleDeleteCompany = async (companyId: string) => {
+    try {
+      await deleteMyCompany(companyId)
+      setCompanies(prev => prev.filter(c => c.id !== companyId))
+      toast({
+        title: "Empresa removida",
+        description: "A empresa foi excluída da sua conta.",
+      })
+    } catch (err) {
+      console.error("Delete company error:", err)
+      toast({ variant: "destructive", title: "Erro ao excluir empresa", description: err instanceof Error ? err.message : "Tente novamente." })
+    }
   }
 
   // Change password
@@ -485,7 +524,22 @@ export default function AccountPage() {
                       <CompanyCard
                         key={company.id}
                         company={company}
-                        onEdit={c => { setEditingCompany(c); setIsCompanyModalOpen(true) }}
+                        onEdit={c => {
+                          setEditingCompany({
+                            id: c.id,
+                            name: c.name,
+                            cnpj: c.cnpj,
+                            categoryId: c.categoryId,
+                            description: c.description,
+                            location: c.location,
+                            contactEmail: c.contactEmail,
+                            contactPhone: c.contactPhone,
+                            linkedin: c.linkedin,
+                            isPrimary: c.isPrimary,
+                            gallery: [],
+                          })
+                          setIsCompanyModalOpen(true)
+                        }}
                         onDelete={handleDeleteCompany}
                       />
                     ))}
@@ -524,6 +578,7 @@ export default function AccountPage() {
         onClose={() => { setIsCompanyModalOpen(false); setEditingCompany(null) }}
         onSave={handleSaveCompany}
         userId={currentUserId}
+        categories={categories}
       />
 
       {/* Referral Modal */}

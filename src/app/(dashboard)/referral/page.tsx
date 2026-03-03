@@ -11,7 +11,7 @@ import { createReferral, fetchMyReferrals } from "@/services/referral.service"
 import type { SupabaseReferral } from "@/types"
 import {
   Gift, Send, Loader2, UserPlus, Trophy,
-  Video, Handshake, Clock, CheckCircle2, XCircle,
+  Video, Handshake, Clock, CheckCircle2, XCircle, Info,
 } from "lucide-react"
 
 function getReferralStatusBadge(status: string) {
@@ -25,11 +25,24 @@ function getReferralStatusBadge(status: string) {
   }
 }
 
+/** Aplica máscara de telefone BR: (00) 00000-0000 ou (00) 0000-0000 */
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length <= 2) return digits.length ? `(${digits}` : ""
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
 export default function ReferralPage() {
   const { toast } = useToast()
   const { user } = useCurrentUser()
 
   const [form, setForm] = useState({ name: "", email: "", phone: "" })
+  const [emailError, setEmailError] = useState("")
+  const [phoneError, setPhoneError] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [referrals, setReferrals] = useState<SupabaseReferral[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,10 +54,38 @@ export default function ReferralPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  const handlePhoneChange = (value: string) => {
+    const masked = maskPhone(value)
+    setForm(prev => ({ ...prev, phone: masked }))
+    const digits = masked.replace(/\D/g, "")
+    setPhoneError(digits.length > 0 && digits.length < 10 ? "Telefone incompleto" : "")
+  }
+
+  const handleEmailChange = (value: string) => {
+    setForm(prev => ({ ...prev, email: value }))
+    if (value && !EMAIL_REGEX.test(value)) {
+      setEmailError("Email inválido")
+    } else {
+      setEmailError("")
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!form.name || !form.email || !form.phone) {
       toast({ title: "Preencha todos os campos", variant: "destructive" })
+      return
+    }
+
+    if (!EMAIL_REGEX.test(form.email)) {
+      setEmailError("Email inválido")
+      return
+    }
+
+    const phoneDigits = form.phone.replace(/\D/g, "")
+    if (phoneDigits.length < 10) {
+      setPhoneError("Telefone incompleto")
       return
     }
 
@@ -57,6 +98,8 @@ export default function ReferralPage() {
       })
       setReferrals(prev => [newRef, ...prev])
       setForm({ name: "", email: "", phone: "" })
+      setEmailError("")
+      setPhoneError("")
       toast({
         title: "Indicação enviada!",
         description: "Sua indicação foi registrada com sucesso.",
@@ -94,44 +137,6 @@ export default function ReferralPage() {
         </p>
       </div>
 
-      {/* How it works */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-gradient-to-br from-purple-900/10 to-pink-900/10 border border-purple-500/20 rounded-2xl p-6"
-      >
-        <h2 className="text-lg font-bold mb-4">Como funciona a pontuação</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
-            <div className="p-2 bg-blue-500/10 rounded-lg shrink-0">
-              <Video className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">+1 ponto</p>
-              <p className="text-xs text-muted-foreground">Por reunião realizada</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
-            <div className="p-2 bg-purple-500/10 rounded-lg shrink-0">
-              <UserPlus className="h-5 w-5 text-purple-500" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">+1 ponto</p>
-              <p className="text-xs text-muted-foreground">Por indicação aprovada</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
-            <div className="p-2 bg-green-500/10 rounded-lg shrink-0">
-              <Handshake className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">+5 pontos</p>
-              <p className="text-xs text-muted-foreground">Por negócio fechado</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
       {/* Form + List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Referral Form */}
@@ -166,8 +171,10 @@ export default function ReferralPage() {
                 placeholder="joao@empresa.com"
                 required
                 value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
+                onChange={e => handleEmailChange(e.target.value)}
+                className={emailError ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
+              {emailError && <p className="text-xs text-red-500 mt-1 ml-1">{emailError}</p>}
             </div>
             <div>
               <label className="text-xs text-muted-foreground ml-1 mb-1 block">Telefone *</label>
@@ -175,12 +182,15 @@ export default function ReferralPage() {
                 placeholder="(00) 00000-0000"
                 required
                 value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
+                onChange={e => handlePhoneChange(e.target.value)}
+                className={phoneError ? "border-red-500 focus-visible:ring-red-500" : ""}
+                inputMode="numeric"
               />
+              {phoneError && <p className="text-xs text-red-500 mt-1 ml-1">{phoneError}</p>}
             </div>
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !!emailError || !!phoneError}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium rounded-xl mt-2"
             >
               {submitting ? (
@@ -245,6 +255,48 @@ export default function ReferralPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Scoring Rules — below the form/list */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="bg-gradient-to-br from-purple-900/10 to-pink-900/10 border border-purple-500/20 rounded-2xl p-6"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Info className="h-5 w-5 text-purple-400" />
+          <h2 className="text-lg font-bold">Regras de Pontuação</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
+            <div className="p-2 bg-blue-500/10 rounded-lg shrink-0">
+              <Video className="h-5 w-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">+1 ponto</p>
+              <p className="text-xs text-muted-foreground">Por reunião realizada</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
+            <div className="p-2 bg-purple-500/10 rounded-lg shrink-0">
+              <UserPlus className="h-5 w-5 text-purple-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">+1 ponto</p>
+              <p className="text-xs text-muted-foreground">Por indicação aprovada</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
+            <div className="p-2 bg-green-500/10 rounded-lg shrink-0">
+              <Handshake className="h-5 w-5 text-green-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">+5 pontos</p>
+              <p className="text-xs text-muted-foreground">Por negócio fechado</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
