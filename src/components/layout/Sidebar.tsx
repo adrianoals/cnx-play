@@ -38,6 +38,8 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
     }
   }, [authUser, isOpen])
 
+  const isAdminPanel = pathname.startsWith("/admin")
+
   const baseItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: Search, label: "Pesquisar Empresas", path: "/search" },
@@ -48,7 +50,11 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
   const footerItems = [{ icon: MessageCircle, label: "Suporte WhatsApp", path: "https://wa.me/5511950222063", external: true }]
 
   let currentMenu: typeof baseItems & { external?: boolean }[]
-  if (status === "pending") {
+  if (isAdminPanel) {
+    currentMenu = [
+      { icon: ShieldCheck, label: "Gestão de Usuários", path: "/admin/users" },
+    ] as typeof baseItems
+  } else if (status === "pending") {
     currentMenu = [
       { icon: Home, label: "Status da Aprovação", path: "/dashboard" },
       { icon: User, label: "Minha Conta", path: "/account" },
@@ -140,10 +146,14 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-60" align="start" side="top" sideOffset={10}>
-              <DropdownMenuItem onClick={() => router.push("/account")} className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" /><span>Minha Conta</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              {!isAdminPanel && (
+                <>
+                  <DropdownMenuItem onClick={() => router.push("/account")} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" /><span>Minha Conta</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" /><span>Sair da Plataforma</span>
               </DropdownMenuItem>

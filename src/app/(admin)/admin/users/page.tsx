@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,15 +10,15 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
+import { useAuthContext } from "@/providers/auth-provider"
 import { SUPER_ADMINS } from "@/lib/constants"
-import { getAllUsers, updateUser, deleteUser, changeStatus, createUser } from "@/services/users.service"
-import { createCompany as createCompanyService, getPrimaryCompany, updateCompany as updateCompanyService } from "@/services/company.service"
+import { fetchAllUsers, updateUserProfile, deleteUserProfile, changeUserStatus, createUserViaApi } from "@/services/admin.service"
 import type { User } from "@/types"
 import {
   Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
   MoreHorizontal, UserPlus, Clock, CheckCircle, XCircle,
-  Building2, Phone, Fingerprint, FileText, Plus, MapPin,
-  Briefcase, Target, ShieldAlert,
+  Phone, Fingerprint, Plus, MapPin,
+  ShieldAlert, Lock, Loader2,
 } from "lucide-react"
 
 function getStatusBadge(status: string) {
@@ -36,54 +35,34 @@ function getStatusBadge(status: string) {
 }
 
 export default function AdminUsersPage() {
-  const router = useRouter()
   const { toast } = useToast()
+  const { user: currentUser } = useAuthContext()
 
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [loadingUsers, setLoadingUsers] = useState(true)
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState<(User & { address?: string; metadata?: Record<string, string> }) | null>(null)
+  const [editingUser, setEditingUser] = useState<(User & { address?: string }) | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const [isNewUsersModalOpen, setIsNewUsersModalOpen] = useState(false)
 
   const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
   const [newUserData, setNewUserData] = useState({
-    name: "", email: "", companyName: "", cnpj: "",
+    name: "", email: "", password: "",
     phone: "", cpf: "", role: "user" as "user" | "admin", status: "active" as "active" | "pending" | "inactive",
   })
 
   useEffect(() => {
-    // SUPER_ADMIN permission auto-correction
-    const currentUserStr = localStorage.getItem("current_user")
-    if (currentUserStr) {
-      const currentUser = JSON.parse(currentUserStr)
-      if (SUPER_ADMINS.includes(currentUser.email?.toLowerCase())) {
-        if (currentUser.role !== "admin" || currentUser.status !== "active") {
-          currentUser.role = "admin"
-          currentUser.status = "active"
-          localStorage.setItem("current_user", JSON.stringify(currentUser))
-          // Also sync in users array
-          const allUsersStr = localStorage.getItem("users")
-          if (allUsersStr) {
-            const allUsersArr = JSON.parse(allUsersStr)
-            const idx = allUsersArr.findIndex((u: User) => u.email?.toLowerCase() === currentUser.email?.toLowerCase())
-            if (idx !== -1) {
-              allUsersArr[idx].role = "admin"
-              allUsersArr[idx].status = "active"
-              localStorage.setItem("users", JSON.stringify(allUsersArr))
-            }
-          }
-        }
-      } else if (currentUser.role !== "admin") {
-        toast({ title: "Acesso negado", description: "Você não tem permissão para acessar esta área.", variant: "destructive" })
-        router.push("/dashboard")
-        return
-      }
-    }
-
-    getAllUsers().then(u => setUsers(u))
+    fetchAllUsers()
+      .then(u => setUsers(u))
+      .catch(err => {
+        toast({ title: "Erro ao carregar usuários", description: err.message, variant: "destructive" })
+      })
+      .finally(() => setLoadingUsers(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -91,9 +70,8 @@ export default function AdminUsersPage() {
     const term = searchTerm.toLowerCase()
     const name = (user.name || user.fullName || "").toLowerCase()
     const email = (user.email || "").toLowerCase()
-    const company = (user.companyName || "").toLowerCase()
 
-    const matchesSearch = name.includes(term) || email.includes(term) || company.includes(term)
+    const matchesSearch = name.includes(term) || email.includes(term)
     const matchesTab = activeTab === "all" ? true : activeTab === "pending" ? user.status === "pending" : user.status === "active"
     return matchesSearch && matchesTab
   })
@@ -105,10 +83,9 @@ export default function AdminUsersPage() {
   }).slice(0, 5)
 
   const handleDelete = async (id: string) => {
-    const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}")
     const userToDelete = users.find(u => u.id === id)
 
-    if (userToDelete && userToDelete.email === currentUser.email) {
+    if (userToDelete && userToDelete.email === currentUser?.email) {
       toast({ title: "Ação bloqueada", description: "Você não pode excluir sua própria conta.", variant: "destructive" })
       return
     }
@@ -119,7 +96,7 @@ export default function AdminUsersPage() {
 
     if (window.confirm("Tem certeza que deseja excluir este usuário permanentemente?")) {
       try {
-        await deleteUser(id)
+        await deleteUserProfile(id)
         setUsers(prev => prev.filter(u => u.id !== id))
         toast({ title: "Usuário excluído", description: "O usuário foi removido do sistema.", variant: "destructive" })
       } catch (error) {
@@ -129,26 +106,26 @@ export default function AdminUsersPage() {
   }
 
   const handleStatusChange = async (id: string, newStatus: User["status"]) => {
-    await changeStatus(id, newStatus)
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u))
-    toast({
-      title: newStatus === "active" ? "Usuário Aprovado" : "Usuário Atualizado",
-      description: `O status foi alterado para ${newStatus === "active" ? "Ativo" : newStatus}.`,
-      className: newStatus === "active" ? "bg-green-600 border-green-500 text-white" : "",
-    })
+    try {
+      await changeUserStatus(id, newStatus)
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u))
+      toast({
+        title: newStatus === "active" ? "Usuário Aprovado" : "Usuário Atualizado",
+        description: `O status foi alterado para ${newStatus === "active" ? "Ativo" : newStatus === "inactive" ? "Inativo" : "Pendente"}.`,
+        className: newStatus === "active" ? "bg-green-600 border-green-500 text-white" : "",
+      })
+    } catch (error) {
+      toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao alterar status.", variant: "destructive" })
+    }
   }
 
   const handleEditClick = (user: User) => {
     setEditingUser({
       ...user,
       name: user.name || user.fullName,
-      companyName: user.companyName || "",
       phone: user.phone || "",
       cpf: user.cpf || "",
-      cnpj: user.cnpj || "",
-      segment: user.segment || "",
       address: user.address || "",
-      metadata: user.metadata || {},
     })
     setIsEditModalOpen(true)
   }
@@ -163,65 +140,74 @@ export default function AdminUsersPage() {
       }
     }
 
-    await updateUser(editingUser.id, { ...editingUser, fullName: editingUser.name })
-    // Sync company data
-    const primaryCompany = getPrimaryCompany(editingUser.id)
-    if (primaryCompany && editingUser.companyName) {
-      updateCompanyService(primaryCompany.id, {
-        name: editingUser.companyName,
-        cnpj: editingUser.cnpj || undefined,
-        category: editingUser.segment || undefined,
-        location: editingUser.address || undefined,
+    setSavingEdit(true)
+    try {
+      await updateUserProfile(editingUser.id, {
+        full_name: editingUser.name,
+        phone: editingUser.phone || undefined,
+        cpf: editingUser.cpf || undefined,
+        address: editingUser.address || undefined,
+        role: editingUser.role,
+        status: editingUser.status,
       })
-    } else if (!primaryCompany && editingUser.companyName) {
-      createCompanyService({
-        userId: editingUser.id,
-        name: editingUser.companyName,
-        cnpj: editingUser.cnpj || undefined,
-        category: editingUser.segment || undefined,
-        location: editingUser.address || undefined,
-        isPrimary: true,
-        gallery: [],
-      })
+      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...editingUser, fullName: editingUser.name } : u))
+      setIsEditModalOpen(false)
+      toast({ title: "Usuário atualizado", description: "As informações foram salvas com sucesso.", className: "bg-green-600 border-green-500 text-white" })
+    } catch (error) {
+      toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao salvar.", variant: "destructive" })
+    } finally {
+      setSavingEdit(false)
     }
-    setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...editingUser, fullName: editingUser.name } : u))
-    setIsEditModalOpen(false)
-    toast({ title: "Usuário atualizado", description: "As informações foram salvas com sucesso.", className: "bg-green-600 border-green-500 text-white" })
   }
 
   const handleCreateUser = async () => {
-    if (!newUserData.name || !newUserData.email) {
-      toast({ title: "Erro", description: "Nome e Email são obrigatórios.", variant: "destructive" })
+    if (!newUserData.name || !newUserData.email || !newUserData.password) {
+      toast({ title: "Erro", description: "Nome, Email e Senha são obrigatórios.", variant: "destructive" })
+      return
+    }
+    if (newUserData.password.length < 6) {
+      toast({ title: "Erro", description: "A senha deve ter pelo menos 6 caracteres.", variant: "destructive" })
       return
     }
 
+    setCreatingUser(true)
     try {
-      const newUser = await createUser(newUserData)
-      // Create company entry if companyName provided
-      if (newUserData.companyName) {
-        createCompanyService({
-          userId: newUser.id,
-          name: newUserData.companyName,
-          cnpj: newUserData.cnpj || undefined,
-          isPrimary: true,
-          gallery: [],
-        })
-      }
-      setUsers(prev => [...prev, newUser])
+      const newUser = await createUserViaApi({
+        email: newUserData.email,
+        password: newUserData.password,
+        fullName: newUserData.name,
+        phone: newUserData.phone || undefined,
+        cpf: newUserData.cpf || undefined,
+        role: newUserData.role,
+        status: newUserData.status,
+      })
+      setUsers(prev => [newUser, ...prev])
       setIsCreateUserModalOpen(false)
-      setNewUserData({ name: "", email: "", companyName: "", cnpj: "", phone: "", cpf: "", role: "user", status: "active" })
+      setNewUserData({ name: "", email: "", password: "", phone: "", cpf: "", role: "user", status: "active" })
       toast({ title: "Usuário Criado", description: "O usuário foi adicionado com sucesso.", className: "bg-green-600 text-white border-none" })
     } catch (error) {
       toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao criar.", variant: "destructive" })
+    } finally {
+      setCreatingUser(false)
     }
   }
 
   const handleExportCSV = () => {
-    const headers = ["ID", "Nome", "Email", "Empresa", "Segmento", "Regiao", "Telefone", "Status", "Função", "Data Cadastro"]
+    const headers = ["ID", "Nome", "Email", "Telefone", "CPF", "Regiao", "Status", "Função", "Data Cadastro"]
     const csvContent = [
       headers.join(","),
       ...filteredUsers.map(u =>
-        [u.id, `"${u.name || u.fullName}"`, u.email, `"${u.companyName || ""}"`, `"${u.segment || ""}"`, `"${u.address || ""}"`, u.phone || "", u.status, u.role, u.createdAt].join(",")
+        [
+          u.id,
+          `"${u.name || u.fullName}"`,
+          u.email,
+          u.phone || "",
+          u.cpf || "",
+          `"${u.address || ""}"`,
+          u.status,
+          u.role,
+          new Date(u.createdAt).toLocaleDateString("pt-BR"),
+        ].join(",")
       ),
     ].join("\n")
 
@@ -229,10 +215,14 @@ export default function AdminUsersPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.setAttribute("href", url)
-    link.setAttribute("download", `usuarios_admin_full_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute("download", `usuarios_admin_${new Date().toISOString().slice(0, 10)}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  const formatDate = (dateStr: string) => {
+    try { return new Date(dateStr).toLocaleDateString("pt-BR") } catch { return "N/A" }
   }
 
   return (
@@ -282,7 +272,7 @@ export default function AdminUsersPage() {
         <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
           <Search className="ml-2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, email ou empresa..."
+            placeholder="Buscar por nome ou email..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
@@ -292,89 +282,111 @@ export default function AdminUsersPage() {
 
       {/* Table */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="text-muted-foreground">Usuário</TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">Empresa / Info</TableHead>
-              <TableHead className="text-muted-foreground text-center">Status</TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
-              <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map(user => (
-                <TableRow key={user.id || user.email} className="border-border hover:bg-secondary/30 transition-colors">
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-semibold flex items-center gap-2">
-                        {user.name || user.fullName}
-                        {user.role === "admin" && <span className="text-[10px] uppercase bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">Admin</span>}
-                        {user.metadata?.campaignSource && <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">Campanha</span>}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
-                      <span className="text-xs text-blue-400 lg:hidden mt-1">{user.companyName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{user.companyName || "—"}</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground bg-secondary px-1.5 rounded">{user.segment || "Sem segmento"}</span>
-                        {user.address && <span className="text-xs text-muted-foreground flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" /> {user.address}</span>}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">{getStatusBadge(user.status)}</TableCell>
-                  <TableCell className="text-muted-foreground hidden md:table-cell">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-3 w-3" /> {user.createdAt || "N/A"}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
-                          <span className="sr-only">Abrir menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        {user.status === "pending" && (
-                          <>
-                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20">
-                              <CheckCircle className="mr-2 h-4 w-4" /> Aprovar Cadastro
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20">
-                              <XCircle className="mr-2 h-4 w-4" /> Rejeitar
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                          </>
-                        )}
-                        <DropdownMenuItem onClick={() => handleEditClick(user)}>
-                          <Edit className="mr-2 h-4 w-4" /> Ver / Editar Dados
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-400">
-                          <Trash2 className="mr-2 h-4 w-4" /> Excluir Usuário
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+        {loadingUsers ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-3 text-muted-foreground">Carregando usuários...</span>
+          </div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">Usuário</TableHead>
+                  <TableHead className="text-muted-foreground hidden lg:table-cell">Contato</TableHead>
+                  <TableHead className="text-muted-foreground text-center">Status</TableHead>
+                  <TableHead className="text-muted-foreground hidden md:table-cell">Cadastro</TableHead>
+                  <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Nenhum usuário encontrado.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
-          <span>Total: {filteredUsers.length}</span>
-          <span>{users.filter(u => u.status === "pending").length} aguardando aprovação</span>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map(user => (
+                    <TableRow key={user.id} className="border-border hover:bg-secondary/30 transition-colors">
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold flex items-center gap-2">
+                            {user.name || user.fullName}
+                            {user.role === "admin" && <span className="text-[10px] uppercase bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">Admin</span>}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="flex flex-col">
+                          <span className="text-sm">{user.phone || "—"}</span>
+                          {user.address && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-0.5 mt-1"><MapPin className="w-2.5 h-2.5" /> {user.address}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">{getStatusBadge(user.status)}</TableCell>
+                      <TableCell className="text-muted-foreground hidden md:table-cell">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-3 w-3" /> {formatDate(user.createdAt)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                              <span className="sr-only">Abrir menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            {user.status === "pending" && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20">
+                                  <CheckCircle className="mr-2 h-4 w-4" /> Aprovar Cadastro
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20">
+                                  <XCircle className="mr-2 h-4 w-4" /> Rejeitar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            {user.status === "active" && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-amber-400">
+                                  <XCircle className="mr-2 h-4 w-4" /> Desativar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            {user.status === "inactive" && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "active")} className="cursor-pointer text-emerald-400">
+                                  <CheckCircle className="mr-2 h-4 w-4" /> Reativar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                              <Edit className="mr-2 h-4 w-4" /> Ver / Editar Dados
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-400">
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Usuário
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Nenhum usuário encontrado.</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+              <span>Total: {filteredUsers.length}</span>
+              <span>{users.filter(u => u.status === "pending").length} aguardando aprovação</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create User Modal */}
@@ -395,15 +407,9 @@ export default function AdminUsersPage() {
                 <Input value={newUserData.email} onChange={e => setNewUserData({ ...newUserData, email: e.target.value })} placeholder="Ex: joao@empresa.com" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1"><Building2 className="w-3 h-3" /> Empresa</Label>
-                <Input value={newUserData.companyName} onChange={e => setNewUserData({ ...newUserData, companyName: e.target.value })} placeholder="Nome da Empresa" />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1"><FileText className="w-3 h-3" /> CNPJ</Label>
-                <Input value={newUserData.cnpj} onChange={e => setNewUserData({ ...newUserData, cnpj: e.target.value })} placeholder="00.000.000/0001-00" />
-              </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Lock className="w-3 h-3" /> Senha *</Label>
+              <Input type="password" value={newUserData.password} onChange={e => setNewUserData({ ...newUserData, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -435,7 +441,10 @@ export default function AdminUsersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateUserModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateUser} className="bg-blue-600 hover:bg-blue-700 text-white">Criar Usuário</Button>
+            <Button onClick={handleCreateUser} disabled={creatingUser} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {creatingUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Criar Usuário
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -456,27 +465,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input value={editingUser.email} onChange={e => setEditingUser({ ...editingUser, email: e.target.value })} />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><Building2 className="w-3 h-3" /> Empresa</Label>
-                  <Input value={editingUser.companyName} onChange={e => setEditingUser({ ...editingUser, companyName: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><Briefcase className="w-3 h-3" /> Segmento</Label>
-                  <Input value={editingUser.segment || ""} onChange={e => setEditingUser({ ...editingUser, segment: e.target.value })} placeholder="Ex: Varejo" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><FileText className="w-3 h-3" /> CNPJ</Label>
-                  <Input value={editingUser.cnpj || ""} onChange={e => setEditingUser({ ...editingUser, cnpj: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Região / Endereço</Label>
-                  <Input value={editingUser.address || ""} onChange={e => setEditingUser({ ...editingUser, address: e.target.value })} placeholder="Ex: Nordeste / Rua..." />
+                  <Input value={editingUser.email} readOnly className="opacity-70 cursor-not-allowed" />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -489,25 +478,10 @@ export default function AdminUsersPage() {
                   <Input value={editingUser.cpf || ""} onChange={e => setEditingUser({ ...editingUser, cpf: e.target.value })} />
                 </div>
               </div>
-
-              {editingUser.metadata?.campaignSource && (
-                <div className="bg-purple-900/10 border border-purple-500/20 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-4 h-4 text-purple-400" />
-                    <h4 className="text-sm font-semibold">Dados da Campanha ({editingUser.metadata.campaignName || "N/A"})</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-muted-foreground block text-xs">Conexão Buscada:</span>
-                      <span>{editingUser.metadata.potentialConnection || "N/A"}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs">Faixa Etária:</span>
-                      <span>{editingUser.metadata.ageRange || "N/A"}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Endereço</Label>
+                <Input value={editingUser.address || ""} onChange={e => setEditingUser({ ...editingUser, address: e.target.value })} placeholder="Ex: Rua, Número, Bairro, Cidade - UF" />
+              </div>
 
               {SUPER_ADMINS.includes(editingUser.email.toLowerCase()) && (
                 <div className="bg-amber-900/20 border border-amber-500/30 p-3 rounded-lg flex items-center gap-2 text-xs text-amber-400">
@@ -543,11 +517,19 @@ export default function AdminUsersPage() {
                   </select>
                 </div>
               </div>
+
+              <div className="text-xs text-muted-foreground pt-2 border-t border-border">
+                <span>Cadastrado em: {formatDate(editingUser.createdAt)}</span>
+                {editingUser.referralCode && <span className="ml-4">Código de indicação: {editingUser.referralCode}</span>}
+              </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveEdit} className="bg-blue-600 hover:bg-blue-700 text-white">Salvar Alterações</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit} className="bg-blue-600 hover:bg-blue-700 text-white">
+              {savingEdit ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Salvar Alterações
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -571,7 +553,7 @@ export default function AdminUsersPage() {
               {recentUsers.length > 0 ? (
                 <div className="divide-y divide-border">
                   {recentUsers.map((user, index) => (
-                    <div key={user.id || index} className="p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors">
+                    <div key={user.id} className="p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted border border-border">
                           <span className="font-semibold text-sm">{user.name ? user.name.charAt(0).toUpperCase() : "?"}</span>
@@ -580,14 +562,13 @@ export default function AdminUsersPage() {
                           <p className="text-sm font-medium leading-none flex items-center gap-2">
                             {user.name || user.fullName}
                             {index === 0 && <Badge variant="secondary" className="bg-green-500/10 text-green-400 text-[10px] border-green-500/20">Novo</Badge>}
-                            {user.metadata?.campaignSource && <Badge variant="outline" className="border-purple-500/30 text-purple-400 text-[10px]">Promo</Badge>}
                           </p>
-                          <p className="text-xs text-muted-foreground">{user.companyName || user.email}</p>
+                          <p className="text-xs text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center text-xs text-muted-foreground gap-1">
-                          <Clock className="h-3 w-3" /> {user.createdAt || "Data desc."}
+                          <Clock className="h-3 w-3" /> {formatDate(user.createdAt)}
                         </div>
                         {getStatusBadge(user.status)}
                       </div>
