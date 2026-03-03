@@ -1,7 +1,8 @@
-import type { User, AdminCompany } from '@/types'
+import type { User, AdminCompany, SupabaseReferral } from '@/types'
 import { createClient } from '@/lib/supabase'
 import { mapProfile } from '@/lib/map-profile'
 import { mapCompany } from '@/lib/map-company'
+import { mapReferral } from '@/lib/map-referral'
 
 export async function fetchAllUsers(): Promise<User[]> {
   const supabase = createClient()
@@ -163,6 +164,32 @@ export async function deleteCompanyAdmin(id: string): Promise<void> {
   const { error } = await supabase
     .from('companies')
     .delete()
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
+// ── Referrals ──────────────────────────────────────────────
+
+export async function fetchAllReferrals(): Promise<SupabaseReferral[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('referrals')
+    .select('*, users(full_name)')
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data || []).map(mapReferral)
+}
+
+export async function updateReferralStatus(
+  id: string,
+  status: 'pending' | 'completed' | 'rejected'
+): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('referrals')
+    .update({ status })
     .eq('id', id)
 
   if (error) throw new Error(error.message)

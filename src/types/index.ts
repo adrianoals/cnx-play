@@ -160,3 +160,63 @@ export interface LeaderboardEntry {
   value: number
   meetings: number
 }
+
+// ── Supabase-backed types ──────────────────────────────────
+
+export interface UserStats {
+  userId: string
+  fullName: string
+  companyName: string | null
+  meetingsCompleted: number
+  referralsCompleted: number
+  referralPoints: number
+  totalDealValue: number
+  dealCount: number
+  score: number
+  level: string
+}
+
+export interface PlatformTotals {
+  activeUsers: number
+  totalMeetings: number
+  totalDealValue: number
+  totalDeals: number
+  totalReferrals: number
+  pendingApprovals: number
+}
+
+export interface SupabaseDeal {
+  id: string
+  authorId: string
+  companyName: string
+  value: number
+  dealDate: string
+  description: string | null
+  createdAt: string
+  authorName?: string
+}
+
+export interface SupabaseReferral {
+  id: string
+  referrerId: string
+  referredName: string
+  referredEmail: string | null
+  referredPhone: string | null
+  status: 'pending' | 'completed' | 'rejected'
+  pointsAwarded: number
+  createdAt: string
+  referrerName?: string
+}
+
+export interface LeaderboardRow {
+  userId: string
+  fullName: string
+  companyName: string | null
+  avatarUrl: string | null
+  score: number
+  meetingsCompleted: number
+  totalDealValue: number
+  dealCount: number
+  level: string
+  rankPosition: number
+}

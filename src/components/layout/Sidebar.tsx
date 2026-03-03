@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, Calendar, MessageCircle, LogOut, ShieldCheck, Sun, Moon } from "lucide-react"
+import { X, Home, User, CreditCard, Search, Calendar, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -34,6 +34,7 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
     { icon: Search, label: "Pesquisar Empresas", path: "/search" },
     { icon: User, label: "Minha Conta", path: "/account" },
     { icon: Calendar, label: "Reuniões", path: "/meetings" },
+    { icon: Gift, label: "Indique e Ganhe", path: "/referral" },
   ]
   const adminItems = [{ icon: ShieldCheck, label: "Administração", path: "/admin/users" }]
   const footerItems = [{ icon: MessageCircle, label: "Suporte WhatsApp", path: "https://wa.me/5511950222063", external: true }]

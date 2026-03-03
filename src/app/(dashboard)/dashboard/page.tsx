@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -9,20 +9,25 @@ import { useToast } from "@/hooks/use-toast"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { getUserLevel } from "@/lib/constants"
 import { companies } from "@/data/mock-companies"
-import { initialDeals } from "@/data/mock-deals"
-import type { Deal, DailyMatch } from "@/types"
+import type { DailyMatch, UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal } from "@/types"
+import {
+  fetchMyStats,
+  fetchPlatformTotals,
+  fetchLeaderboard,
+  registerDeal,
+  fetchRecentDeals,
+} from "@/services/dashboard.service"
 import {
   Search, Calendar, Trophy, ArrowRight, Clock, CheckCircle2,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
   TrendingUp, Gem, Info, Gift, X, Lock, Video, AlertTriangle,
-  UserCircle,
+  UserCircle, Crown,
 } from "lucide-react"
 
 import Certificate from "@/components/features/Certificate"
 import LevelInfoModal from "@/components/features/LevelInfoModal"
 import FirstLoginWelcome from "@/components/features/FirstLoginWelcome"
 import DashboardTutorial from "@/components/features/DashboardTutorial"
-import ReferralSystem from "@/components/features/ReferralSystem"
 import { getCompaniesByUserId } from "@/services/company.service"
 
 export default function DashboardPage() {
@@ -34,44 +39,60 @@ export default function DashboardPage() {
   const [showCertificate, setShowCertificate] = useState(false)
   const [certificateLevel, setCertificateLevel] = useState("")
   const [showLevelInfo, setShowLevelInfo] = useState(false)
-  const [showReferralModal, setShowReferralModal] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
 
   const [paymentStatus] = useState("active")
-  const [stats, setStats] = useState({ meetingsRealized: 0, score: 0 })
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [platformTotals, setPlatformTotals] = useState<PlatformTotals | null>(null)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([])
+  const [deals, setDeals] = useState<SupabaseDeal[]>([])
   const [dailyMatch, setDailyMatch] = useState<DailyMatch | null>(null)
   const [isConfirmingMatch, setIsConfirmingMatch] = useState(false)
-  const [deals, setDeals] = useState<Deal[]>([])
   const [newDeal, setNewDeal] = useState({ companyName: "", value: "" })
+  const [loadingData, setLoadingData] = useState(true)
 
-  const currentLevel = getUserLevel(stats.meetingsRealized)
+  const currentScore = stats?.score ?? 0
+  const currentLevel = getUserLevel(currentScore)
+
+  const loadDashboardData = useCallback(async () => {
+    try {
+      const [myStats, totals, board, recentDeals] = await Promise.all([
+        fetchMyStats(),
+        fetchPlatformTotals(),
+        fetchLeaderboard(10),
+        fetchRecentDeals(10),
+      ])
+      setStats(myStats)
+      setPlatformTotals(totals)
+      setLeaderboard(board)
+      setDeals(recentDeals)
+    } catch {
+      // silent — stats cards will show 0
+    } finally {
+      setLoadingData(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (!currentUser) return
-    if (currentUser.status === "pending") return
+    if (currentUser.status === "pending") { setLoadingData(false); return }
 
-    const savedScore = localStorage.getItem("user_score")
-    const savedMeetings = localStorage.getItem("user_meetings")
-    const meetingsCount = savedMeetings ? parseInt(savedMeetings) : 0
+    loadDashboardData()
 
-    setStats({
-      meetingsRealized: meetingsCount,
-      score: savedScore ? parseInt(savedScore) : 0,
-    })
-
-    const calculatedLevel = getUserLevel(meetingsCount).name
-    const lastSeenLevel = localStorage.getItem("last_seen_certificate_level")
+    // Level-up certificate
     const hasSeenOnboarding = localStorage.getItem("has_seen_onboarding")
+    const lastSeenLevel = localStorage.getItem("last_seen_certificate_level")
 
-    if (hasSeenOnboarding && calculatedLevel !== lastSeenLevel) {
-      setCertificateLevel(calculatedLevel)
-      setTimeout(() => setShowCertificate(true), 2000)
-      localStorage.setItem("last_seen_certificate_level", calculatedLevel)
-    } else if (!lastSeenLevel) {
-      localStorage.setItem("last_seen_certificate_level", calculatedLevel)
+    if (stats && hasSeenOnboarding) {
+      const calculatedLevel = getUserLevel(stats.score).name
+      if (calculatedLevel !== lastSeenLevel) {
+        setCertificateLevel(calculatedLevel)
+        setTimeout(() => setShowCertificate(true), 2000)
+        localStorage.setItem("last_seen_certificate_level", calculatedLevel)
+      }
     }
 
-    // Daily match
+    // Daily match (still from mock companies for now)
     const today = new Date().toDateString()
     const storedMatch = JSON.parse(localStorage.getItem("daily_match_v2") || "null")
 
@@ -106,22 +127,24 @@ export default function DashboardPage() {
       localStorage.setItem("daily_match_v2", JSON.stringify({ date: today, match: newMatchObj }))
       setDailyMatch(newMatchObj)
     }
-
-    // Deals
-    const storedDeals = JSON.parse(localStorage.getItem("closed_deals") || "null")
-    if (storedDeals && storedDeals.length > 0) {
-      setDeals(storedDeals)
-    } else {
-      setDeals(initialDeals)
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser])
 
-  const totalPlatformValue = deals.reduce((acc, curr) => acc + curr.value, 0)
-  const userDeals = deals.filter(
-    d => d.author === currentUser?.companyName || d.author === "Minha Empresa" || d.author === currentUser?.fullName
-  )
-  const userDealsCount = userDeals.length
-  const userTotalValue = userDeals.reduce((acc, curr) => acc + curr.value, 0)
+  // Check level-up after stats load
+  useEffect(() => {
+    if (!stats) return
+    const hasSeenOnboarding = localStorage.getItem("has_seen_onboarding")
+    const lastSeenLevel = localStorage.getItem("last_seen_certificate_level")
+    const calculatedLevel = getUserLevel(stats.score).name
+
+    if (hasSeenOnboarding && calculatedLevel !== lastSeenLevel) {
+      setCertificateLevel(calculatedLevel)
+      setTimeout(() => setShowCertificate(true), 2000)
+      localStorage.setItem("last_seen_certificate_level", calculatedLevel)
+    } else if (!lastSeenLevel) {
+      localStorage.setItem("last_seen_certificate_level", calculatedLevel)
+    }
+  }, [stats])
 
   const handleConfirmMeeting = () => {
     setIsConfirmingMatch(true)
@@ -129,54 +152,44 @@ export default function DashboardPage() {
       if (!dailyMatch) return
       const updatedMatch = { ...dailyMatch, status: "completed" as const }
       setDailyMatch(updatedMatch)
-
       localStorage.setItem("daily_match_v2", JSON.stringify({ date: new Date().toDateString(), match: updatedMatch }))
-
-      const newScore = stats.score + 10
-      const newMeetings = stats.meetingsRealized + 1
-      setStats({ score: newScore, meetingsRealized: newMeetings })
-      localStorage.setItem("user_score", newScore.toString())
-      localStorage.setItem("user_meetings", newMeetings.toString())
-
-      const newLevel = getUserLevel(newMeetings).name
-      const lastSeen = localStorage.getItem("last_seen_certificate_level")
-      if (newLevel !== lastSeen) {
-        setCertificateLevel(newLevel)
-        setShowCertificate(true)
-        localStorage.setItem("last_seen_certificate_level", newLevel)
-      }
 
       setIsConfirmingMatch(false)
       toast({
         title: "Reunião Confirmada!",
-        description: "Você e seu parceiro confirmaram a reunião. +10 pontos creditados!",
+        description: "Sua reunião foi registrada. A pontuação será atualizada em breve.",
         className: "bg-green-600 text-white",
       })
+      // Reload stats to pick up new meeting
+      loadDashboardData()
     }, 2500)
   }
 
-  const handleRegisterDeal = (e: React.FormEvent) => {
+  const handleRegisterDeal = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newDeal.companyName || !newDeal.value) return
 
-    const deal: Deal = {
-      id: Date.now(),
-      companyName: newDeal.companyName,
-      value: parseFloat(newDeal.value),
-      date: new Date().toLocaleDateString(),
-      author: currentUser?.companyName || "Minha Empresa",
+    try {
+      const deal = await registerDeal({
+        companyName: newDeal.companyName,
+        value: parseFloat(newDeal.value),
+      })
+      setDeals(prev => [deal, ...prev])
+      setNewDeal({ companyName: "", value: "" })
+      toast({
+        title: "Negócio Registrado!",
+        description: "Parabéns pelo fechamento. O valor foi adicionado ao mural.",
+        className: "bg-green-600 text-white",
+      })
+      // Reload stats
+      loadDashboardData()
+    } catch (err) {
+      toast({
+        title: "Erro ao registrar negócio",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      })
     }
-
-    const updatedDeals = [deal, ...deals]
-    setDeals(updatedDeals)
-    localStorage.setItem("closed_deals", JSON.stringify(updatedDeals))
-
-    setNewDeal({ companyName: "", value: "" })
-    toast({
-      title: "Negócio Registrado!",
-      description: "Parabéns pelo fechamento. O valor foi adicionado ao mural.",
-      className: "bg-green-600 text-white",
-    })
   }
 
   const handleDashboardSearch = () => {
@@ -272,7 +285,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Total na Plataforma</p>
               <p className="text-2xl font-bold">
-                R$ {totalPlatformValue.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                R$ {(platformTotals?.totalDealValue ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </p>
             </div>
           </div>
@@ -333,7 +346,7 @@ export default function DashboardPage() {
             <div className="p-2 bg-blue-500/10 rounded-lg"><Video className="h-5 w-5 text-blue-500" /></div>
             <p className="text-muted-foreground text-sm font-medium">Reuniões</p>
           </div>
-          <p className="text-3xl font-bold">{stats.meetingsRealized}</p>
+          <p className="text-3xl font-bold">{stats?.meetingsCompleted ?? 0}</p>
         </motion.div>
 
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="bg-card border border-border p-6 rounded-2xl shadow-sm cursor-pointer hover:border-purple-500/50 transition-colors" onClick={() => setShowLevelInfo(true)}>
@@ -341,7 +354,7 @@ export default function DashboardPage() {
             <div className="p-2 bg-purple-500/10 rounded-lg"><Trophy className="h-5 w-5 text-purple-500" /></div>
             <p className="text-muted-foreground text-sm font-medium">Pontuação</p>
           </div>
-          <p className="text-3xl font-bold">{stats.score} <span className="text-sm font-normal text-muted-foreground">pts</span></p>
+          <p className="text-3xl font-bold">{currentScore} <span className="text-sm font-normal text-muted-foreground">pts</span></p>
         </motion.div>
 
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="bg-card border border-border p-6 rounded-2xl shadow-sm relative overflow-hidden group">
@@ -349,7 +362,7 @@ export default function DashboardPage() {
             <div className="p-2 bg-green-500/10 rounded-lg"><Handshake className="h-5 w-5 text-green-500" /></div>
             <p className="text-muted-foreground text-sm font-medium">Meus Fechamentos</p>
           </div>
-          <p className="text-3xl font-bold relative z-10">{userDealsCount}</p>
+          <p className="text-3xl font-bold relative z-10">{stats?.dealCount ?? 0}</p>
         </motion.div>
 
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="bg-card border border-border p-6 rounded-2xl shadow-sm relative overflow-hidden">
@@ -358,7 +371,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground text-sm font-medium">Valor Gerado</p>
           </div>
           <p className="text-2xl font-bold relative z-10 truncate">
-            R$ {userTotalValue.toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 } as Intl.NumberFormatOptions)}
+            R$ {(stats?.totalDealValue ?? 0).toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 } as Intl.NumberFormatOptions)}
           </p>
         </motion.div>
       </div>
@@ -422,7 +435,7 @@ export default function DashboardPage() {
                       <Handshake className="h-5 w-5" />
                       Reunião Confirmada
                     </p>
-                    <p className="text-muted-foreground text-xs mt-1">+10 pontos creditados</p>
+                    <p className="text-muted-foreground text-xs mt-1">Pontuação atualizada</p>
                   </div>
                 )}
               </div>
@@ -490,52 +503,81 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">{deal.companyName}</p>
-                    <p className="text-muted-foreground text-xs">Realizado por: <span className="text-foreground/80">{deal.author}</span></p>
+                    <p className="text-muted-foreground text-xs">Realizado por: <span className="text-foreground/80">{deal.authorName || "—"}</span></p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-green-500 font-bold text-sm">
                     R$ {deal.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-muted-foreground text-[10px]">{deal.date}</p>
+                  <p className="text-muted-foreground text-[10px]">{deal.dealDate ? new Date(deal.dealDate).toLocaleDateString("pt-BR") : ""}</p>
                 </div>
               </div>
             ))}
 
-            {deals.length === 0 && (
+            {deals.length === 0 && !loadingData && (
               <div className="text-center py-10 text-muted-foreground">
                 <p>Nenhum negócio registrado ainda. Seja o primeiro!</p>
+              </div>
+            )}
+
+            {loadingData && (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             )}
           </div>
         </div>
       </motion.div>
 
+      {/* Leaderboard */}
+      {leaderboard.length > 0 && (
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }} className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <Crown className="h-5 w-5 text-yellow-500" />
+            <h2 className="text-lg font-bold">Ranking</h2>
+          </div>
+          <div className="space-y-2">
+            {leaderboard.map((entry, i) => (
+              <div key={entry.userId} className={`flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                entry.userId === currentUser?.id
+                  ? "bg-primary/5 border-primary/30"
+                  : "bg-secondary/20 border-border hover:bg-secondary/40"
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                    i === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                    i === 1 ? "bg-gray-400/20 text-gray-400" :
+                    i === 2 ? "bg-amber-700/20 text-amber-600" :
+                    "bg-muted text-muted-foreground"
+                  }`}>
+                    {entry.rankPosition}
+                  </span>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {entry.fullName}
+                      {entry.userId === currentUser?.id && <span className="text-primary text-xs ml-1">(você)</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{entry.companyName || "—"}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-sm">
+                    R$ {entry.totalDealValue.toLocaleString("pt-BR", { notation: "compact", maximumFractionDigits: 1 } as Intl.NumberFormatOptions)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{entry.score} pts</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Feature Modals */}
       <FirstLoginWelcome userName={currentUser?.fullName?.split(" ")[0] || "Empresário"} onClose={() => setShowTutorial(true)} />
       <DashboardTutorial isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
       <Certificate isOpen={showCertificate} onClose={() => setShowCertificate(false)} userName={currentUser?.fullName || "Empresário"} level={certificateLevel} date={new Date().toLocaleDateString()} />
       <LevelInfoModal isOpen={showLevelInfo} onClose={() => setShowLevelInfo(false)} />
-
-      <AnimatePresence>
-        {showReferralModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-card border border-border rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl relative">
-              <button onClick={() => setShowReferralModal(false)} className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors z-10">
-                <X className="h-5 w-5" />
-              </button>
-              <div className="p-8">
-                <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-                  <Gift className="h-6 w-6 text-purple-400" />
-                  Programa de Indicação
-                </h2>
-                <p className="text-muted-foreground mb-6">Convide amigos e turbine sua pontuação no ranking.</p>
-                <ReferralSystem />
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

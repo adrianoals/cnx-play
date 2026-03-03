@@ -9,8 +9,8 @@ export const LEVEL_THRESHOLDS = {
   DIAMANTE: { min: 151, max: Infinity, name: 'Diamante', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', description: 'Elite Empresarial' },
 } as const
 
-export function getUserLevel(meetings: number) {
-  if (meetings >= 151) return LEVEL_THRESHOLDS.DIAMANTE
-  if (meetings >= 50) return LEVEL_THRESHOLDS.SAFIRA
+export function getUserLevel(score: number) {
+  if (score >= 151) return LEVEL_THRESHOLDS.DIAMANTE
+  if (score >= 50) return LEVEL_THRESHOLDS.SAFIRA
   return LEVEL_THRESHOLDS.PLATINA
 }

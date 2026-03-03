@@ -16,10 +16,9 @@ import { useAuth } from "@/hooks/use-auth"
 interface HeaderProps {
   onMenuToggle: () => void
   userInitials?: string
-  onOpenReferral?: () => void
 }
 
-export default function Header({ onMenuToggle, userInitials = "US", onOpenReferral }: HeaderProps) {
+export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { logout } = useAuth()
@@ -72,11 +71,11 @@ export default function Header({ onMenuToggle, userInitials = "US", onOpenReferr
         <div className="ml-auto flex items-center gap-2 md:gap-4">
           {isActive && !isAdminPanel && (
             <>
-              <Button onClick={onOpenReferral} className="hidden md:flex bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-none shadow-sm gap-2 h-9" size="sm">
+              <Button onClick={() => router.push('/referral')} className="hidden md:flex bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-none shadow-sm gap-2 h-9" size="sm">
                 <Gift className="h-4 w-4" />
                 <span className="hidden lg:inline">Indicar e Ganhar</span>
               </Button>
-              <Button variant="ghost" size="icon" className="md:hidden text-purple-600 hover:bg-purple-50" onClick={onOpenReferral}>
+              <Button variant="ghost" size="icon" className="md:hidden text-purple-600 hover:bg-purple-50" onClick={() => router.push('/referral')}>
                 <Gift className="h-5 w-5" />
               </Button>
 

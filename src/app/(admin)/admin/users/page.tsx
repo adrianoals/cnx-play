@@ -15,13 +15,15 @@ import { SUPER_ADMINS } from "@/lib/constants"
 import {
   fetchAllUsers, updateUserProfile, deleteUserProfile, changeUserStatus, createUserViaApi,
   fetchAllCompanies, createCompanyForUser, updateCompanyAdmin, deleteCompanyAdmin,
+  fetchAllReferrals, updateReferralStatus,
 } from "@/services/admin.service"
-import type { User, AdminCompany } from "@/types"
+import type { User, AdminCompany, SupabaseReferral } from "@/types"
 import {
   Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
   MoreHorizontal, UserPlus, Clock, CheckCircle, XCircle,
   Phone, Fingerprint, Plus, MapPin,
   ShieldAlert, Lock, Loader2, Building2, Users, Mail, Linkedin, Star,
+  Gift,
 } from "lucide-react"
 
 function getStatusBadge(status: string) {
@@ -84,6 +86,11 @@ export default function AdminUsersPage() {
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null)
   const [savingCompany, setSavingCompany] = useState(false)
 
+  // ── Referrals state ──
+  const [referrals, setReferrals] = useState<SupabaseReferral[]>([])
+  const [loadingReferrals, setLoadingReferrals] = useState(true)
+  const [referralSearch, setReferralSearch] = useState("")
+
   // ── Load data ──
   useEffect(() => {
     fetchAllUsers()
@@ -103,6 +110,14 @@ export default function AdminUsersPage() {
           toast({ title: "Erro ao carregar empresas", description: err.message, variant: "destructive" })
         })
         .finally(() => setLoadingCompanies(false))
+    }
+    if (mainTab === "referrals" && loadingReferrals) {
+      fetchAllReferrals()
+        .then(r => setReferrals(r))
+        .catch(err => {
+          toast({ title: "Erro ao carregar indicações", description: err.message, variant: "destructive" })
+        })
+        .finally(() => setLoadingReferrals(false))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mainTab])
@@ -156,6 +171,20 @@ export default function AdminUsersPage() {
         description: `O status foi alterado para ${newStatus === "active" ? "Ativo" : newStatus === "inactive" ? "Inativo" : "Pendente"}.`,
         className: newStatus === "active" ? "bg-green-600 border-green-500 text-white" : "",
       })
+
+      // Send approval email when user is activated
+      if (newStatus === "active") {
+        const approvedUser = users.find(u => u.id === id)
+        if (approvedUser) {
+          fetch("/api/admin/approve-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: approvedUser.email, fullName: approvedUser.fullName || approvedUser.name }),
+          }).catch(() => {
+            // Email failure should not block the approval flow
+          })
+        }
+      }
     } catch (error) {
       toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao alterar status.", variant: "destructive" })
     }
@@ -355,6 +384,41 @@ export default function AdminUsersPage() {
     }
   }
 
+  // ── Referrals logic ──
+  const filteredReferrals = referrals.filter(r => {
+    const term = referralSearch.toLowerCase()
+    return (
+      r.referredName.toLowerCase().includes(term) ||
+      (r.referredEmail || "").toLowerCase().includes(term) ||
+      (r.referrerName || "").toLowerCase().includes(term)
+    )
+  })
+
+  const handleReferralStatusChange = async (id: string, newStatus: SupabaseReferral["status"]) => {
+    try {
+      await updateReferralStatus(id, newStatus)
+      setReferrals(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r))
+      toast({
+        title: "Indicação atualizada",
+        description: `Status alterado para ${newStatus === "completed" ? "Aprovado" : newStatus === "rejected" ? "Rejeitado" : "Pendente"}.`,
+        className: newStatus === "completed" ? "bg-green-600 border-green-500 text-white" : "",
+      })
+    } catch (error) {
+      toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao alterar status.", variant: "destructive" })
+    }
+  }
+
+  function getReferralStatusBadge(status: string) {
+    switch (status) {
+      case "completed":
+        return <Badge className="bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border-emerald-500/20">Aprovado</Badge>
+      case "rejected":
+        return <Badge className="bg-red-500/20 text-red-400 hover:bg-red-500/30 border-red-500/20">Rejeitado</Badge>
+      default:
+        return <Badge className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border-amber-500/20">Pendente</Badge>
+    }
+  }
+
   const formatDate = (dateStr: string) => {
     try { return new Date(dateStr).toLocaleDateString("pt-BR") } catch { return "N/A" }
   }
@@ -381,6 +445,12 @@ export default function AdminUsersPage() {
             <Building2 className="h-4 w-4" /> Empresas
             {companies.length > 0 && (
               <span className="ml-1 text-[10px] bg-muted-foreground/20 px-1.5 rounded-full">{companies.length}</span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="referrals" className="gap-2">
+            <Gift className="h-4 w-4" /> Indicações
+            {referrals.length > 0 && (
+              <span className="ml-1 text-[10px] bg-muted-foreground/20 px-1.5 rounded-full">{referrals.length}</span>
             )}
           </TabsTrigger>
         </TabsList>
@@ -657,6 +727,112 @@ export default function AdminUsersPage() {
                 <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
                   <span>Total: {filteredCompanies.length}</span>
                   <span>{companies.filter(c => c.isPrimary).length} principal(is)</span>
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* ════════════════ REFERRALS TAB ════════════════ */}
+        <TabsContent value="referrals" className="space-y-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Gerencie todas as indicações dos usuários da plataforma.</p>
+            </div>
+            <div className="bg-card border border-border p-2 rounded-xl flex items-center gap-2 shadow-sm w-full md:w-80">
+              <Search className="ml-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar indicante ou indicado..."
+                value={referralSearch}
+                onChange={e => setReferralSearch(e.target.value)}
+                className="bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground h-8"
+              />
+            </div>
+          </div>
+
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+            {loadingReferrals ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-muted-foreground">Carregando indicações...</span>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">Indicante</TableHead>
+                      <TableHead className="text-muted-foreground">Indicado</TableHead>
+                      <TableHead className="text-muted-foreground hidden md:table-cell">Contato</TableHead>
+                      <TableHead className="text-muted-foreground text-center">Status</TableHead>
+                      <TableHead className="text-muted-foreground hidden md:table-cell">Data</TableHead>
+                      <TableHead className="text-right text-muted-foreground w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredReferrals.length > 0 ? (
+                      filteredReferrals.map(ref => (
+                        <TableRow key={ref.id} className="border-border hover:bg-secondary/30 transition-colors">
+                          <TableCell>
+                            <span className="font-medium text-sm">{ref.referrerName || "—"}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-sm">{ref.referredName}</span>
+                              <span className="text-xs text-muted-foreground">{ref.referredEmail || "—"}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <span className="text-sm">{ref.referredPhone || "—"}</span>
+                          </TableCell>
+                          <TableCell className="text-center">{getReferralStatusBadge(ref.status)}</TableCell>
+                          <TableCell className="text-muted-foreground hidden md:table-cell">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-3 w-3" /> {formatDate(ref.createdAt)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                                  <span className="sr-only">Abrir menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Alterar Status</DropdownMenuLabel>
+                                {ref.status !== "completed" && (
+                                  <DropdownMenuItem onClick={() => handleReferralStatusChange(ref.id, "completed")} className="cursor-pointer text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20">
+                                    <CheckCircle className="mr-2 h-4 w-4" /> Aprovar
+                                  </DropdownMenuItem>
+                                )}
+                                {ref.status !== "rejected" && (
+                                  <DropdownMenuItem onClick={() => handleReferralStatusChange(ref.id, "rejected")} className="cursor-pointer text-red-400 hover:text-red-300 hover:bg-red-950/20">
+                                    <XCircle className="mr-2 h-4 w-4" /> Rejeitar
+                                  </DropdownMenuItem>
+                                )}
+                                {ref.status !== "pending" && (
+                                  <DropdownMenuItem onClick={() => handleReferralStatusChange(ref.id, "pending")} className="cursor-pointer text-amber-400">
+                                    <Clock className="mr-2 h-4 w-4" /> Voltar para Pendente
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                          {referralSearch ? "Nenhuma indicação encontrada." : "Nenhuma indicação cadastrada."}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <div className="p-4 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Total: {filteredReferrals.length}</span>
+                  <span>{referrals.filter(r => r.status === "pending").length} pendente(s)</span>
                 </div>
               </>
             )}
