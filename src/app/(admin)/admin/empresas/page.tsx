@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -16,11 +16,14 @@ import {
   fetchAllUsers,
 } from "@/services/admin.service"
 import { fetchCategories } from "@/services/category.service"
+import { createClient } from "@/lib/supabase"
 import type { User, AdminCompany, Category } from "@/types"
 import {
   Search, Trash2, Edit, Calendar, MoreHorizontal, Plus, MapPin,
-  Loader2, Building2, Mail, Phone, Linkedin, Star,
+  Loader2, Building2, Mail, Phone, Linkedin, Star, X, Image as ImageIcon,
 } from "lucide-react"
+
+const MAX_GALLERY = 5
 
 const emptyCompanyForm = {
   name: "",
@@ -33,6 +36,7 @@ const emptyCompanyForm = {
   linkedin: "",
   isPrimary: true,
   userId: "",
+  gallery: [] as string[],
 }
 
 export default function AdminEmpresasPage() {
@@ -49,6 +53,8 @@ export default function AdminEmpresasPage() {
   const [companyForm, setCompanyForm] = useState(emptyCompanyForm)
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null)
   const [savingCompany, setSavingCompany] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchAllCompanies()
@@ -98,6 +104,7 @@ export default function AdminEmpresasPage() {
       linkedin: company.linkedin || "",
       isPrimary: company.isPrimary,
       userId: company.userId,
+      gallery: company.gallery || [],
     })
     setIsCompanyModalOpen(true)
   }
@@ -125,6 +132,7 @@ export default function AdminEmpresasPage() {
           contactPhone: companyForm.contactPhone,
           linkedin: companyForm.linkedin,
           isPrimary: companyForm.isPrimary,
+          gallery: companyForm.gallery,
         })
         setCompanies(prev => prev.map(c => c.id === editingCompanyId ? updated : c))
         toast({ title: "Empresa atualizada", description: "Os dados foram salvos com sucesso.", className: "bg-green-600 border-green-500 text-white" })
@@ -140,6 +148,7 @@ export default function AdminEmpresasPage() {
           contactPhone: companyForm.contactPhone || undefined,
           linkedin: companyForm.linkedin || undefined,
           isPrimary: companyForm.isPrimary,
+          gallery: companyForm.gallery,
         })
         setCompanies(prev => [created, ...prev])
         toast({ title: "Empresa cadastrada", description: "A empresa foi adicionada com sucesso.", className: "bg-green-600 text-white border-none" })
@@ -414,6 +423,103 @@ export default function AdminEmpresasPage() {
               />
             </div>
 
+            {/* Gallery */}
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1">
+                  <ImageIcon className="w-3 h-3" /> Galeria ({companyForm.gallery.length}/{MAX_GALLERY})
+                </Label>
+                {companyForm.gallery.length < MAX_GALLERY && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => galleryInputRef.current?.click()}
+                    disabled={uploading || (!editingCompanyId && !companyForm.userId)}
+                  >
+                    {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                    {uploading ? "Enviando..." : "Adicionar"}
+                  </Button>
+                )}
+              </div>
+              <input
+                type="file"
+                ref={galleryInputRef}
+                onChange={async (event) => {
+                  const file = event.target.files?.[0]
+                  if (!file) return
+                  if (!file.type.startsWith("image/")) {
+                    toast({ variant: "destructive", title: "Formato inválido", description: "Use PNG ou JPG." })
+                    return
+                  }
+                  if (file.size > 2 * 1024 * 1024) {
+                    toast({ variant: "destructive", title: "Arquivo muito grande", description: "Máximo 2MB." })
+                    return
+                  }
+                  const ownerId = companyForm.userId || "admin"
+                  setUploading(true)
+                  try {
+                    const supabase = createClient()
+                    const ext = file.name.split(".").pop() || "jpg"
+                    const filePath = `${ownerId}/${Date.now()}.${ext}`
+                    const { error: uploadError } = await supabase.storage
+                      .from("gallery")
+                      .upload(filePath, file, { upsert: true })
+                    if (uploadError) throw uploadError
+                    const { data: urlData } = supabase.storage.from("gallery").getPublicUrl(filePath)
+                    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+                    setCompanyForm(prev => ({ ...prev, gallery: [...prev.gallery, publicUrl] }))
+                  } catch (err) {
+                    console.error("Gallery upload error:", err)
+                    toast({ variant: "destructive", title: "Erro ao enviar foto", description: "Tente novamente." })
+                  } finally {
+                    setUploading(false)
+                    if (galleryInputRef.current) galleryInputRef.current.value = ""
+                  }
+                }}
+                accept="image/*"
+                className="hidden"
+              />
+              {companyForm.gallery.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {companyForm.gallery.map((img, idx) => (
+                    <div key={idx} className="relative group aspect-square bg-muted rounded-lg overflow-hidden border border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const url = companyForm.gallery[idx]
+                          setCompanyForm(prev => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }))
+                          try {
+                            const supabase = createClient()
+                            const match = url.match(/\/gallery\/(.+?)(\?|$)/)
+                            if (match) await supabase.storage.from("gallery").remove([decodeURIComponent(match[1])])
+                          } catch { /* best-effort */ }
+                        }}
+                        className="absolute top-1 right-1 p-0.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  onClick={() => {
+                    if (!uploading && (editingCompanyId || companyForm.userId)) galleryInputRef.current?.click()
+                  }}
+                  className={`flex flex-col items-center justify-center py-4 border-2 border-dashed border-muted-foreground/20 rounded-lg text-muted-foreground text-xs ${
+                    !editingCompanyId && !companyForm.userId ? "opacity-50" : "cursor-pointer hover:bg-secondary/30"
+                  } transition-colors`}
+                >
+                  <Plus className="h-5 w-5 mb-1" />
+                  <span>{!editingCompanyId && !companyForm.userId ? "Selecione o usuário primeiro" : "Adicionar fotos"}</span>
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-3 pt-2 border-t border-border">
               <input
                 type="checkbox"
@@ -429,7 +535,7 @@ export default function AdminEmpresasPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCompanyModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveCompany} disabled={savingCompany} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={handleSaveCompany} disabled={savingCompany || uploading} className="bg-blue-600 hover:bg-blue-700 text-white">
               {savingCompany ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {editingCompanyId ? "Salvar Alterações" : "Cadastrar Empresa"}
             </Button>
