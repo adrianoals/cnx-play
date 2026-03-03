@@ -1,80 +1,175 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
-import { getMatches, getMessages, sendMessage } from "@/services/messages.service"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { fetchConversations, fetchMessages, sendMessage, markMessagesRead, deleteConversation } from "@/services/messages.service"
+import { fetchPendingReceived, respondConnection, deleteConnection } from "@/services/connection.service"
+import { createClient } from "@/lib/supabase"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Send, Search, ArrowLeft, Phone, Video, Info } from "lucide-react"
-import type { Message } from "@/types"
-
-interface MatchWithCompany {
-  id: number
-  user1Id: string
-  user2Id: string
-  timestamp: string
-  source: string
-  company: {
-    id: number | string
-    name: string
-    image?: string | null
-    segment?: string
-  }
-}
+import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Send, Search, ArrowLeft, Trash2, Loader2, Check, X as XIcon } from "lucide-react"
+import type { Message, Connection } from "@/types"
+import type { Conversation } from "@/services/messages.service"
 
 export default function MeetingsPage() {
   const router = useRouter()
-  const [matches, setMatches] = useState<MatchWithCompany[]>([])
-  const [selectedMatch, setSelectedMatch] = useState<MatchWithCompany | null>(null)
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [pendingRequests, setPendingRequests] = useState<Connection[]>([])
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(searchParams.get("chat"))
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState("")
+  const [searchFilter, setSearchFilter] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState<Conversation | null>(null)
+  const [responding, setResponding] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const currentUser = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("current_user") || "{}") : {}
 
-  const loadData = () => {
-    const loadedMatches = getMatches()
-    setMatches(loadedMatches)
+  const selectedConversation = conversations.find(c => c.otherUserId === selectedUserId)
 
-    if (selectedMatch) {
-      const msgs = getMessages(selectedMatch.id)
-      setMessages(msgs)
+  const loadData = useCallback(async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      setCurrentUserId(user.id)
+
+      const [convs, pending] = await Promise.all([
+        fetchConversations(),
+        fetchPendingReceived(),
+      ])
+      setConversations(convs)
+      setPendingRequests(pending)
+
+      // If there's a selected chat, load messages
+      if (selectedUserId) {
+        const msgs = await fetchMessages(selectedUserId)
+        setMessages(msgs)
+        await markMessagesRead(selectedUserId)
+      }
+    } catch (err) {
+      console.error("Error loading chat data:", err)
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [selectedUserId])
 
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 2000)
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "social_messages" || e.key === "social_matches") loadData()
-    }
-    window.addEventListener("storage", handleStorageChange)
-
-    return () => {
-      clearInterval(interval)
-      window.removeEventListener("storage", handleStorageChange)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMatch])
+    const interval = setInterval(loadData, 3000)
+    return () => clearInterval(interval)
+  }, [loadData])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages.length, selectedMatch])
+  }, [messages.length, selectedUserId])
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSelectChat = async (otherUserId: string) => {
+    setSelectedUserId(otherUserId)
+    try {
+      const msgs = await fetchMessages(otherUserId)
+      setMessages(msgs)
+      await markMessagesRead(otherUserId)
+      // Update unread count locally
+      setConversations(prev => prev.map(c =>
+        c.otherUserId === otherUserId ? { ...c, unreadCount: 0 } : c
+      ))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputText.trim() || !selectedMatch) return
+    if (!inputText.trim() || !selectedUserId) return
 
-    const newMsg = sendMessage(selectedMatch.id, inputText)
-    setMessages(prev => [...prev, newMsg])
+    const text = inputText.trim()
     setInputText("")
+    try {
+      const newMsg = await sendMessage(selectedUserId, text)
+      setMessages(prev => [...prev, newMsg])
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível enviar a mensagem.", variant: "destructive" })
+      setInputText(text)
+    }
+  }
+
+  const handleDeleteChat = async () => {
+    if (!deleteTarget) return
+    try {
+      await deleteConversation(deleteTarget.otherUserId)
+      await deleteConnection(deleteTarget.connectionId)
+      setConversations(prev => prev.filter(c => c.otherUserId !== deleteTarget.otherUserId))
+      if (selectedUserId === deleteTarget.otherUserId) {
+        setSelectedUserId(null)
+        setMessages([])
+      }
+      toast({ title: "Chat excluído", description: "A conversa e a conexão foram removidas." })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível excluir o chat.", variant: "destructive" })
+    } finally {
+      setDeleteTarget(null)
+    }
+  }
+
+  const handleAcceptPending = async (conn: Connection) => {
+    setResponding(conn.id)
+    try {
+      await respondConnection(conn.id, true)
+      setPendingRequests(prev => prev.filter(p => p.id !== conn.id))
+      toast({ title: "Conexão aceita!", description: `Você e ${conn.requesterName} agora estão conectados.`, className: "bg-green-600 text-white" })
+      await loadData()
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível aceitar.", variant: "destructive" })
+    } finally {
+      setResponding(null)
+    }
+  }
+
+  const handleRejectPending = async (conn: Connection) => {
+    setResponding(conn.id)
+    try {
+      await respondConnection(conn.id, false)
+      setPendingRequests(prev => prev.filter(p => p.id !== conn.id))
+      toast({ title: "Solicitação recusada" })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível recusar.", variant: "destructive" })
+    } finally {
+      setResponding(null)
+    }
+  }
+
+  const filteredConversations = conversations.filter(c =>
+    c.otherUserName.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    c.otherUserCompany.toLowerCase().includes(searchFilter.toLowerCase())
+  )
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-5rem)] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Carregando conversas...</span>
+      </div>
+    )
   }
 
   return (
     <div className="flex h-[calc(100vh-5rem)] bg-background overflow-hidden -m-4 md:-m-6 lg:-m-8 rounded-none">
-      {/* Sidebar / Match List */}
-      <div className={`w-full md:w-80 border-r border-border bg-card flex flex-col ${selectedMatch ? "hidden md:flex" : "flex"}`}>
+      {/* Sidebar / Conversation List */}
+      <div className={`w-full md:w-80 border-r border-border bg-card flex flex-col ${selectedUserId ? "hidden md:flex" : "flex"}`}>
         <div className="p-4 border-b border-border flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")} className="md:hidden text-muted-foreground">
             <ArrowLeft className="w-5 h-5" />
@@ -85,12 +180,61 @@ export default function MeetingsPage() {
         <div className="p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input className="bg-secondary border-border pl-9 placeholder:text-muted-foreground" placeholder="Buscar conversa..." />
+            <Input
+              className="bg-secondary border-border pl-9 placeholder:text-muted-foreground"
+              placeholder="Buscar conversa..."
+              value={searchFilter}
+              onChange={e => setSearchFilter(e.target.value)}
+            />
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {matches.length === 0 ? (
+          {/* Pending connection requests */}
+          {pendingRequests.length > 0 && (
+            <div className="border-b border-border">
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Solicitações Pendentes
+              </div>
+              {pendingRequests.map(conn => (
+                <div key={conn.id} className="p-4 flex items-center gap-3 border-b border-border/50 bg-blue-500/5">
+                  <Avatar className="h-10 w-10 border border-border">
+                    <AvatarImage src={conn.requesterAvatar || undefined} />
+                    <AvatarFallback>{(conn.requesterName || "??").substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm truncate">{conn.requesterName}</span>
+                      <Badge variant="default" className="text-[10px] px-1.5 py-0 bg-blue-600">Novo</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{conn.requesterCompany}</p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => handleAcceptPending(conn)}
+                      disabled={responding === conn.id}
+                    >
+                      {responding === conn.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-8 w-8"
+                      onClick={() => handleRejectPending(conn)}
+                      disabled={responding === conn.id}
+                    >
+                      <XIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Conversations */}
+          {filteredConversations.length === 0 && pendingRequests.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground text-sm">
               <p className="mb-4">Você ainda não tem conexões.</p>
               <Button onClick={() => router.push("/search")} variant="outline" className="w-full">
@@ -98,26 +242,35 @@ export default function MeetingsPage() {
               </Button>
             </div>
           ) : (
-            matches.map(match => (
+            filteredConversations.map(conv => (
               <div
-                key={match.id}
-                onClick={() => setSelectedMatch(match)}
-                className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors border-b border-border/50 ${selectedMatch?.id === match.id ? "bg-secondary border-l-4 border-l-blue-500" : ""}`}
+                key={conv.otherUserId}
+                onClick={() => handleSelectChat(conv.otherUserId)}
+                className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors border-b border-border/50 ${selectedUserId === conv.otherUserId ? "bg-secondary border-l-4 border-l-blue-500" : ""}`}
               >
                 <Avatar className="h-12 w-12 border border-border">
-                  <AvatarImage src={match.company.image || undefined} />
-                  <AvatarFallback>{match.company.name ? match.company.name.substring(0, 2).toUpperCase() : "??"}</AvatarFallback>
+                  <AvatarImage src={conv.otherUserAvatar || undefined} />
+                  <AvatarFallback>{conv.otherUserName.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 overflow-hidden">
                   <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-foreground truncate text-sm">{match.company.name}</h3>
+                    <h3 className="font-semibold text-foreground truncate text-sm">{conv.otherUserName}</h3>
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wider whitespace-nowrap ml-2">
-                      {new Date(match.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      {conv.lastMessageAt
+                        ? new Date(conv.lastMessageAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                        : ""}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-1">
-                    {match.source === "daily" ? "Match Diário" : "Conexão Direta"}
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground truncate flex-1">
+                      {conv.lastMessage || conv.otherUserCompany || "Conexão direta"}
+                    </p>
+                    {conv.unreadCount > 0 && (
+                      <span className="bg-blue-600 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
+                        {conv.unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
@@ -126,42 +279,46 @@ export default function MeetingsPage() {
       </div>
 
       {/* Chat Area */}
-      <div className={`flex-1 flex flex-col bg-background ${!selectedMatch ? "hidden md:flex" : "flex"}`}>
-        {selectedMatch ? (
+      <div className={`flex-1 flex flex-col bg-background ${!selectedUserId ? "hidden md:flex" : "flex"}`}>
+        {selectedConversation ? (
           <>
             <div className="h-16 border-b border-border flex items-center justify-between px-4 bg-card/50 backdrop-blur-sm">
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => setSelectedMatch(null)} className="md:hidden text-muted-foreground -ml-2">
+                <Button variant="ghost" size="icon" onClick={() => setSelectedUserId(null)} className="md:hidden text-muted-foreground -ml-2">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
                 <Avatar className="h-10 w-10 border border-border">
-                  <AvatarImage src={selectedMatch.company.image || undefined} />
-                  <AvatarFallback>{selectedMatch.company.name ? selectedMatch.company.name.substring(0, 2) : "CN"}</AvatarFallback>
+                  <AvatarImage src={selectedConversation.otherUserAvatar || undefined} />
+                  <AvatarFallback>{selectedConversation.otherUserName.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="font-semibold text-foreground leading-none text-sm md:text-base">{selectedMatch.company.name}</h2>
-                  <span className="text-xs text-green-400 flex items-center gap-1 mt-1">
-                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" /> Online agora
-                  </span>
+                  <h2 className="font-semibold text-foreground leading-none text-sm md:text-base">{selectedConversation.otherUserName}</h2>
+                  {selectedConversation.otherUserCompany && (
+                    <span className="text-xs text-muted-foreground mt-1 block">{selectedConversation.otherUserCompany}</span>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Button variant="ghost" size="icon" className="hidden sm:inline-flex"><Phone className="w-5 h-5" /></Button>
-                <Button variant="ghost" size="icon" className="hidden sm:inline-flex"><Video className="w-5 h-5" /></Button>
-                <Button variant="ghost" size="icon"><Info className="w-5 h-5" /></Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-red-500"
+                onClick={() => setDeleteTarget(selectedConversation)}
+                title="Excluir chat"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
               <div className="text-center py-8">
                 <p className="text-muted-foreground text-xs uppercase tracking-widest mb-2">Início da Conexão</p>
                 <div className="bg-card inline-block px-4 py-2 rounded-full text-sm text-foreground border border-border">
-                  Você conectou com {selectedMatch.company.name}. Digam oi! 👋
+                  Você conectou com {selectedConversation.otherUserName}. Digam oi!
                 </div>
               </div>
 
               {messages.map(msg => {
-                const isMe = msg.senderId === currentUser.id
+                const isMe = msg.senderId === currentUserId
                 return (
                   <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm shadow-md ${
@@ -171,7 +328,7 @@ export default function MeetingsPage() {
                     }`}>
                       {msg.text}
                       <span className={`text-[10px] block text-right mt-1 ${isMe ? "text-blue-200" : "text-muted-foreground"}`}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
                   </div>
@@ -207,6 +364,24 @@ export default function MeetingsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete chat confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a conversa com <strong>{deleteTarget?.otherUserName}</strong>? Todas as mensagens serão removidas e a conexão será desfeita. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteChat} className="bg-red-600 hover:bg-red-700 text-white">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

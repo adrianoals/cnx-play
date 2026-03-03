@@ -129,22 +129,40 @@ export interface SocialMatch {
   }
 }
 
+export interface Connection {
+  id: string
+  requesterId: string
+  requestedId: string
+  status: 'pending' | 'accepted' | 'rejected'
+  createdAt: string
+  respondedAt: string | null
+  requesterName?: string
+  requesterAvatar?: string | null
+  requesterCompany?: string
+  requestedName?: string
+  requestedAvatar?: string | null
+  requestedCompany?: string
+}
+
 export interface Message {
-  id: number
-  matchId: number
+  id: string
   senderId: string
+  receiverId: string
   text: string
-  timestamp: string
+  createdAt: string
   read: boolean
 }
 
 export interface Notification {
-  id: number
+  id: string
   userId: string
-  type: 'match' | 'message' | 'like' | 'system'
+  type: 'connection' | 'message' | 'meeting' | 'daily_match' | 'referral' | 'system'
+  title: string
   content: string
   read: boolean
-  timestamp: string
+  createdAt: string
+  referenceId?: string | null
+  referenceType?: string | null
 }
 
 export interface Referral {

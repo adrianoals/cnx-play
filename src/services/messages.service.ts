@@ -1,138 +1,180 @@
-import type { SocialMatch, Message, Notification } from '@/types'
-import { companies } from '@/data/mock-companies'
-import { getCurrentUser } from './auth.service'
+import { createClient } from '@/lib/supabase'
+import type { Message } from '@/types'
 
-const KEYS = {
-  LIKES: 'social_likes',
-  MATCHES: 'social_matches',
-  MESSAGES: 'social_messages',
-  NOTIFICATIONS: 'social_notifications',
-}
+const supabase = () => createClient()
 
-function getJSON<T>(key: string): T[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(key) || '[]') } catch { return [] }
-}
-
-export function getMatches(): (SocialMatch & { company: { id: number | string; name: string; image?: string | null; segment?: string } })[] {
-  const matches = getJSON<SocialMatch>(KEYS.MATCHES)
-  const user = getCurrentUser()
-  if (!user) return []
-  const allUsers = getJSON<{ id: string; companyName?: string; fullName?: string; avatar?: string; email?: string; phone?: string; segment?: string }>(
-    'users'
-  )
-  return matches
-    .filter(m => String(m.user1Id) === String(user.id) || String(m.user2Id) === String(user.id))
-    .map(match => {
-      const otherId = String(match.user1Id) === String(user.id) ? match.user2Id : match.user1Id
-      const partner = companies.find(c => String(c.id) === String(otherId))
-      let companyData: { id: number | string; name: string; image?: string | null; segment?: string }
-      if (partner) {
-        companyData = { id: partner.id, name: partner.name, image: partner.image, segment: partner.segment }
-      } else {
-        const up = allUsers.find(u => String(u.id) === String(otherId))
-        companyData = up
-          ? { id: up.id, name: up.companyName || up.fullName || 'Usuário', image: up.avatar, segment: up.segment || 'Empresário' }
-          : { id: otherId, name: 'Usuário Desconhecido', image: null, segment: 'N/A' }
-      }
-      return { ...match, company: companyData }
-    })
-}
-
-export function getMessages(matchId: number): Message[] {
-  return getJSON<Message>(KEYS.MESSAGES)
-    .filter(m => m.matchId === matchId)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-}
-
-export function sendMessage(matchId: number, text: string): Message {
-  const user = getCurrentUser()
+async function getMyId(): Promise<string> {
+  const { data: { user } } = await supabase().auth.getUser()
   if (!user) throw new Error('Not authenticated')
-  const messages = getJSON<Message>(KEYS.MESSAGES)
-  const msg: Message = {
-    id: Date.now(), matchId, senderId: user.id, text,
-    timestamp: new Date().toISOString(), read: false
-  }
-  localStorage.setItem(KEYS.MESSAGES, JSON.stringify([...messages, msg]))
-
-  const matches = getJSON<SocialMatch>(KEYS.MATCHES)
-  const match = matches.find(m => m.id === matchId)
-  if (match) {
-    const receiverId = String(match.user1Id) === String(user.id) ? match.user2Id : match.user1Id
-    createNotification(receiverId, 'message', `Nova mensagem de ${user.companyName || user.fullName}`)
-  }
-  return msg
+  return user.id
 }
 
-export function createMatch(otherUserId: string, source = 'manual'): SocialMatch {
-  const user = getCurrentUser()
-  if (!user) throw new Error('Not authenticated')
-  if (user.status !== 'active') throw new Error('User not active')
-  const matches = getJSON<SocialMatch>(KEYS.MATCHES)
-  const existing = matches.find(
-    m => (String(m.user1Id) === String(user.id) && String(m.user2Id) === String(otherUserId)) ||
-         (String(m.user1Id) === String(otherUserId) && String(m.user2Id) === String(user.id))
-  )
-  if (existing) return existing
+export interface Conversation {
+  otherUserId: string
+  otherUserName: string
+  otherUserAvatar: string | null
+  otherUserCompany: string
+  connectionId: string
+  lastMessage: string | null
+  lastMessageAt: string | null
+  unreadCount: number
+}
 
-  const newMatch: SocialMatch = {
-    id: Date.now(), user1Id: user.id, user2Id: otherUserId,
-    timestamp: new Date().toISOString(), source
+export async function fetchConversations(): Promise<Conversation[]> {
+  const me = await getMyId()
+
+  // Get accepted connections
+  const { data: connections, error: connErr } = await supabase()
+    .from('connections')
+    .select('id, requester_id, requested_id')
+    .eq('status', 'accepted')
+    .or(`requester_id.eq.${me},requested_id.eq.${me}`)
+
+  if (connErr) throw connErr
+  if (!connections || connections.length === 0) return []
+
+  // Collect other user IDs
+  const otherIds: string[] = []
+  const connMap = new Map<string, string>() // otherUserId -> connectionId
+  for (const c of connections) {
+    const otherId = c.requester_id === me ? c.requested_id : c.requester_id
+    otherIds.push(otherId)
+    connMap.set(otherId, c.id)
   }
-  localStorage.setItem(KEYS.MATCHES, JSON.stringify([...matches, newMatch]))
 
-  let partnerName = companies.find(c => String(c.id) === String(otherUserId))?.name
-  if (!partnerName) {
-    const u = getJSON<{ id: string; companyName?: string; fullName?: string }>('users').find(x => String(x.id) === String(otherUserId))
-    partnerName = u ? (u.companyName || u.fullName || 'Novo Parceiro') : 'Novo Parceiro'
+  // Fetch user info
+  const { data: users } = await supabase()
+    .from('users')
+    .select('id, full_name, avatar_url')
+    .in('id', otherIds)
+
+  const { data: comps } = await supabase()
+    .from('companies')
+    .select('user_id, name')
+    .eq('is_primary', true)
+    .in('user_id', otherIds)
+
+  const userMap = new Map<string, { full_name: string; avatar_url: string | null }>()
+  for (const u of users || []) userMap.set(u.id, u)
+  const compMap = new Map<string, string>()
+  for (const c of comps || []) compMap.set(c.user_id, c.name)
+
+  // Fetch all messages involving me to compute last message & unread count per conversation
+  const { data: allMessages } = await supabase()
+    .from('messages')
+    .select('sender_id, receiver_id, text, created_at, read')
+    .or(`sender_id.eq.${me},receiver_id.eq.${me}`)
+    .order('created_at', { ascending: false })
+
+  // Group by other user
+  const msgByUser = new Map<string, { lastText: string; lastAt: string; unread: number }>()
+  for (const msg of allMessages || []) {
+    const otherId = msg.sender_id === me ? msg.receiver_id : msg.sender_id
+    if (!connMap.has(otherId)) continue
+    const existing = msgByUser.get(otherId)
+    const isUnread = msg.receiver_id === me && !msg.read
+    if (!existing) {
+      msgByUser.set(otherId, { lastText: msg.text, lastAt: msg.created_at, unread: isUnread ? 1 : 0 })
+    } else {
+      if (isUnread) existing.unread++
+    }
   }
-  createNotification(user.id, 'match', `Nova conexão com ${partnerName}!`)
-  return newMatch
+
+  // Build conversations
+  const conversations: Conversation[] = otherIds.map(otherId => {
+    const userInfo = userMap.get(otherId)
+    const msgInfo = msgByUser.get(otherId)
+    return {
+      otherUserId: otherId,
+      otherUserName: userInfo?.full_name || 'Usuário',
+      otherUserAvatar: userInfo?.avatar_url ?? null,
+      otherUserCompany: compMap.get(otherId) || '',
+      connectionId: connMap.get(otherId)!,
+      lastMessage: msgInfo?.lastText ?? null,
+      lastMessageAt: msgInfo?.lastAt ?? null,
+      unreadCount: msgInfo?.unread ?? 0,
+    }
+  })
+
+  // Sort: conversations with messages first (by last message date desc), then without messages
+  conversations.sort((a, b) => {
+    if (a.lastMessageAt && b.lastMessageAt) {
+      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+    }
+    if (a.lastMessageAt) return -1
+    if (b.lastMessageAt) return 1
+    return 0
+  })
+
+  return conversations
 }
 
-export function startConversation(targetUserId: string) {
-  return createMatch(targetUserId, 'direct_message')
+export async function fetchMessages(otherUserId: string): Promise<Message[]> {
+  const me = await getMyId()
+
+  const { data, error } = await supabase()
+    .from('messages')
+    .select('*')
+    .or(
+      `and(sender_id.eq.${me},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${me})`
+    )
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  return (data || []).map(row => ({
+    id: row.id,
+    senderId: row.sender_id,
+    receiverId: row.receiver_id,
+    text: row.text,
+    createdAt: row.created_at,
+    read: row.read,
+  }))
 }
 
-export function addLike(targetId: string): { status: 'match' | 'liked' | 'already_liked' } {
-  const user = getCurrentUser()
-  if (!user) return { status: 'already_liked' }
-  const likes = getJSON<{ fromId: string; toId: string }>(KEYS.LIKES)
-  if (likes.find(l => String(l.fromId) === String(user.id) && String(l.toId) === String(targetId))) return { status: 'already_liked' }
+export async function sendMessage(receiverId: string, text: string): Promise<Message> {
+  const me = await getMyId()
 
-  localStorage.setItem(KEYS.LIKES, JSON.stringify([...likes, { fromId: user.id, toId: targetId, timestamp: new Date().toISOString() }]))
+  const { data, error } = await supabase()
+    .from('messages')
+    .insert({ sender_id: me, receiver_id: receiverId, text })
+    .select('*')
+    .single()
 
-  const reverseLike = likes.find(l => String(l.fromId) === String(targetId) && String(l.toId) === String(user.id))
-  if (reverseLike) {
-    createMatch(targetId, 'mutual_like')
-    return { status: 'match' }
+  if (error) throw error
+
+  return {
+    id: data.id,
+    senderId: data.sender_id,
+    receiverId: data.receiver_id,
+    text: data.text,
+    createdAt: data.created_at,
+    read: data.read,
   }
-  return { status: 'liked' }
 }
 
-export function getNotifications(): Notification[] {
-  const user = getCurrentUser()
-  if (!user) return []
-  return getJSON<Notification>(KEYS.NOTIFICATIONS)
-    .filter(n => String(n.userId) === String(user.id))
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+export async function markMessagesRead(otherUserId: string): Promise<void> {
+  const me = await getMyId()
+
+  const { error } = await supabase()
+    .from('messages')
+    .update({ read: true })
+    .eq('sender_id', otherUserId)
+    .eq('receiver_id', me)
+    .eq('read', false)
+
+  if (error) throw error
 }
 
-export function createNotification(userId: string, type: Notification['type'], content: string) {
-  const all = getJSON<Notification>(KEYS.NOTIFICATIONS)
-  const n: Notification = {
-    id: Date.now() + Math.random(), userId, type, content,
-    read: false, timestamp: new Date().toISOString()
-  }
-  localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify([...all, n]))
-  return n
-}
+export async function deleteConversation(otherUserId: string): Promise<void> {
+  const me = await getMyId()
 
-export function markNotificationsRead() {
-  const user = getCurrentUser()
-  if (!user) return
-  const all = getJSON<Notification>(KEYS.NOTIFICATIONS)
-  localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify(
-    all.map(n => String(n.userId) === String(user.id) ? { ...n, read: true } : n)
-  ))
+  const { error } = await supabase()
+    .from('messages')
+    .delete()
+    .or(
+      `and(sender_id.eq.${me},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${me})`
+    )
+
+  if (error) throw error
 }

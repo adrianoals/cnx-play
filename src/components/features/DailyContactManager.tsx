@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { companies } from "@/data/mock-companies"
 import { MapPin, Building2, Briefcase, Calendar, ArrowRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createMatch } from "@/services/messages.service"
 import type { Company } from "@/types"
 
 export default function DailyContactManager() {
@@ -35,8 +34,7 @@ export default function DailyContactManager() {
 
     setDailyContact(selected)
     setOpen(true)
-    createMatch(String(selected.id), "daily")
-    toast({ title: "Nova Conexão Disponível! 🚀", description: "Seu contato diário foi gerado e adicionado aos seus Matches.", className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none" })
+    toast({ title: "Nova Conexão Disponível!", description: "Seu contato diário foi gerado.", className: "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none" })
   }
 
   useEffect(() => {

@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase"
 import { fetchCategories } from "@/services/category.service"
-import { startConversation, addLike } from "@/services/messages.service"
-import type { Category } from "@/types"
-import { Search, MapPin, Mail, MessageCircle, UserPlus, X, Loader2, Building2 } from "lucide-react"
+import { fetchConnectionsMap, requestConnection, respondConnection, deleteConnection } from "@/services/connection.service"
+import type { Category, Connection } from "@/types"
+import { Search, MapPin, Mail, MessageCircle, UserPlus, X, Loader2, Building2, Clock, Check, XIcon } from "lucide-react"
 
 interface SearchCompany {
   id: string
@@ -37,6 +41,10 @@ export default function SearchPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [activeCategory, setActiveCategory] = useState("Todos")
   const [loading, setLoading] = useState(true)
+  const [connectionsMap, setConnectionsMap] = useState<Map<string, { connectionId: string; status: Connection['status']; iRequested: boolean }>>(new Map())
+  const [myScore, setMyScore] = useState(0)
+  const [connecting, setConnecting] = useState<string | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<SearchCompany | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -62,6 +70,11 @@ export default function SearchPage() {
           scoreMap.set(row.user_id as string, (row.score as number) || 0)
         }
 
+        // Set my score
+        if (user) {
+          setMyScore(scoreMap.get(user.id) || 0)
+        }
+
         // Map and filter out current user's companies
         const mapped: SearchCompany[] = (companiesData || [])
           .filter((row: Record<string, unknown>) => row.user_id !== user?.id)
@@ -85,13 +98,16 @@ export default function SearchPage() {
             }
           })
 
-        // Sort by owner score descending
         mapped.sort((a, b) => b.score - a.score)
         setCompanies(mapped)
 
         // Fetch categories for filter badges
         const cats = await fetchCategories()
         setCategories(cats)
+
+        // Fetch connections map
+        const cMap = await fetchConnectionsMap()
+        setConnectionsMap(cMap)
       } catch (err) {
         console.error("Error loading search data:", err)
       } finally {
@@ -114,35 +130,175 @@ export default function SearchPage() {
     return matchText && matchCategory
   })
 
-  const handleStartChat = (company: SearchCompany) => {
-    startConversation(company.userId)
-    setTimeout(() => {
-      router.push("/meetings")
-      toast({
-        title: "Conexão iniciada",
-        description: `Você iniciou uma conversa com ${company.name}.`,
-        className: "bg-blue-600 text-white",
-      })
-    }, 100)
+  const handleRequestConnection = async (company: SearchCompany) => {
+    if (myScore < 1) {
+      toast({ title: "Pontos insuficientes", description: "Você precisa de pelo menos 1 ponto para solicitar uma conexão.", variant: "destructive" })
+      return
+    }
+    setConfirmTarget(company)
   }
 
-  const handleConnect = (company: SearchCompany) => {
-    const result = addLike(company.userId)
-    if (result.status === "match") {
-      toast({
-        title: "It's a Match!",
-        description: "Vocês estão conectados. O chat foi aberto.",
-        className: "bg-green-600 text-white",
+  const confirmConnection = async () => {
+    if (!confirmTarget) return
+    setConnecting(confirmTarget.userId)
+    setConfirmTarget(null)
+    try {
+      const conn = await requestConnection(confirmTarget.userId)
+      setConnectionsMap(prev => {
+        const next = new Map(prev)
+        next.set(confirmTarget.userId, { connectionId: conn.id, status: 'pending', iRequested: true })
+        return next
       })
-      router.push("/meetings")
-    } else if (result.status === "liked") {
-      toast({
-        title: "Interesse Enviado",
-        description: "Notificaremos se houver interesse mútuo.",
-      })
-    } else {
-      toast({ description: "Você já enviou interesse para este perfil." })
+      toast({ title: "Solicitação enviada", description: `Solicitação de conexão enviada para ${confirmTarget.name}.`, className: "bg-blue-600 text-white" })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível enviar a solicitação.", variant: "destructive" })
+    } finally {
+      setConnecting(null)
     }
+  }
+
+  const handleAccept = async (company: SearchCompany) => {
+    const info = connectionsMap.get(company.userId)
+    if (!info) return
+    setConnecting(company.userId)
+    try {
+      await respondConnection(info.connectionId, true)
+      setConnectionsMap(prev => {
+        const next = new Map(prev)
+        next.set(company.userId, { ...info, status: 'accepted' })
+        return next
+      })
+      toast({ title: "Conexão aceita!", description: `Você e ${company.name} agora estão conectados.`, className: "bg-green-600 text-white" })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível aceitar.", variant: "destructive" })
+    } finally {
+      setConnecting(null)
+    }
+  }
+
+  const handleReject = async (company: SearchCompany) => {
+    const info = connectionsMap.get(company.userId)
+    if (!info) return
+    setConnecting(company.userId)
+    try {
+      await respondConnection(info.connectionId, false)
+      setConnectionsMap(prev => {
+        const next = new Map(prev)
+        next.set(company.userId, { ...info, status: 'rejected' })
+        return next
+      })
+      toast({ title: "Solicitação recusada", description: `Você recusou a conexão com ${company.name}.` })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível recusar.", variant: "destructive" })
+    } finally {
+      setConnecting(null)
+    }
+  }
+
+  const handleReconnect = async (company: SearchCompany) => {
+    const info = connectionsMap.get(company.userId)
+    if (!info) return
+    if (myScore < 1) {
+      toast({ title: "Pontos insuficientes", description: "Você precisa de pelo menos 1 ponto para solicitar uma conexão.", variant: "destructive" })
+      return
+    }
+    setConnecting(company.userId)
+    try {
+      await deleteConnection(info.connectionId)
+      const conn = await requestConnection(company.userId)
+      setConnectionsMap(prev => {
+        const next = new Map(prev)
+        next.set(company.userId, { connectionId: conn.id, status: 'pending', iRequested: true })
+        return next
+      })
+      toast({ title: "Solicitação reenviada", description: `Nova solicitação enviada para ${company.name}.`, className: "bg-blue-600 text-white" })
+    } catch (err) {
+      console.error(err)
+      toast({ title: "Erro", description: "Não foi possível reenviar.", variant: "destructive" })
+    } finally {
+      setConnecting(null)
+    }
+  }
+
+  const renderActionButtons = (company: SearchCompany) => {
+    const info = connectionsMap.get(company.userId)
+    const isProcessing = connecting === company.userId
+
+    if (!info) {
+      return (
+        <Button
+          className="flex-1 gap-2"
+          onClick={() => handleRequestConnection(company)}
+          disabled={isProcessing}
+        >
+          {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+          Conectar
+        </Button>
+      )
+    }
+
+    if (info.status === 'pending' && info.iRequested) {
+      return (
+        <Badge variant="outline" className="flex-1 justify-center py-2 text-sm gap-2 cursor-default">
+          <Clock className="h-4 w-4" />
+          Pendente
+        </Badge>
+      )
+    }
+
+    if (info.status === 'pending' && !info.iRequested) {
+      return (
+        <>
+          <Button
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
+            onClick={() => handleAccept(company)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Aceitar
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1 gap-2"
+            onClick={() => handleReject(company)}
+            disabled={isProcessing}
+          >
+            <XIcon className="h-4 w-4" />
+            Recusar
+          </Button>
+        </>
+      )
+    }
+
+    if (info.status === 'accepted') {
+      return (
+        <Button
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white gap-2"
+          onClick={() => router.push(`/meetings?chat=${company.userId}`)}
+        >
+          <MessageCircle className="h-4 w-4" />
+          Mensagem
+        </Button>
+      )
+    }
+
+    if (info.status === 'rejected') {
+      return (
+        <Button
+          className="flex-1 gap-2"
+          onClick={() => handleReconnect(company)}
+          disabled={isProcessing}
+        >
+          {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+          Conectar
+        </Button>
+      )
+    }
+
+    return null
   }
 
   const categoryBadges = ["Todos", ...categories.map(c => c.name)]
@@ -245,14 +401,7 @@ export default function SearchPage() {
                 </p>
 
                 <div className="flex gap-3 mb-6">
-                  <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white gap-2" onClick={() => handleStartChat(company)}>
-                    <MessageCircle className="h-4 w-4" />
-                    Mensagem
-                  </Button>
-                  <Button variant="outline" className="flex-1 gap-2" onClick={() => handleConnect(company)}>
-                    <UserPlus className="h-4 w-4" />
-                    Conectar
-                  </Button>
+                  {renderActionButtons(company)}
                 </div>
               </div>
             </div>
@@ -288,6 +437,26 @@ export default function SearchPage() {
           </div>
         )}
       </div>
+
+      {/* Connection confirmation dialog */}
+      <AlertDialog open={!!confirmTarget} onOpenChange={(open) => { if (!open) setConfirmTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Solicitar Conexão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para solicitar conexão com <strong>{confirmTarget?.name}</strong>, será consumido <strong>1 ponto</strong> do seu score.
+              {myScore <= 1 && " Atenção: você está com poucos pontos!"}
+              {" "}Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmConnection}>
+              Confirmar (-1 ponto)
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
