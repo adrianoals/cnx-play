@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
                             )}
                             {user.status === "active" && (
                               <>
-                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-amber-400">
+                                <DropdownMenuItem onClick={() => handleStatusChange(user.id, "inactive")} className="cursor-pointer text-amber-600 dark:text-amber-400">
                                   <XCircle className="mr-2 h-4 w-4" /> Desativar
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
