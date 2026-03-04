@@ -50,3 +50,16 @@ export async function markOneRead(id: string): Promise<void> {
 
   if (error) throw error
 }
+
+export async function clearReadNotifications(): Promise<void> {
+  const { data: { user } } = await supabase().auth.getUser()
+  if (!user) return
+
+  const { error } = await supabase()
+    .from('notifications')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('read', true)
+
+  if (error) throw error
+}

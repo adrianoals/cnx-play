@@ -2,10 +2,10 @@
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { Bell, Menu, Gift, User, LogOut } from "lucide-react"
+import { Bell, Menu, Gift, User, LogOut, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { fetchNotifications, markAllRead } from "@/services/notification.service"
+import { fetchNotifications, markAllRead, clearReadNotifications } from "@/services/notification.service"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -38,6 +38,11 @@ const Header = React.memo(function Header({ onMenuToggle, userInitials = "US" }:
     [notifications],
   )
 
+  const readCount = useMemo(
+    () => notifications.filter(n => n.read).length,
+    [notifications],
+  )
+
   const handleNotificationsOpen = async (open: boolean) => {
     if (open && unreadCount > 0) {
       try {
@@ -52,6 +57,18 @@ const Header = React.memo(function Header({ onMenuToggle, userInitials = "US" }:
     }
   }
 
+  const handleClearRead = async () => {
+    try {
+      await clearReadNotifications()
+      mutate(
+        notifications.filter(n => !n.read),
+        false,
+      )
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center px-4 md:px-6">
@@ -60,7 +77,7 @@ const Header = React.memo(function Header({ onMenuToggle, userInitials = "US" }:
             <Menu className="h-6 w-6" />
           </Button>
           <div className="hidden md:flex items-center gap-2 font-bold text-xl tracking-tight">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white">C</div>
+            <img src="/icon.svg" alt="ConectaPlay" className="w-8 h-8" />
             <span className="text-foreground">Conecta<span className="text-blue-600">Play</span></span>
           </div>
         </div>
@@ -118,6 +135,18 @@ const Header = React.memo(function Header({ onMenuToggle, userInitials = "US" }:
                       <div className="p-4 text-center text-sm text-muted-foreground">Nenhuma notificação nova.</div>
                     )}
                   </div>
+                  {readCount > 0 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleClearRead}
+                        className="text-xs text-muted-foreground hover:text-red-500 cursor-pointer justify-center gap-1"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Limpar lidas ({readCount})
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
