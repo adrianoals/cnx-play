@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import Header from "@/components/layout/Header"
 import Sidebar from "@/components/layout/Sidebar"
 import SupportChat from "@/components/features/SupportChat"
-import DailyContactManager from "@/components/features/DailyContactManager"
 import { useAuthContext } from "@/providers/auth-provider"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -54,7 +53,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
       <SupportChat />
-      <DailyContactManager />
     </div>
   )
 }

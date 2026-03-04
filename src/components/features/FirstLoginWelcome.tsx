@@ -43,7 +43,7 @@ export default function FirstLoginWelcome({ userName, onClose }: { userName: str
           </motion.div>
         </div>
         <div className="bg-slate-900/50 p-4 border-t border-slate-800">
-          <p className="text-xs text-slate-500 flex items-center justify-center gap-2"><Sparkles className="h-3 w-3 text-yellow-500" />Você começa como nível <strong>Platina</strong></p>
+          <p className="text-xs text-slate-500 flex items-center justify-center gap-2"><Sparkles className="h-3 w-3 text-yellow-500" />Cada reunião confirmada vale <strong>+1 ponto</strong> no ranking</p>
         </div>
       </DialogContent>
     </Dialog>

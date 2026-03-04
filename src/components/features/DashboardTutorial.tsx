@@ -3,13 +3,13 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { X, ChevronRight, ChevronLeft, LayoutDashboard, HeartHandshake as Handshake, Trophy, Gem, Menu } from "lucide-react"
+import { X, ChevronRight, ChevronLeft, LayoutDashboard, HeartHandshake as Handshake, Trophy, Calendar, Menu } from "lucide-react"
 
 const steps = [
   { title: "O Hub Principal", description: "Aqui no Dashboard você tem uma visão geral de suas métricas, reuniões e o valor total gerado pela comunidade.", icon: LayoutDashboard, color: "bg-blue-500" },
-  { title: "Reunião Diária", description: "Todo dia selecionamos um parceiro ideal para você. Confirme a reunião no card 'Reunião do Dia' para ganhar pontos.", icon: Handshake, color: "bg-green-500" },
+  { title: "Conexões do Dia", description: "Todo dia você recebe parceiros para conectar. Confirme a reunião quando realizada — ambos precisam confirmar para ganhar o ponto.", icon: Handshake, color: "bg-green-500" },
   { title: "Mural de Negócios", description: "Fechou contrato? Registre no Mural de Conquistas. Aumenta sua visibilidade.", icon: Trophy, color: "bg-yellow-500" },
-  { title: "Níveis e Pontos", description: "Interaja e suba de nível (Platina, Safira, Diamante). Pontos desbloqueiam benefícios.", icon: Gem, color: "bg-purple-500" },
+  { title: "Agenda", description: "Configure sua disponibilidade semanal (07:00 e 19:00) e acompanhe o histórico de conexões realizadas.", icon: Calendar, color: "bg-purple-500" },
   { title: "Navegação Completa", description: "Use o menu lateral para buscar empresas, gerenciar conta ou acessar suporte.", icon: Menu, color: "bg-slate-500" },
 ]
 
