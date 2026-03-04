@@ -34,7 +34,7 @@ export async function POST(request: Request) {
           <!-- Logo -->
           <tr>
             <td align="center" style="padding:32px 32px 16px;">
-              <img src="${appUrl}/icon.svg" alt="ConectaPlay" width="48" height="48" style="display:block;border-radius:12px;" />
+              <img src="cid:logo@conectaplay" alt="ConectaPlay" width="48" height="48" style="display:block;border-radius:12px;" />
             </td>
           </tr>
           <!-- Content -->
