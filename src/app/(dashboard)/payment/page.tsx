@@ -97,13 +97,11 @@ function PlanCard({ type, title, price, period, total, features, recommended, hi
 
 const PLAN_LABELS: Record<string, string> = {
   monthly: "Mensal",
-  annual: "Anual Premium",
   visionary: "Start 2026 (Promo)",
 }
 
 const PLAN_PRICES: Record<string, string> = {
   monthly: "R$ 59,99",
-  annual: "R$ 497,00",
   visionary: "R$ 365,00",
 }
 
@@ -130,9 +128,7 @@ export default function PaymentPage() {
     setLoading(true)
     let paymentLink = ""
 
-    if (selectedPlan === "annual") {
-      paymentLink = "https://app.infinitepay.io/plans/share/2g3U8skAh"
-    } else if (selectedPlan === "visionary") {
+    if (selectedPlan === "visionary") {
       paymentLink = "https://invoice.infinitepay.io/plans/lucas-da-silva-recchia/6ulzdCoO1L"
     } else {
       paymentLink = "https://invoice.infinitepay.io/plans/lucas-da-silva-recchia/rZ6TVJIR3"
@@ -165,7 +161,7 @@ export default function PaymentPage() {
         <p className="text-muted-foreground">Escolha seu plano e ative seu acesso à plataforma.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch max-w-4xl mx-auto">
         <PlanCard
           type="monthly"
           title="Plano Mensal"
@@ -178,24 +174,6 @@ export default function PaymentPage() {
           ]}
           isSelected={selectedPlan === "monthly"}
           onSelect={() => setSelectedPlan("monthly")}
-        />
-
-        <PlanCard
-          type="annual"
-          title="Plano Anual"
-          price="41,42"
-          total="Faturado como R$ 497,00/ano"
-          period="mês"
-          recommended
-          features={[
-            "2 reuniões de networking por dia",
-            "Tudo do plano mensal",
-            "2 meses grátis",
-            "Badge de Membro Fundador",
-            "Prioridade em eventos",
-          ]}
-          isSelected={selectedPlan === "annual"}
-          onSelect={() => setSelectedPlan("annual")}
         />
 
         <PlanCard
