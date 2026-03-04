@@ -87,15 +87,26 @@ export interface Deal {
   author: string
 }
 
-export interface DailyMatch {
-  id: number
-  name: string
-  segment: string
-  contact: string
-  phone: string
-  time: string
+export interface DailyMatchRow {
+  id: string
+  userId: string
+  suggestedUserId: string
+  matchDate: string
+  timeSlot: '07:00' | '19:00'
   status: 'pending' | 'completed'
-  image: string
+  createdAt: string
+  partnerName?: string
+  partnerAvatar?: string | null
+  partnerCompany?: string
+  partnerCategory?: string
+}
+
+export interface UserAvailability {
+  id: string
+  userId: string
+  availableDate: string
+  slot07: boolean
+  slot19: boolean
 }
 
 export interface Meeting {

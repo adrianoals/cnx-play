@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useCurrentUser } from "@/hooks/use-current-user"
-import type { UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal } from "@/types"
+import type { UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal, DailyMatchRow } from "@/types"
 import {
   fetchMyStats,
   fetchPlatformTotals,
@@ -19,19 +18,19 @@ import {
   Search, Trophy, ArrowRight, Clock,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
   TrendingUp, Video, AlertTriangle,
-  UserCircle, Crown,
+  UserCircle, Crown, MessageCircle, CheckCircle2, Calendar, Link2,
 } from "lucide-react"
 
 import FirstLoginWelcome from "@/components/features/FirstLoginWelcome"
 import DashboardTutorial from "@/components/features/DashboardTutorial"
 import { getCompaniesByUserId } from "@/services/company.service"
+import { fetchTodayMatches, confirmMatch, ensureMatchConnection } from "@/services/daily-match.service"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { user: currentUser } = useCurrentUser()
 
-  const [dashboardSearch, setDashboardSearch] = useState("")
   const [showTutorial, setShowTutorial] = useState(false)
 
   const [paymentStatus] = useState("active")
@@ -40,22 +39,25 @@ export default function DashboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([])
   const [deals, setDeals] = useState<SupabaseDeal[]>([])
   const [newDeal, setNewDeal] = useState({ companyName: "", value: "" })
+  const [todayMatches, setTodayMatches] = useState<DailyMatchRow[]>([])
   const [loadingData, setLoadingData] = useState(true)
 
   const currentScore = stats?.score ?? 0
 
   const loadDashboardData = useCallback(async () => {
     try {
-      const [myStats, totals, board, recentDeals] = await Promise.all([
+      const [myStats, totals, board, recentDeals, matches] = await Promise.all([
         fetchMyStats(),
         fetchPlatformTotals(),
         fetchLeaderboard(5),
         fetchRecentDeals(10),
+        fetchTodayMatches().catch(() => [] as DailyMatchRow[]),
       ])
       setStats(myStats)
       setPlatformTotals(totals)
       setLeaderboard(board)
       setDeals(recentDeals)
+      setTodayMatches(matches)
     } catch {
       // silent — stats cards will show 0
     } finally {
@@ -97,9 +99,19 @@ export default function DashboardPage() {
     }
   }
 
-  const handleDashboardSearch = () => {
-    if (dashboardSearch.trim()) {
-      router.push(`/search?q=${encodeURIComponent(dashboardSearch)}`)
+  const handleConfirmMatch = async (matchId: string) => {
+    try {
+      await confirmMatch(matchId)
+      setTodayMatches(prev =>
+        prev.map(m => (m.id === matchId ? { ...m, status: 'completed' as const } : m))
+      )
+      toast({
+        title: "Reunião confirmada!",
+        description: "Obrigado por confirmar. Continue fazendo conexões!",
+        className: "bg-green-600 text-white",
+      })
+    } catch {
+      toast({ title: "Erro ao confirmar", variant: "destructive" })
     }
   }
 
@@ -215,23 +227,148 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* Search */}
-      <div className="w-full max-w-full mx-auto relative z-20">
-        <div className="bg-card border border-border p-2 md:p-3 rounded-2xl flex gap-2 shadow-sm items-center focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-          <Search className="ml-3 h-5 w-5 text-muted-foreground shrink-0" />
-          <Input
-            type="text"
-            placeholder="Busque por empresas, serviços ou conexões..."
-            className="bg-transparent border-none placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 text-base h-10 w-full"
-            value={dashboardSearch}
-            onChange={e => setDashboardSearch(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleDashboardSearch()}
-          />
-          <Button onClick={handleDashboardSearch} className="rounded-xl px-6">
-            Buscar
-          </Button>
+      {/* Search Banner */}
+      <motion.div
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/20 rounded-xl shrink-0">
+            <Search className="h-5 w-5 text-blue-500" />
+          </div>
+          <div>
+            <p className="font-semibold text-sm">Encontre novos parceiros</p>
+            <p className="text-muted-foreground text-xs">
+              Explore empresas de diferentes segmentos e envie solicitações de conexão.
+            </p>
+          </div>
         </div>
-      </div>
+        <Button
+          onClick={() => router.push("/search")}
+          size="sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shrink-0"
+        >
+          Pesquisar Empresas
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </motion.div>
+
+      {/* Conexões do Dia */}
+      {!loadingData && (
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}>
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Link2 className="h-5 w-5 text-blue-500" />
+                <h2 className="text-lg font-bold">Conexões do Dia</h2>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/agenda")}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Calendar className="h-4 w-4 mr-1" />
+                Agenda
+              </Button>
+            </div>
+
+            {todayMatches.length > 0 ? (
+              <div className="space-y-3">
+                {todayMatches.map(match => (
+                  <div
+                    key={match.id}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border transition-colors ${
+                      match.status === "completed"
+                        ? "bg-green-500/5 border-green-500/20"
+                        : "bg-secondary/30 border-border hover:bg-secondary/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        match.status === "completed"
+                          ? "bg-green-500/10"
+                          : "bg-blue-500/10"
+                      }`}>
+                        {match.partnerAvatar ? (
+                          <img src={match.partnerAvatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+                        ) : (
+                          <UserCircle className={`h-5 w-5 ${match.status === "completed" ? "text-green-500" : "text-blue-500"}`} />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{match.partnerName || "Parceiro"}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {match.partnerCompany || ""}{match.partnerCategory ? ` · ${match.partnerCategory}` : ""}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-13 sm:ml-0">
+                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-lg border border-border">
+                        {match.timeSlot}
+                      </span>
+
+                      {match.status === "completed" ? (
+                        <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 font-medium">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Realizada
+                        </span>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              try {
+                                await ensureMatchConnection(match.suggestedUserId)
+                                router.push(`/conexoes?chat=${match.suggestedUserId}`)
+                              } catch {
+                                toast({ title: "Erro ao abrir chat", variant: "destructive" })
+                              }
+                            }}
+                            className="text-xs h-8 rounded-lg"
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                            Abrir Chat
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleConfirmMatch(match.id)}
+                            className="text-xs h-8 rounded-lg bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                            Reunião Realizada
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground text-center pt-1">
+                  Converse pelo chat e combinem a reunião por fora (WhatsApp, Meet, presencial).
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground text-sm mb-3">
+                  Nenhuma conexão para hoje. Configure sua disponibilidade na agenda.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push("/agenda")}
+                  className="rounded-xl"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Configurar Agenda
+                </Button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

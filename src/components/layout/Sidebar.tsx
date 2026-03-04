@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake } from "lucide-react"
+import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -31,6 +31,7 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
 
   const baseItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
+    { icon: Calendar, label: "Agenda", path: "/agenda" },
     { icon: Search, label: "Pesquisar Empresas", path: "/search" },
     { icon: User, label: "Minha Conta", path: "/account" },
     { icon: Users, label: "Conexões", path: "/conexoes" },
@@ -45,6 +46,7 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
       { icon: Home, label: "Dashboard", path: "/dashboard" },
       { icon: Users, label: "Usuários", path: "/admin/users" },
       { icon: Building2, label: "Empresas", path: "/admin/empresas" },
+      { icon: Link2, label: "Conexões do Dia", path: "/admin/conexoes" },
       { icon: Gift, label: "Indicações", path: "/admin/indicacoes" },
       { icon: Handshake, label: "Negócios", path: "/admin/negocios" },
     ] as typeof baseItems
