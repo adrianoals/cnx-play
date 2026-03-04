@@ -353,7 +353,7 @@ export default function AdminConexoesPage() {
           <DialogHeader>
             <DialogTitle>Criar Match Manual</DialogTitle>
             <DialogDescription>
-              Selecione dois usuários disponíveis para conectar em {selectedDate}.
+              Selecione dois usuários disponíveis para conectar em {new Date(selectedDate + "T00:00:00").toLocaleDateString("pt-BR")}.
             </DialogDescription>
           </DialogHeader>
 

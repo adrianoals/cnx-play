@@ -101,6 +101,10 @@ export interface DailyMatchRow {
   partnerCategory?: string
 }
 
+export interface MatchHistoryItem extends DailyMatchRow {
+  bothConfirmed: boolean
+}
+
 export interface UserAvailability {
   id: string
   userId: string

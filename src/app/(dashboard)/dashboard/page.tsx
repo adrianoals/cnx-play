@@ -101,15 +101,25 @@ export default function DashboardPage() {
 
   const handleConfirmMatch = async (matchId: string) => {
     try {
-      await confirmMatch(matchId)
+      const { bothConfirmed } = await confirmMatch(matchId)
       setTodayMatches(prev =>
         prev.map(m => (m.id === matchId ? { ...m, status: 'completed' as const } : m))
       )
-      toast({
-        title: "Reunião confirmada!",
-        description: "Obrigado por confirmar. Continue fazendo conexões!",
-        className: "bg-green-600 text-white",
-      })
+      if (bothConfirmed) {
+        toast({
+          title: "Reunião confirmada por ambos!",
+          description: "+1 ponto no seu score. Continue fazendo conexões!",
+          className: "bg-green-600 text-white",
+        })
+        // Reload stats to reflect new score
+        loadDashboardData()
+      } else {
+        toast({
+          title: "Confirmado!",
+          description: "Aguardando seu parceiro confirmar para computar o ponto.",
+          className: "bg-amber-600 text-white",
+        })
+      }
     } catch {
       toast({ title: "Erro ao confirmar", variant: "destructive" })
     }
