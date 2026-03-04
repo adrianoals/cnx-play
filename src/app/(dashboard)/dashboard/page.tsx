@@ -23,8 +23,9 @@ import useSWR from "swr"
 
 const FirstLoginWelcome = dynamic(() => import("@/components/features/FirstLoginWelcome"), { ssr: false })
 const DashboardTutorial = dynamic(() => import("@/components/features/DashboardTutorial"), { ssr: false })
-import { getCompaniesByUserId } from "@/services/company.service"
+import { getCompaniesByUserId, fetchMyCompanies } from "@/services/company.service"
 import { confirmMatch, ensureMatchConnection } from "@/services/daily-match.service"
+import type { AdminCompany } from "@/types"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -34,9 +35,14 @@ export default function DashboardPage() {
   const [showTutorial, setShowTutorial] = useState(false)
 
   const [paymentStatus] = useState("active")
-  const [newDeal, setNewDeal] = useState({ companyName: "", value: "" })
+  const [newDeal, setNewDeal] = useState({ companyName: "", value: "", authorCompanyId: "" })
 
   const isActive = currentUser && currentUser.status !== "pending"
+
+  const { data: myCompanies = [] } = useSWR<AdminCompany[]>(
+    isActive ? "my-companies" : null,
+    fetchMyCompanies,
+  )
 
   const { data: dashData, isLoading: loadingData, mutate } = useSWR(
     isActive ? "dashboard-data" : null,
@@ -59,8 +65,9 @@ export default function DashboardPage() {
       await registerDeal({
         companyName: newDeal.companyName,
         value: parseFloat(newDeal.value),
+        authorCompanyId: newDeal.authorCompanyId || undefined,
       })
-      setNewDeal({ companyName: "", value: "" })
+      setNewDeal({ companyName: "", value: "", authorCompanyId: "" })
       toast({
         title: "Negócio enviado para validação",
         description: "Seu negócio foi enviado e está pendente de validação pelo administrador.",
@@ -414,6 +421,22 @@ export default function DashboardPage() {
           <p className="text-muted-foreground text-sm mb-6">Fechou negócio através da plataforma? Registre aqui e inspire outros.</p>
 
           <form onSubmit={handleRegisterDeal} className="space-y-4">
+            {myCompanies.length > 0 && (
+              <div>
+                <label className="text-xs text-muted-foreground ml-1 mb-1 block">Sua Empresa</label>
+                <select
+                  required
+                  value={newDeal.authorCompanyId}
+                  onChange={e => setNewDeal({ ...newDeal, authorCompanyId: e.target.value })}
+                  className="w-full bg-secondary/50 border border-input rounded-xl px-4 py-2.5 text-foreground text-sm focus:border-primary focus:outline-none"
+                >
+                  <option value="">Selecione sua empresa</option>
+                  {myCompanies.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className="text-xs text-muted-foreground ml-1 mb-1 block">Nome da Empresa Parceira</label>
               <input
@@ -463,7 +486,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">{deal.companyName}</p>
-                    <p className="text-muted-foreground text-xs">Realizado por: <span className="text-foreground/80">{deal.authorName || "—"}</span></p>
+                    <p className="text-muted-foreground text-xs">Por: <span className="text-foreground/80">{deal.authorCompanyName || deal.authorName || "—"}</span></p>
                   </div>
                 </div>
                 <div className="text-right">

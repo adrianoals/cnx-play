@@ -230,6 +230,8 @@ export interface PlatformTotals {
 export interface SupabaseDeal {
   id: string
   authorId: string
+  authorCompanyId?: string | null
+  authorCompanyName?: string
   companyName: string
   value: number
   dealDate: string

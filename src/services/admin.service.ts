@@ -184,14 +184,11 @@ export async function fetchAllDeals(): Promise<SupabaseDeal[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('deals')
-    .select('*, users!deals_author_id_fkey(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name), companies(name)')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return (data || []).map((row: Record<string, unknown>) => {
-    const nested = row.users as Record<string, unknown> | null
-    return mapDeal({ ...row, users: nested })
-  })
+  return (data || []).map(mapDeal)
 }
 
 export async function updateDealStatus(

@@ -39,7 +39,8 @@ export default function AdminNegociosPage() {
     const term = dealSearch.toLowerCase()
     return (
       d.companyName.toLowerCase().includes(term) ||
-      (d.authorName || "").toLowerCase().includes(term)
+      (d.authorName || "").toLowerCase().includes(term) ||
+      (d.authorCompanyName || "").toLowerCase().includes(term)
     )
   })
 
@@ -112,6 +113,7 @@ export default function AdminNegociosPage() {
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="text-muted-foreground">Autor</TableHead>
+                  <TableHead className="text-muted-foreground">Empresa do Autor</TableHead>
                   <TableHead className="text-muted-foreground">Empresa Parceira</TableHead>
                   <TableHead className="text-muted-foreground hidden md:table-cell">Valor (R$)</TableHead>
                   <TableHead className="text-muted-foreground text-center">Status</TableHead>
@@ -125,6 +127,9 @@ export default function AdminNegociosPage() {
                     <TableRow key={deal.id} className="border-border hover:bg-secondary/30 transition-colors">
                       <TableCell>
                         <span className="font-medium text-sm">{deal.authorName || "—"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-medium text-sm">{deal.authorCompanyName || "—"}</span>
                       </TableCell>
                       <TableCell>
                         <span className="font-semibold text-sm">{deal.companyName}</span>
@@ -170,7 +175,7 @@ export default function AdminNegociosPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                       {dealSearch ? "Nenhum negócio encontrado." : "Nenhum negócio cadastrado."}
                     </TableCell>
                   </TableRow>

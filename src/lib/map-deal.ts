@@ -2,10 +2,13 @@ import type { SupabaseDeal } from '@/types'
 
 export function mapDeal(row: Record<string, unknown>): SupabaseDeal {
   const user = row.users as Record<string, unknown> | null | undefined
+  const company = row.companies as Record<string, unknown> | null | undefined
 
   return {
     id: row.id as string,
     authorId: row.author_id as string,
+    authorCompanyId: (row.author_company_id as string) || null,
+    authorCompanyName: company ? ((company.name as string) || '') : undefined,
     companyName: (row.partner_company_name as string) || '',
     value: Number(row.value_brl) || 0,
     dealDate: (row.deal_date as string) || '',

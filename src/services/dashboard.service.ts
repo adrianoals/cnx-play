@@ -46,6 +46,7 @@ export async function fetchLeaderboard(limit = 10): Promise<LeaderboardRow[]> {
 export async function registerDeal(input: {
   companyName: string
   value: number
+  authorCompanyId?: string
 }): Promise<SupabaseDeal> {
   const supabase = createClient()
 
@@ -56,11 +57,12 @@ export async function registerDeal(input: {
     .from('deals')
     .insert({
       author_id: user.id,
+      author_company_id: input.authorCompanyId || null,
       partner_company_name: input.companyName,
       value_brl: input.value,
       deal_date: new Date().toISOString().slice(0, 10),
     })
-    .select('*, users!deals_author_id_fkey(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name), companies(name)')
     .single()
 
   if (error) throw new Error(error.message)
@@ -72,7 +74,7 @@ export async function fetchRecentDeals(limit = 10): Promise<SupabaseDeal[]> {
 
   const { data, error } = await supabase
     .from('deals')
-    .select('*, users!deals_author_id_fkey(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name), companies(name)')
     .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -86,7 +88,7 @@ export async function fetchMyDeals(): Promise<SupabaseDeal[]> {
 
   const { data, error } = await supabase
     .from('deals')
-    .select('*, users!deals_author_id_fkey(full_name)')
+    .select('*, users!deals_author_id_fkey(full_name), companies(name)')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
@@ -123,6 +125,8 @@ export async function fetchDashboardBundle(): Promise<DashboardBundle> {
     recentDeals: (dealsRaw || []).map(row => ({
       id: row.id as string,
       authorId: row.author_id as string,
+      authorCompanyId: (row.author_company_id as string) || null,
+      authorCompanyName: (row.author_company_name as string) || undefined,
       companyName: (row.partner_company_name as string) || '',
       value: Number(row.value_brl) || 0,
       dealDate: (row.deal_date as string) || '',
