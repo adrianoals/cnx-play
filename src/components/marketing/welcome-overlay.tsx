@@ -45,7 +45,7 @@ export function WelcomeOverlay() {
 
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/eddfc832ca27ba52405ce133d722146f.jpg"
+                src="/landing/welcome-bg.jpg"
                 alt=""
                 className="h-full w-full scale-105 object-cover object-center opacity-60"
               />

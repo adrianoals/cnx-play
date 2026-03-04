@@ -22,8 +22,7 @@ const entrepreneurs = [
     name: "Lucrecchia",
     role: "Fundador & Visionário",
     handle: "@lucrecchia",
-    image:
-      "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/29d9bdc5555dfc55db2ab494e57c4172.jpg",
+    image: "/landing/lucrecchia.jpg",
     quote: "Construindo pontes onde outros veem abismos. O futuro pertence a quem conecta.",
     isFounder: true,
   },
@@ -31,24 +30,21 @@ const entrepreneurs = [
     name: "Danni Sarturi",
     role: "Estrategista de Imagem",
     handle: "@dannisarturi",
-    image:
-      "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/8d30866ded4524dc56f3aba9d2925168.jpg",
+    image: "/landing/danni-sarturi.jpg",
     quote: "Sua marca pessoal é a moeda mais valiosa do novo mercado.",
   },
   {
     name: "Dr. Lucas Luquetti",
     role: "Referência em Saúde",
     handle: "@dr.lucasluquettioficial",
-    image:
-      "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/81bbf7abd4522a8da73e1b11923ca382.jpg",
+    image: "/landing/lucas-luquetti.jpg",
     quote: "Alta performance começa de dentro para fora. Saúde é o pilar do sucesso.",
   },
   {
     name: "Greice Marin",
     role: "Liderança Feminina",
     handle: "@greicemarin",
-    image:
-      "https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/c6c6d39254a72e3ce2c7e2eb75aacac1.jpg",
+    image: "/landing/greice-marin.jpg",
     quote: "Empoderamento através da ação. Transformando desafios em degraus.",
   },
   {
