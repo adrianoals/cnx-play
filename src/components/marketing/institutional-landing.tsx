@@ -14,6 +14,8 @@ import {
   Users2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CompanyLogo } from "@/components/marketing/company-logo"
+import { WelcomeOverlay } from "@/components/marketing/welcome-overlay"
 
 const entrepreneurs = [
   {
@@ -94,26 +96,6 @@ const fallingParticles = Array.from({ length: 28 }, (_, index) => ({
           : "bg-white",
 }))
 
-function BrandLockup() {
-  return (
-    <div className="flex items-center gap-2">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.86 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35, type: "spring", stiffness: 180, damping: 18 }}
-        className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-1 shadow-lg shadow-blue-500/20"
-      >
-        <Network className="h-5 w-5 text-white" />
-      </motion.div>
-      <div className="flex items-center gap-2">
-        <span className="text-xl font-bold tracking-tight text-white">Company Conexão Play</span>
-        <span className="text-xl font-bold text-slate-500">|</span>
-        <span className="text-lg font-semibold tracking-tight text-white">365conexões</span>
-      </div>
-    </div>
-  )
-}
-
 function FloatingAccent({
   className,
   delay = 0,
@@ -140,6 +122,7 @@ function FloatingAccent({
 export function InstitutionalLanding() {
   return (
     <div className="min-h-screen overflow-hidden bg-slate-950 font-sans text-white selection:bg-primary/20">
+      <WelcomeOverlay />
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         {fallingParticles.map((particle) => (
           <div
@@ -183,7 +166,7 @@ export function InstitutionalLanding() {
       </div>
 
       <nav className="relative z-10 container mx-auto flex h-20 items-center justify-between px-6 py-4">
-        <BrandLockup />
+        <CompanyLogo />
 
         <div className="hidden gap-4 md:flex">
           <Button
