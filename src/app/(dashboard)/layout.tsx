@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import Header from "@/components/layout/Header"
 import Sidebar from "@/components/layout/Sidebar"
-import SupportChat from "@/components/features/SupportChat"
 import { useAuthContext } from "@/providers/auth-provider"
+
+const SupportChat = dynamic(() => import("@/components/features/SupportChat"), { ssr: false })
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -26,6 +28,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [loading, user, router])
 
+  const handleClose = useCallback(() => setMenuOpen(false), [])
+  const handleToggle = useCallback(() => setMenuOpen(prev => !prev), [])
+
+  const status = user?.status === "pending" ? "pending" : "active"
+
+  const userInitials = useMemo(() => {
+    if (!user?.fullName) return "US"
+    return user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+  }, [user?.fullName])
+
   if (loading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -34,18 +46,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  const status = user.status === "pending" ? "pending" : "active"
-
-  const userInitials = user.fullName
-    ? user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
-    : "US"
-
   return (
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
-      <Sidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} status={status} />
+      <Sidebar isOpen={menuOpen} onClose={handleClose} status={status} />
       <div className={`flex flex-col min-h-screen transition-all duration-300 ${menuOpen ? "lg:ml-72" : ""}`}>
         <Header
-          onMenuToggle={() => setMenuOpen(!menuOpen)}
+          onMenuToggle={handleToggle}
           userInitials={userInitials}
         />
         <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full">

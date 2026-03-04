@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ interface SidebarProps {
   status?: string
 }
 
-export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ isOpen, onClose, status = "active" }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
@@ -128,4 +128,6 @@ export default function Sidebar({ isOpen, onClose, status = "active" }: SidebarP
       </motion.aside>
     </>
   )
-}
+})
+
+export default Sidebar

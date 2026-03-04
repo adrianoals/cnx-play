@@ -9,7 +9,7 @@ export async function fetchNotifications(): Promise<Notification[]> {
 
   const { data, error } = await supabase()
     .from('notifications')
-    .select('*')
+    .select('id, user_id, type, title, content, read, created_at, reference_id, reference_type')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(50)

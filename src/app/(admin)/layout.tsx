@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/layout/Header"
 import Sidebar from "@/components/layout/Sidebar"
@@ -41,6 +41,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setAuthorized(true)
   }, [loading, user, router, toast])
 
+  const handleClose = useCallback(() => setMenuOpen(false), [])
+  const handleToggle = useCallback(() => setMenuOpen(prev => !prev), [])
+
+  const userInitials = useMemo(() => {
+    if (!user?.fullName) return "AD"
+    return user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+  }, [user?.fullName])
+
   if (loading || !authorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -52,10 +60,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header
-        onMenuToggle={() => setMenuOpen(!menuOpen)}
-        userInitials={user?.fullName ? user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) : "AD"}
+        onMenuToggle={handleToggle}
+        userInitials={userInitials}
       />
-      <Sidebar isOpen={menuOpen} onClose={() => setMenuOpen(false)} status="active" />
+      <Sidebar isOpen={menuOpen} onClose={handleClose} status="active" />
       <main className={`transition-all duration-300 p-4 md:p-8 lg:p-12 ${menuOpen ? "lg:ml-72" : ""}`}>
         {children}
       </main>

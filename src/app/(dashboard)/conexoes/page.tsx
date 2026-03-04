@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { fetchConversations, fetchMessages, sendMessage, markMessagesRead, deleteConversation } from "@/services/messages.service"
 import { fetchPendingReceived, fetchPendingSent, respondConnection, deleteConnection } from "@/services/connection.service"
 import { createClient } from "@/lib/supabase"
+import useSWR from "swr"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -28,53 +29,65 @@ export default function ConexoesPage() {
   const [activeTab, setActiveTab] = useState(chatParam ? "conversas" : "solicitacoes")
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [pendingReceived, setPendingReceived] = useState<Connection[]>([])
-  const [pendingSent, setPendingSent] = useState<Connection[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string | null>(chatParam)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState("")
   const [searchFilter, setSearchFilter] = useState("")
-  const [loading, setLoading] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState<Conversation | null>(null)
   const [responding, setResponding] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Fetch current user ID once
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id)
+    })
+  }, [])
+
+  // SWR for conversations and connections
+  const fetchConexoesData = useCallback(async () => {
+    const [convs, received, sent] = await Promise.all([
+      fetchConversations(),
+      fetchPendingReceived(),
+      fetchPendingSent(),
+    ])
+    return { convs, received, sent }
+  }, [])
+
+  const { data: conexoesData, isLoading: loading, mutate: mutateConexoes } = useSWR(
+    currentUserId ? "conexoes-data" : null,
+    fetchConexoesData,
+    { refreshInterval: 15000 },
+  )
+
+  const conversations = conexoesData?.convs ?? []
+  const pendingReceived = conexoesData?.received ?? []
+  const pendingSent = conexoesData?.sent ?? []
+
   const selectedConversation = conversations.find(c => c.otherUserId === selectedUserId)
 
-  const loadData = useCallback(async () => {
+  // Fetch messages when selected user changes
+  const loadMessages = useCallback(async (userId: string) => {
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      setCurrentUserId(user.id)
-
-      const [convs, received, sent] = await Promise.all([
-        fetchConversations(),
-        fetchPendingReceived(),
-        fetchPendingSent(),
-      ])
-      setConversations(convs)
-      setPendingReceived(received)
-      setPendingSent(sent)
-
-      if (selectedUserId) {
-        const msgs = await fetchMessages(selectedUserId)
-        setMessages(msgs)
-        await markMessagesRead(selectedUserId)
-      }
+      const msgs = await fetchMessages(userId)
+      setMessages(msgs)
+      await markMessagesRead(userId)
     } catch (err) {
-      console.error("Error loading data:", err)
-    } finally {
-      setLoading(false)
+      console.error(err)
     }
-  }, [selectedUserId])
+  }, [])
 
   useEffect(() => {
-    loadData()
-    const interval = setInterval(loadData, 3000)
+    if (selectedUserId) loadMessages(selectedUserId)
+  }, [selectedUserId, loadMessages])
+
+  // Refresh messages on interval when chat is open
+  useEffect(() => {
+    if (!selectedUserId) return
+    const interval = setInterval(() => loadMessages(selectedUserId), 15000)
     return () => clearInterval(interval)
-  }, [loadData])
+  }, [selectedUserId, loadMessages])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -87,9 +100,15 @@ export default function ConexoesPage() {
       const msgs = await fetchMessages(otherUserId)
       setMessages(msgs)
       await markMessagesRead(otherUserId)
-      setConversations(prev => prev.map(c =>
-        c.otherUserId === otherUserId ? { ...c, unreadCount: 0 } : c
-      ))
+      // Optimistic: zero out unread count
+      if (conexoesData) {
+        mutateConexoes({
+          ...conexoesData,
+          convs: conexoesData.convs.map(c =>
+            c.otherUserId === otherUserId ? { ...c, unreadCount: 0 } : c
+          ),
+        }, false)
+      }
     } catch (err) {
       console.error(err)
     }
@@ -116,11 +135,11 @@ export default function ConexoesPage() {
     try {
       await deleteConversation(deleteTarget.otherUserId)
       await deleteConnection(deleteTarget.connectionId)
-      setConversations(prev => prev.filter(c => c.otherUserId !== deleteTarget.otherUserId))
       if (selectedUserId === deleteTarget.otherUserId) {
         setSelectedUserId(null)
         setMessages([])
       }
+      mutateConexoes()
       toast({ title: "Chat excluído", description: "A conversa e a conexão foram removidas." })
     } catch (err) {
       console.error(err)
@@ -134,9 +153,8 @@ export default function ConexoesPage() {
     setResponding(conn.id)
     try {
       await respondConnection(conn.id, true)
-      setPendingReceived(prev => prev.filter(p => p.id !== conn.id))
       toast({ title: "Conexão aceita!", description: `Você e ${conn.requesterName} agora estão conectados.`, className: "bg-green-600 text-white" })
-      await loadData()
+      await mutateConexoes()
     } catch (err) {
       console.error(err)
       toast({ title: "Erro", description: "Não foi possível aceitar.", variant: "destructive" })
@@ -149,7 +167,7 @@ export default function ConexoesPage() {
     setResponding(conn.id)
     try {
       await respondConnection(conn.id, false)
-      setPendingReceived(prev => prev.filter(p => p.id !== conn.id))
+      mutateConexoes()
       toast({ title: "Solicitação recusada" })
     } catch (err) {
       console.error(err)

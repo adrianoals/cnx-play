@@ -11,59 +11,24 @@ async function getMyId(): Promise<string> {
 
 export async function fetchTodayMatches(): Promise<DailyMatchRow[]> {
   const me = await getMyId()
-  const today = new Date().toISOString().slice(0, 10)
 
-  const { data, error } = await supabase()
-    .from('daily_matches')
-    .select('*')
-    .eq('user_id', me)
-    .eq('match_date', today)
-    .order('time_slot')
-
+  const { data, error } = await supabase().rpc('get_today_matches', { p_user_id: me })
   if (error) throw error
-  if (!data || data.length === 0) return []
+  if (!data || !Array.isArray(data) || data.length === 0) return []
 
-  // Enrich with partner info
-  const partnerIds = data.map(r => r.suggested_user_id)
-
-  const { data: users } = await supabase()
-    .from('users')
-    .select('id, full_name, avatar_url')
-    .in('id', partnerIds)
-
-  const { data: companies } = await supabase()
-    .from('companies')
-    .select('user_id, name, category_id, categories(name)')
-    .eq('is_primary', true)
-    .in('user_id', partnerIds)
-
-  const userMap = new Map<string, { full_name: string; avatar_url: string | null }>()
-  for (const u of users || []) userMap.set(u.id, u)
-
-  const compMap = new Map<string, { name: string; categoryName?: string }>()
-  for (const c of companies || []) {
-    const raw = c.categories as unknown
-    const cat = Array.isArray(raw) ? (raw[0] as { name: string } | undefined) : (raw as { name: string } | null)
-    compMap.set(c.user_id, { name: c.name, categoryName: cat?.name })
-  }
-
-  return data.map(row => {
-    const partner = userMap.get(row.suggested_user_id)
-    const comp = compMap.get(row.suggested_user_id)
-    return {
-      id: row.id as string,
-      userId: row.user_id as string,
-      suggestedUserId: row.suggested_user_id as string,
-      matchDate: row.match_date as string,
-      timeSlot: row.time_slot as '07:00' | '19:00',
-      status: row.status as 'pending' | 'completed',
-      createdAt: row.created_at as string,
-      partnerName: partner?.full_name,
-      partnerAvatar: partner?.avatar_url ?? null,
-      partnerCompany: comp?.name,
-      partnerCategory: comp?.categoryName,
-    }
-  })
+  return (data as Record<string, unknown>[]).map(row => ({
+    id: row.id as string,
+    userId: row.user_id as string,
+    suggestedUserId: row.suggested_user_id as string,
+    matchDate: row.match_date as string,
+    timeSlot: row.time_slot as '07:00' | '19:00',
+    status: row.status as 'pending' | 'completed',
+    createdAt: row.created_at as string,
+    partnerName: row.partner_name as string | undefined,
+    partnerAvatar: (row.partner_avatar as string) ?? null,
+    partnerCompany: row.partner_company as string | undefined,
+    partnerCategory: row.partner_category as string | undefined,
+  }))
 }
 
 export async function confirmMatch(matchId: string): Promise<{ bothConfirmed: boolean }> {
@@ -72,7 +37,7 @@ export async function confirmMatch(matchId: string): Promise<{ bothConfirmed: bo
   // 1. Get the match record to know the partner, date, and slot
   const { data: myMatch, error: fetchErr } = await supabase()
     .from('daily_matches')
-    .select('*')
+    .select('id, user_id, suggested_user_id, match_date, time_slot, status')
     .eq('id', matchId)
     .single()
 
@@ -127,7 +92,7 @@ export async function fetchMatchHistory(): Promise<MatchHistoryItem[]> {
 
   const { data, error } = await supabase()
     .from('daily_matches')
-    .select('*')
+    .select('id, user_id, suggested_user_id, match_date, time_slot, status, created_at')
     .eq('user_id', me)
     .lt('match_date', today)
     .order('match_date', { ascending: false })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Bell, Menu, Gift, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,54 +12,40 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Notification } from "@/types"
 import { useAuth } from "@/hooks/use-auth"
-import { useToast } from "@/hooks/use-toast"
+import useSWR from "swr"
 
 interface HeaderProps {
   onMenuToggle: () => void
   userInitials?: string
 }
 
-export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProps) {
+const Header = React.memo(function Header({ onMenuToggle, userInitials = "US" }: HeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { logout } = useAuth()
-  const { toast } = useToast()
-  const [user, setUser] = useState<{ fullName?: string; companyName?: string; avatar?: string; status?: string }>({})
-  const [avatar, setAvatar] = useState<string | null>(null)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
+  const { user, logout } = useAuth()
 
-  const isActive = user.status === "active"
+  const isActive = user?.status === "active"
   const isAdminPanel = pathname.startsWith("/admin")
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      const notifs = await fetchNotifications()
-      setNotifications(notifs)
-      setUnreadCount(notifs.filter(n => !n.read).length)
-    } catch (err) {
-      console.error("Error loading notifications:", err)
-    }
-  }, [])
+  const { data: notifications = [], mutate } = useSWR<Notification[]>(
+    isActive ? "notifications" : null,
+    fetchNotifications,
+    { refreshInterval: 30000 },
+  )
 
-  useEffect(() => {
-    const u = JSON.parse(localStorage.getItem("current_user") || "{}")
-    setUser(u)
-    setAvatar(u.avatar || null)
-
-    if (u.status !== "active") return
-
-    loadNotifications()
-    const interval = setInterval(loadNotifications, 3000)
-    return () => clearInterval(interval)
-  }, [loadNotifications])
+  const unreadCount = useMemo(
+    () => notifications.filter(n => !n.read).length,
+    [notifications],
+  )
 
   const handleNotificationsOpen = async (open: boolean) => {
     if (open && unreadCount > 0) {
       try {
         await markAllRead()
-        setUnreadCount(0)
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+        mutate(
+          notifications.map(n => ({ ...n, read: true })),
+          false,
+        )
       } catch (err) {
         console.error(err)
       }
@@ -142,12 +128,12 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
               <button className="flex items-center gap-2 pl-2 border-l border-border outline-none cursor-pointer hover:opacity-80 transition-opacity">
                 {!isAdminPanel && (
                   <div className="hidden md:block text-right">
-                    <p className="text-sm font-medium leading-none text-foreground">{user.fullName || "Visitante"}</p>
-                    <p className="text-xs text-muted-foreground">{user.companyName || "Empresa"}</p>
+                    <p className="text-sm font-medium leading-none text-foreground">{user?.fullName || "Visitante"}</p>
+                    <p className="text-xs text-muted-foreground">{user?.companyName || "Empresa"}</p>
                   </div>
                 )}
                 <Avatar className="h-8 w-8 border border-border">
-                  <AvatarImage src={avatar || user.avatar || undefined} />
+                  <AvatarImage src={user?.avatar || undefined} />
                   <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white font-medium text-xs">{userInitials}</AvatarFallback>
                 </Avatar>
               </button>
@@ -170,4 +156,6 @@ export default function Header({ onMenuToggle, userInitials = "US" }: HeaderProp
       </div>
     </header>
   )
-}
+})
+
+export default Header

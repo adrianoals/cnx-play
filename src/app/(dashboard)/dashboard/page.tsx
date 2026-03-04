@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -8,11 +8,8 @@ import { useToast } from "@/hooks/use-toast"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import type { UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal, DailyMatchRow } from "@/types"
 import {
-  fetchMyStats,
-  fetchPlatformTotals,
-  fetchLeaderboard,
   registerDeal,
-  fetchRecentDeals,
+  fetchDashboardBundle,
 } from "@/services/dashboard.service"
 import {
   Search, Trophy, ArrowRight, Clock,
@@ -21,10 +18,13 @@ import {
   UserCircle, Crown, MessageCircle, CheckCircle2, Calendar, Link2,
 } from "lucide-react"
 
-import FirstLoginWelcome from "@/components/features/FirstLoginWelcome"
-import DashboardTutorial from "@/components/features/DashboardTutorial"
+import dynamic from "next/dynamic"
+import useSWR from "swr"
+
+const FirstLoginWelcome = dynamic(() => import("@/components/features/FirstLoginWelcome"), { ssr: false })
+const DashboardTutorial = dynamic(() => import("@/components/features/DashboardTutorial"), { ssr: false })
 import { getCompaniesByUserId } from "@/services/company.service"
-import { fetchTodayMatches, confirmMatch, ensureMatchConnection } from "@/services/daily-match.service"
+import { confirmMatch, ensureMatchConnection } from "@/services/daily-match.service"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -34,44 +34,22 @@ export default function DashboardPage() {
   const [showTutorial, setShowTutorial] = useState(false)
 
   const [paymentStatus] = useState("active")
-  const [stats, setStats] = useState<UserStats | null>(null)
-  const [platformTotals, setPlatformTotals] = useState<PlatformTotals | null>(null)
-  const [leaderboard, setLeaderboard] = useState<LeaderboardRow[]>([])
-  const [deals, setDeals] = useState<SupabaseDeal[]>([])
   const [newDeal, setNewDeal] = useState({ companyName: "", value: "" })
-  const [todayMatches, setTodayMatches] = useState<DailyMatchRow[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+
+  const isActive = currentUser && currentUser.status !== "pending"
+
+  const { data: dashData, isLoading: loadingData, mutate } = useSWR(
+    isActive ? "dashboard-data" : null,
+    fetchDashboardBundle,
+  )
+
+  const stats: UserStats | null = dashData?.myStats ?? null
+  const platformTotals: PlatformTotals | null = dashData?.totals ?? null
+  const leaderboard: LeaderboardRow[] = dashData?.board ?? []
+  const deals: SupabaseDeal[] = dashData?.recentDeals ?? []
+  const todayMatches: DailyMatchRow[] = dashData?.matches ?? []
 
   const currentScore = stats?.score ?? 0
-
-  const loadDashboardData = useCallback(async () => {
-    try {
-      const [myStats, totals, board, recentDeals, matches] = await Promise.all([
-        fetchMyStats(),
-        fetchPlatformTotals(),
-        fetchLeaderboard(5),
-        fetchRecentDeals(10),
-        fetchTodayMatches().catch(() => [] as DailyMatchRow[]),
-      ])
-      setStats(myStats)
-      setPlatformTotals(totals)
-      setLeaderboard(board)
-      setDeals(recentDeals)
-      setTodayMatches(matches)
-    } catch {
-      // silent — stats cards will show 0
-    } finally {
-      setLoadingData(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!currentUser) return
-    if (currentUser.status === "pending") { setLoadingData(false); return }
-
-    loadDashboardData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser])
 
   const handleRegisterDeal = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -89,7 +67,7 @@ export default function DashboardPage() {
         className: "bg-blue-600 text-white",
       })
       // Reload stats
-      loadDashboardData()
+      mutate()
     } catch (err) {
       toast({
         title: "Erro ao registrar negócio",
@@ -102,8 +80,17 @@ export default function DashboardPage() {
   const handleConfirmMatch = async (matchId: string) => {
     try {
       const { bothConfirmed } = await confirmMatch(matchId)
-      setTodayMatches(prev =>
-        prev.map(m => (m.id === matchId ? { ...m, status: 'completed' as const } : m))
+      // Optimistic update via SWR
+      mutate(
+        dashData
+          ? {
+              ...dashData,
+              matches: dashData.matches.map(m =>
+                m.id === matchId ? { ...m, status: 'completed' as const } : m
+              ),
+            }
+          : undefined,
+        false,
       )
       if (bothConfirmed) {
         toast({
@@ -112,7 +99,7 @@ export default function DashboardPage() {
           className: "bg-green-600 text-white",
         })
         // Reload stats to reflect new score
-        loadDashboardData()
+        mutate()
       } else {
         toast({
           title: "Confirmado!",

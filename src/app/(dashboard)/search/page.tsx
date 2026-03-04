@@ -45,6 +45,7 @@ export default function SearchPage() {
   const [myScore, setMyScore] = useState(0)
   const [connecting, setConnecting] = useState<string | null>(null)
   const [confirmTarget, setConfirmTarget] = useState<SearchCompany | null>(null)
+  const [visibleCount, setVisibleCount] = useState(24)
 
   useEffect(() => {
     async function loadData() {
@@ -52,10 +53,10 @@ export default function SearchPage() {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
 
-        // Fetch companies with joins
+        // Fetch companies with joins (paginated at DB level)
         const { data: companiesData, error: companiesError } = await supabase
           .from("companies")
-          .select("*, categories(name), users(full_name, email, avatar_url)")
+          .select("id, name, user_id, location, description, contact_email, gallery, categories(name), users(full_name, email, avatar_url)")
           .order("created_at", { ascending: false })
 
         if (companiesError) throw companiesError
@@ -308,7 +309,7 @@ export default function SearchPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCompanies.length > 0 ? (
-          filteredCompanies.map(company => (
+          filteredCompanies.slice(0, visibleCount).map(company => (
             <div key={company.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col h-full">
               <div className="relative h-32 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
                 <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-semibold border border-border">
@@ -386,6 +387,18 @@ export default function SearchPage() {
           </div>
         )}
       </div>
+
+      {filteredCompanies.length > visibleCount && (
+        <div className="flex justify-center pt-4">
+          <Button
+            variant="outline"
+            onClick={() => setVisibleCount(prev => prev + 24)}
+            className="rounded-xl"
+          >
+            Carregar mais ({filteredCompanies.length - visibleCount} restantes)
+          </Button>
+        </div>
+      )}
 
       {/* Connection confirmation dialog */}
       <AlertDialog open={!!confirmTarget} onOpenChange={(open) => { if (!open) setConfirmTarget(null) }}>
