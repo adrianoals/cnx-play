@@ -56,7 +56,8 @@ export default function SearchPage() {
         // Fetch companies with joins (paginated at DB level)
         const { data: companiesData, error: companiesError } = await supabase
           .from("companies")
-          .select("id, name, user_id, location, description, contact_email, gallery, categories(name), users(full_name, email, avatar_url)")
+          .select("id, name, user_id, location, description, contact_email, gallery, categories(name), users!inner(full_name, email, avatar_url, status)")
+          .eq("users.status", "active")
           .order("created_at", { ascending: false })
 
         if (companiesError) throw companiesError
