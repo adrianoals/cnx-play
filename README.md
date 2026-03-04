@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Conecta Play
 
-## Getting Started
+Plataforma de networking premium para empresarios, lideres e visionarios que querem acelerar relacionamento, prospeccao e parcerias.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Framework:** Next.js 16 (App Router) + React 19 + TypeScript
+- **Backend:** Supabase (Postgres, Auth, RLS, Edge Functions, Storage)
+- **Estilizacao:** TailwindCSS + Radix UI + Framer Motion
+- **Deploy:** Vercel (frontend) + Supabase Cloud (backend)
+
+## Funcionalidades
+
+### Para Usuarios
+
+- **Dashboard** com stats (reunioes, pontuacao, fechamentos, valor gerado), mural de conquistas e ranking
+- **Conexoes Diarias** com matches automaticos (sorteio via Edge Function, cron 20h BRT) e confirmacao bilateral
+- **Agenda** com grid semanal de disponibilidade (slots 07:00 e 19:00) e aba de historico
+- **Chat** em tempo real entre conexoes aceitas
+- **Busca de Empresas** com filtro por categoria/segmento
+- **Perfil Publico** com galeria, contato e compartilhamento
+- **Indicacoes** (referral) com rastreamento de status e pontuacao
+- **Registro de Negocios** com aprovacao por admin
+- **Pagamento** com 3 planos (Mensal, Anual, Start 2026)
+
+### Para Admin
+
+- **Gestao de Usuarios** com aprovacao, edicao, exportacao CSV
+- **Gestao de Empresas** vinculadas aos usuarios
+- **Conexoes do Dia** com match manual, swap de parceiros e exclusao
+- **Indicacoes** com aprovacao/rejeicao
+- **Negocios** com validacao e aprovacao
+
+### Sistema de Pontuacao
+
+- +1 ponto por reuniao confirmada (bilateral)
+- +1 ponto por indicacao aprovada
+- +5 pontos por negocio fechado (aprovado)
+
+## Estrutura do Projeto
+
+```
+src/
+  app/
+    (auth)/          # Login, Register, Reset Password
+    (dashboard)/     # Dashboard, Agenda, Conexoes, Search, Account, Referral, Payment, Meetings
+    (admin)/         # Admin: Users, Empresas, Conexoes, Indicacoes, Negocios
+    (marketing)/     # Landing page
+    api/             # API routes (auth, admin)
+  components/
+    ui/              # Radix UI primitives (button, dialog, tabs, etc.)
+    layout/          # Sidebar, Header
+    features/        # FirstLoginWelcome, DashboardTutorial, SupportChat, CompanyCard, etc.
+    marketing/       # Landing page, WelcomeOverlay, CompanyLogo
+  services/          # Supabase service layer (dashboard, availability, daily-match, admin, etc.)
+  types/             # TypeScript interfaces
+  lib/               # Supabase clients (browser + server), utils
+  hooks/             # Custom hooks (use-current-user, use-toast)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuracao Local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Instalar dependencias
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Configurar variaveis de ambiente
+cp .env.example .env.local
+# Preencher NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-## Learn More
+# Rodar em desenvolvimento
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build
+npm start
+```
