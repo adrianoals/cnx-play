@@ -68,7 +68,18 @@ export default function RevistaPage() {
       </div>
 
       {/* FlipBook */}
-      <div className="relative">
+      <div
+        className="relative transition-transform duration-500 ease-in-out"
+        style={{
+          transform: !isMobile
+            ? currentPage === 0
+              ? `translateX(-${pageWidth / 2}px)`
+              : currentPage >= totalPages - 1
+                ? `translateX(${pageWidth / 2}px)`
+                : 'translateX(0)'
+            : 'translateX(0)',
+        }}
+      >
         {/* @ts-ignore react-pageflip type mismatch with ref */}
         <HTMLFlipBook
           ref={flipBookRef}
