@@ -339,7 +339,7 @@ Paulistano de família humilde, Valter Pacheco entrou no mercado de seguros em 1
 **Institucional:**
 Fundada em 1998, a Champion Life atua em previdência, seguros, consórcios e planos de saúde. Com sede em SP e atuação também em SC, destaca-se pela versatilidade e processos digitalizados. Histórico limpo, premiada em diversas ocasiões. Referência em proteção e planejamento financeiro.
 
-**Instagram:**
+**Instagram:** @valterpachecodosantos
 
 ---
 
