@@ -354,7 +354,7 @@ export function InstitutionalLanding() {
               asChild
               className="rounded-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 px-8 py-6 text-base font-semibold text-white shadow-lg shadow-blue-900/20 transition-all duration-300 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 hover:shadow-xl"
             >
-              <Link href="/register">
+              <Link href="/revista">
                 Quero ver todos
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
