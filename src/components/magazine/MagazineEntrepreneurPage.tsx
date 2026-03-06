@@ -9,12 +9,12 @@ interface Props {
 const MagazineEntrepreneurPage = React.forwardRef<HTMLDivElement, Props>(
   function MagazineEntrepreneurPage({ entrepreneur, pageNumber }, ref) {
     return (
-      <div ref={ref} className="magazine-page bg-white dark:bg-slate-900 flex flex-col relative overflow-hidden">
+      <div ref={ref} className="magazine-page bg-white flex flex-col relative overflow-hidden">
         {/* Top accent */}
-        <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-primary shrink-0" />
+        <div className="h-1 bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 shrink-0" />
 
         {/* Photo section */}
-        <div className="relative h-[40%] shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
+        <div className="relative h-[40%] shrink-0 overflow-hidden bg-slate-100">
           <img
             src={entrepreneur.photoUrl}
             alt={entrepreneur.name}
@@ -32,19 +32,19 @@ const MagazineEntrepreneurPage = React.forwardRef<HTMLDivElement, Props>(
           <div className="space-y-4">
             {/* Company */}
             <div className="flex items-center gap-2">
-              <div className="w-1 h-6 bg-primary rounded-full shrink-0" />
-              <p className="text-sm font-semibold text-primary truncate">{entrepreneur.companyName}</p>
+              <div className="w-1 h-6 bg-blue-600 rounded-full shrink-0" />
+              <p className="text-sm font-semibold text-blue-600 truncate">{entrepreneur.companyName}</p>
             </div>
 
             {/* Bio */}
-            <p className="text-sm leading-relaxed text-foreground/80 line-clamp-6">
+            <p className="text-sm leading-relaxed text-slate-700 line-clamp-6">
               {entrepreneur.bio}
             </p>
 
             {/* Institutional text */}
             {entrepreneur.institutionalText && (
-              <div className="border-l-2 border-primary/30 pl-4">
-                <p className="text-xs leading-relaxed text-muted-foreground italic line-clamp-5">
+              <div className="border-l-2 border-blue-300 pl-4">
+                <p className="text-xs leading-relaxed text-slate-500 italic line-clamp-5">
                   &ldquo;{entrepreneur.institutionalText}&rdquo;
                 </p>
               </div>
@@ -52,9 +52,9 @@ const MagazineEntrepreneurPage = React.forwardRef<HTMLDivElement, Props>(
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-border mt-auto">
-            <span className="text-xs text-muted-foreground">Conexao Play</span>
-            <span className="text-xs text-muted-foreground">{pageNumber}</span>
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-auto">
+            <span className="text-xs text-slate-400">Conexao Play</span>
+            <span className="text-xs text-slate-400">{pageNumber}</span>
           </div>
         </div>
       </div>
