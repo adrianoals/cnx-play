@@ -34,7 +34,9 @@
       "Bash(git:*)",
       "mcp__supabase__deploy_edge_function",
       "mcp__supabase__list_extensions",
-      "mcp__supabase__get_edge_function"
+      "mcp__supabase__get_edge_function",
+      "Bash(openspec status:*)",
+      "Bash(openspec instructions:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
