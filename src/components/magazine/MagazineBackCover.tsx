@@ -2,7 +2,7 @@ import React from "react"
 
 const MagazineBackCover = React.forwardRef<HTMLDivElement>(function MagazineBackCover(_props, ref) {
   return (
-    <div ref={ref} className="magazine-page bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center text-white p-8 relative overflow-hidden">
+    <div ref={ref} className="magazine-page bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center text-white p-6 md:p-8 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-0 w-full h-full" style={{
@@ -10,16 +10,14 @@ const MagazineBackCover = React.forwardRef<HTMLDivElement>(function MagazineBack
         }} />
       </div>
 
-      <div className="relative z-10 text-center space-y-8">
+      <div className="relative z-10 text-center space-y-6">
         <div className="space-y-3">
-          <div className="w-16 h-16 mx-auto rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary">C</span>
-          </div>
-          <h2 className="text-2xl font-bold">Conexao Play</h2>
+          <img src="/icon.svg" alt="Conexao Play" className="w-16 h-16 mx-auto" />
+          <h2 className="text-xl font-bold">Conexao Play</h2>
           <div className="w-12 h-0.5 bg-primary mx-auto" />
         </div>
 
-        <div className="space-y-2 text-sm text-slate-400">
+        <div className="space-y-1 text-sm text-slate-400">
           <p>Conectando empresarios,</p>
           <p>gerando negocios.</p>
         </div>

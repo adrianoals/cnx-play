@@ -34,8 +34,8 @@ const FIELD_LIMITS = {
   name: 60,
   company_name: 80,
   role_title: 60,
-  bio: 300,
-  institutional_text: 500,
+  bio: 800,
+  institutional_text: 600,
 }
 
 function CharCounter({ current, max }: { current: number; max: number }) {
@@ -53,6 +53,7 @@ interface EntrepreneurForm {
   role_title: string
   bio: string
   institutional_text: string
+  instagram: string
   photo_url: string
   is_active: boolean
 }
@@ -63,6 +64,7 @@ const emptyForm: EntrepreneurForm = {
   role_title: "",
   bio: "",
   institutional_text: "",
+  instagram: "",
   photo_url: "",
   is_active: true,
 }
@@ -184,6 +186,7 @@ export default function AdminRevistaPage() {
       role_title: item.roleTitle,
       bio: item.bio,
       institutional_text: item.institutionalText || "",
+      instagram: item.instagram || "",
       photo_url: item.photoUrl,
       is_active: item.isActive,
     })
@@ -237,6 +240,7 @@ export default function AdminRevistaPage() {
           role_title: form.role_title,
           bio: form.bio,
           institutional_text: form.institutional_text || null,
+          instagram: form.instagram || null,
           photo_url: photoUrl,
           is_active: form.is_active,
         })
@@ -250,6 +254,7 @@ export default function AdminRevistaPage() {
           role_title: form.role_title,
           bio: form.bio,
           institutional_text: form.institutional_text || undefined,
+          instagram: form.instagram || undefined,
           photo_url: photoUrl,
           display_order: nextOrder,
           is_active: form.is_active,
@@ -434,6 +439,11 @@ export default function AdminRevistaPage() {
                 <CharCounter current={form.institutional_text.length} max={FIELD_LIMITS.institutional_text} />
               </div>
               <Textarea value={form.institutional_text} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateField("institutional_text", e.target.value)} placeholder="Mensagem institucional (opcional)" rows={4} />
+            </div>
+
+            <div>
+              <Label>Instagram</Label>
+              <Input value={form.instagram} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("instagram", e.target.value)} placeholder="@usuario ou URL do perfil" />
             </div>
 
             <div>

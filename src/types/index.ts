@@ -213,6 +213,7 @@ export interface MagazineEntrepreneur {
   photoUrl: string
   bio: string
   institutionalText: string | null
+  instagram: string | null
   displayOrder: number
   isActive: boolean
   createdAt: string

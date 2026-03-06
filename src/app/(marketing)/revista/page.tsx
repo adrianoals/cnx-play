@@ -62,9 +62,9 @@ export default function RevistaPage() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center py-8 px-4">
       {/* Header */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-white">Revista Digital</h1>
-        <p className="text-sm text-slate-400 mt-1">Conexao Play</p>
+      <div className="text-center mb-4 md:mb-6">
+        <h1 className="text-xl md:text-3xl font-bold text-white">Revista Digital</h1>
+        <p className="text-xs md:text-sm text-slate-400 mt-1">Conexao Play</p>
       </div>
 
       {/* FlipBook */}
