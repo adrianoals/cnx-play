@@ -12,6 +12,9 @@ A trajetória de Dani Sarturi é marcada por recomeços que se transformaram em 
 **Institucional:**
 Fundada em Balneário Camboriú, a Sarturi Solutions é uma hub de soluções completas para negócios e pessoas. Gestão de patrimônio, consultoria empresarial, planejamento de capital seguro e assessoria financeira — com confiança e transparência como diferenciais. Referência em soluções patrimoniais e estratégicas.
 
+**Instagram:**
+https://www.instagram.com/dannisarturi?igsh=MXU5eHh6bHdncjE5MA==
+
 ---
 
 ## 2. Lucas Luquetti
