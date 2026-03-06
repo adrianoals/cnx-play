@@ -14,14 +14,11 @@ const MagazineCover = React.forwardRef<HTMLDivElement>(function MagazineCover(_p
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/80 to-primary" />
 
       <div className="relative z-10 text-center space-y-6">
-        <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center">
-          <span className="text-3xl font-bold text-primary">C</span>
-        </div>
+        <img src="/icon.svg" alt="Conexao Play" className="w-20 h-20 mx-auto" />
 
         <div className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Revista Digital</h1>
           <div className="w-16 h-0.5 bg-primary mx-auto" />
-          <p className="text-lg text-slate-300">Conexao Play</p>
         </div>
 
         <p className="text-sm text-slate-400 max-w-[200px] mx-auto leading-relaxed">
