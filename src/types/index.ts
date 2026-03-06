@@ -203,6 +203,22 @@ export interface Category {
   sortOrder: number
 }
 
+// ── Magazine ──────────────────────────────────────────────
+
+export interface MagazineEntrepreneur {
+  id: string
+  name: string
+  companyName: string
+  roleTitle: string
+  photoUrl: string
+  bio: string
+  institutionalText: string | null
+  displayOrder: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 // ── Supabase-backed types ──────────────────────────────────
 
 export interface UserStats {

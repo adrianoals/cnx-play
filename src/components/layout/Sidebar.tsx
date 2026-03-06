@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2 } from "lucide-react"
+import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -49,6 +49,7 @@ const Sidebar = React.memo(function Sidebar({ isOpen, onClose, status = "active"
       { icon: Link2, label: "Conexões do Dia", path: "/admin/conexoes" },
       { icon: Gift, label: "Indicações", path: "/admin/indicacoes" },
       { icon: Handshake, label: "Negócios", path: "/admin/negocios" },
+      { icon: BookOpen, label: "Revista", path: "/admin/revista" },
     ] as typeof baseItems
   } else if (status === "pending") {
     currentMenu = [
