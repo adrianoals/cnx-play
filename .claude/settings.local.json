@@ -37,7 +37,8 @@
       "mcp__supabase__get_edge_function",
       "Bash(openspec status:*)",
       "Bash(openspec instructions:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(/Users/adriano/Desktop/Cnxplay/cnx-play/empresarios-resumido.md:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

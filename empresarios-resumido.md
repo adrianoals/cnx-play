@@ -40,6 +40,8 @@ Há quatorze anos na medicina, a Dra. Flávia Freire Hoelz construiu uma trajet�
 **Institucional:**
 Idealizada pela Dra. Flávia Hoelz, a Clínica Hoelz oferece atendimento completo, humano e resolutivo em Guarulhos. Com foco em cirurgias dermatológicas, combina técnica avançada e olhar estético. Cada paciente é tratado como único, com protocolos que priorizam excelência sem abrir mão da humanização.
 
+**Instagram:** https://www.instagram.com/dra_flaviafreirehoelz?igsh=ejRmZnByNXlrMzJy
+
 ---
 
 ## 4. Filipi Hoelz
@@ -50,6 +52,8 @@ Há mais de duas décadas na contabilidade, Filipi Paltrinieri Hoelz desafia o e
 
 **Institucional:**
 A Hoelz Assessoria nasceu de um incômodo: ver empresários trabalhados por uma contabilidade fria e distante. Construída sobre proteção, clareza e confiança, transforma ansiedade em segurança e caos em estratégia. Mais que relatórios, entrega tranquilidade e cuidado.
+
+**Instagram:** https://www.instagram.com/filipihoelzcontador?igsh=MWpjdDB5ODFuajZvbw%3D%3D
 
 ---
 
@@ -62,6 +66,8 @@ Aos quarenta anos, Alexandre Roberto da Silva carrega uma história que desafia 
 **Institucional:**
 Fundada por Alexandre, a Amigão Saúde nasceu dentro de casa e hoje conta com duas lojas e uma corretora em São Miguel Paulista. Com mais de vinte anos de experiência, Alexandre ainda é o "vendedor pastinha" que vai até o cliente. Vendas humanas, emocionais e transformadoras.
 
+**Instagram:** https://www.instagram.com/eusoualexandreamigao?igsh=MXFuYnhvMTB5d3l2dQ%3D%3D
+
 ---
 
 ## 6. Alexandra Áurea
@@ -72,6 +78,8 @@ Formada em Odontologia há mais de vinte e cinco anos, Alexandra Áurea une téc
 
 **Institucional:**
 Localizada no CUBE em Guarulhos, a clínica une excelência técnica e acolhimento humano. Com especialidade em endodontia e parcerias que abrangem todas as áreas da odontologia, oferece atendimento completo e personalizado. Pacientes são recebidos como convidados, em um espaço moderno e acolhedor.
+
+**Instagram:** https://www.instagram.com/alexandraaureasantos?igsh=a3lpZGM3OTcwaWI1
 
 ---
 
@@ -84,6 +92,8 @@ Aos quarenta e três anos, mãe solo e empreendedora, Fernanda Pascucci carrega 
 **Institucional:**
 Fundada em 2019, a FP Soluções oferece administração condominial, consultoria para síndicos e manutenção preventiva e corretiva. Combina técnica e propósito — mais que gestão, promove confiança e comunidade. Referência em Guarulhos e São Paulo.
 
+**Instagram:**
+
 ---
 
 ## 8. Aline Cintra
@@ -95,6 +105,8 @@ Empreendedora desde os nove anos, Aline Cintra transformou cada desafio em combu
 **Institucional:**
 O Mulheres Desbravadoras é o maior ecossistema de empreendedorismo feminino de Guarulhos, com mais de 1.600 participantes e expansão pelo Sudeste. Oferece suporte emocional e empresarial, livros, podcasts, revistas e eventos mensais. Liderança feminina que transforma.
 
+**Instagram:**
+https://www.instagram.com/alinecintraoficial?igsh=MWF5ZXAxODNtdDF2dg%3D%3D
 ---
 
 ## 9. Stephanie Georgia
@@ -105,6 +117,8 @@ Desde os nove anos, Stephanie Georgia já mostrava que empreender era sua essên
 
 **Institucional:**
 Com vinte e três anos de mercado, a consultoria oferece soluções financeiras completas. Mais do que consórcios, atua como consultora da saúde financeira dos clientes, com acompanhamento personalizado. Cada decisão é orientada para segurança e clareza. Crédito que é confiança e futuro.
+
+**Instagram:** https://www.instagram.com/stephanie.secco?igsh=emNsdG5kM3c5N2Z6
 
 ---
 
@@ -117,6 +131,8 @@ Aos 14 anos, Bruno Pires já empreendia. Com quinze, liderava um telemensagem co
 **Institucional:**
 Fundado há 13 anos, o Skoberg Pires é um escritório boutique que oferece soluções do Simples Nacional a grupos de capital aberto. Atua em trabalhista, tributário, contratos e civil. Slogan: "Prever, proteger e prosperar". Também lidera a SKP Assessoria Tributária com sede em SP e Florianópolis.
 
+**Instagram:** https://www.instagram.com/brunopires.adv?igsh=MTV4aHBqNnM0NGUzbw==
+
 ---
 
 ## 11. Camila Shiraiva
@@ -127,6 +143,8 @@ Aos seis anos, ouviu que deveria ser arquiteta e decidiu que esse seria seu cami
 
 **Institucional:**
 A Camila Shiraiva Arquitetura nasceu da soma de conhecimento técnico e experiência prática. Cada cliente é acompanhado desde a escolha do terreno até a entrega da obra. Atua em arquitetura corporativa, comercial e residencial com foco em planejamento e excelência.
+
+**Instagram:**
 
 ---
 
@@ -139,6 +157,8 @@ Perito judicial, engenheiro eletricista, ambiental e de segurança do trabalho, 
 **Institucional:**
 A Prezervare transforma gestão de saúde e segurança do trabalho em ferramenta estratégica. Com mais de dezenove anos de experiência, ajuda empresas a reduzir impostos indevidos e contestar pagamentos de insalubridade. Orientação técnica com conciliação jurídica integrada.
 
+**Instagram:** https://www.instagram.com/sstcomfabricio?igsh=cGtyM284MGdieGNi
+
 ---
 
 ## 13. Cláudia Plaza
@@ -149,6 +169,8 @@ Formada em Publicidade e Propaganda, com mais de vinte anos no meio corporativo,
 
 **Institucional:**
 A Plaza Marketing Digital une estratégia e autenticidade. Atua em mídias sociais, sites, landing pages, fotos, vídeos e tráfego pago via Google Ads e Meta Ads. Conteúdo desenvolvido por jornalistas especializados. Marketing que inspira e conecta.
+
+**Instagram:** https://www.instagram.com/plaza_marketingdigital?igsh=MThmanExbTZ6NnI2MQ%3D%3D&utm_source=qr
 
 ---
 
@@ -161,6 +183,8 @@ Formada em Contabilidade, pós-graduada em Controladoria e Gestão Tributária, 
 **Institucional:**
 Fundada em 2021, a Kah Consultoria foi pensada para acolher mulheres empreendedoras e fortalecer autoestima. A união com a Hoelz Assessoria trouxe mais força ao propósito: proteger, orientar e impulsionar empresárias. Contabilidade com propósito e transformação.
 
+**Instagram:** https://www.instagram.com/karinaalmeidacontadora?igsh=OHVqNDlndnpkenEy
+
 ---
 
 ## 15. Kamila Estevam
@@ -171,6 +195,8 @@ Desde os doze anos sabia que queria ser arquiteta. Sem condições financeiras, 
 
 **Institucional:**
 A empresa aplica neurociência à arquitetura — cada projeto é pensado para influenciar emoções e melhorar qualidade de vida. Forte em interiores e reformas de apartamentos e estúdios na Grande SP. Em 2025, entregou vinte estúdios no modelo "chave na mão".
+
+**Instagram:**
 
 ---
 
@@ -196,6 +222,8 @@ Autor do livro Fator K, Gabriel Araujo sempre acreditou que empreender é transf
 **Institucional:**
 Fundada há três anos em Guarulhos, a Angulares Reformas é um hub de soluções para condomínios: pintura de fachadas, reformas de piscinas, impermeabilização e manutenção. Com registro no CREA e gestão trazida da experiência em grandes obras da Petrobras.
 
+**Instagram:** https://www.instagram.com/angularisreformas?igsh=MTgwYzVyaGUydTVibg%3D%3D
+
 ---
 
 ## 18. Roberto Mendes
@@ -206,6 +234,8 @@ Roberto Mendes descobriu cedo sua vocação no universo comercial. Construiu tra
 
 **Institucional:**
 Há seis anos no mercado, a Casa Dei se consolidou como referência em brindes corporativos e materiais promocionais. Atendimento próximo e consultivo, ajudando marcas a se destacarem com brindes que surpreendem e fortalecem relacionamentos. Confiança, agilidade e cuidado.
+
+**Instagram:**
 
 ---
 
@@ -218,6 +248,8 @@ Nascida em Belém do Pará, Ellen começou como técnica em segurança do trabal
 **Institucional:**
 O escritório atua em Direito Empresarial, Compliance Trabalhista, Assessoria Jurídica Corporativa e Direito Criminal. Parceiro estratégico que ajuda empresas a prevenir riscos e enfrentar desafios legais com segurança. Referência em Guarulhos.
 
+**Instagram:**
+
 ---
 
 ## 20. Paula Braziliano
@@ -228,6 +260,8 @@ Com mais de duas décadas no mercado de seguros, Paula Braziliano construiu sua 
 
 **Institucional:**
 Fundada em 2006, a corretora mantém parcerias sólidas com diversas seguradoras. Membro do MDRT (Million Dollar Round Table). Atua como consultoria estratégica, ajudando famílias e profissionais a protegerem patrimônio e renda. Sinônimo de confiança e excelência.
+
+**Instagram:** https://www.instagram.com/paulabraziliano?igsh=OWRiOHBidzEyamJl
 
 ---
 
@@ -240,6 +274,8 @@ Desde pequena, Lívia cresceu acompanhando a Kaema, empresa fundada por seu pai 
 **Institucional:**
 Fundada em 1993, a Kaema é pioneira na distribuição de EPIs no Alto Tietê. O diferencial é o atendimento consultivo: além de fornecer produtos, avalia se os EPIs são os mais adequados. Com 31 anos de história e 28 funcionários, é referência em segurança e proteção.
 
+**Instagram:** https://www.instagram.com/livia.kaema?igsh=MXVvemNuMG1vZ2tlbw%3D%3D
+
 ---
 
 ## 22. Ana Cathalanni
@@ -250,6 +286,8 @@ Desde os três anos, Ana Cathalanni já escrevia histórias. Formou-se em jornal
 
 **Institucional:**
 A Lumen nasceu da frustração com o mercado editorial distante e pouco humanizado. Voltada para títulos cristãos e de empreendedorismo, caminha junto com os autores em cada etapa. O nome vem do latim "luz" — ser luz na vida dos autores e dar forma às suas histórias.
+
+**Instagram:**
 
 ---
 
@@ -262,6 +300,8 @@ Aos 36 anos, Anny Teixeira construiu trajetória marcada por coragem e reinvenç
 **Institucional:**
 Atua em seguros empresariais de saúde com soluções inteligentes e personalizadas. Atendimento consultivo focado em entender necessidades de cada cliente. Proteger pessoas é proteger negócios. Também escritora, com livro sobre cura e autoconhecimento.
 
+**Instagram:** https://www.instagram.com/annyatx7?igsh=MXY5bGp6ZDZyeXNqaw%3D%3D
+
 ---
 
 ## 24. Felipe Tolentino
@@ -272,6 +312,8 @@ Aos 35 anos, Felipe Tolentino é designer e músico apaixonado pelo estilo clás
 
 **Institucional:**
 A Casa Filipo é alfaiataria de alto padrão para quem busca exclusividade. Cada peça transmite finesse e poder, com tecidos nobres e acabamentos personalizados. Na Zona Norte de SP, o espaço une luxo, atendimento personalizado e experiência VIP.
+
+**Instagram:** @casafilipo
 
 ---
 
@@ -284,6 +326,8 @@ Com 13 anos de experiência, a Dra. Larissa é especialista em harmonização fa
 **Institucional:**
 A BL Odontologia se destaca pela abordagem única em harmonização facial: realçar a beleza natural sem que se perceba a intervenção. Filosofia de equilíbrio estético e funcional, unindo harmonização e ortodontia. Ciência e arte respeitando a individualidade de cada paciente.
 
+**Instagram:** https://www.instagram.com/laaamoura?igsh=aHI5YWJ3Z3liMzE2
+
 ---
 
 ## 26. Valter Pacheco
@@ -294,6 +338,8 @@ Paulistano de família humilde, Valter Pacheco entrou no mercado de seguros em 1
 
 **Institucional:**
 Fundada em 1998, a Champion Life atua em previdência, seguros, consórcios e planos de saúde. Com sede em SP e atuação também em SC, destaca-se pela versatilidade e processos digitalizados. Histórico limpo, premiada em diversas ocasiões. Referência em proteção e planejamento financeiro.
+
+**Instagram:**
 
 ---
 
@@ -306,6 +352,8 @@ Formada em Direito pela Mackenzie e pós-graduada pela FGV, Giovanna construiu c
 **Institucional:**
 Consultoria completa para brasileiros que desejam migrar para os EUA. Vai além do jurídico: planejamento estratégico, escolha de estado e cidade, escolas para filhos e adaptação cultural. Une credibilidade jurídica e sensibilidade humana.
 
+**Instagram:** https://www.instagram.com/_giovannabalan?igsh=M2dwZ3VpbG5sOXpy
+
 ---
 
 ## 28. Carlos Serpeloni
@@ -316,6 +364,8 @@ Nascido no interior do Paraná, Carlos enfrentou grandes desafios desde cedo. Ao
 
 **Institucional:**
 O Instituto Serpeloni prepara pessoas para liderar, vender, atender e comunicar com eficiência. Treinamentos que unem técnica e emoção, mostrando que é possível produzir mais com harmonia e sem assédio. Reconhecido pelo impacto emocional e aplicabilidade prática.
+
+**Instagram:** https://www.instagram.com/carlosserpeloni?igsh=MWhpaDRydzg1NG9jOA%3D%3D
 
 ---
 
@@ -328,6 +378,8 @@ Psicóloga, psicopedagoga e terapeuta formada na metodologia Louise Hay, Sílvia
 **Institucional:**
 Acompanhamento terapêutico com foco em desenvolvimento emocional, autoconhecimento e ressignificação de padrões internos. Integra psicologia e metodologia Louise Hay, trabalhando crenças, merecimento e relação com a própria história. Abordagem humanizada e estratégica.
 
+**Instagram:**
+
 ---
 
 ## 30. Dra. Paula Favaron do Prado
@@ -338,6 +390,8 @@ Médica veterinária há mais de 30 anos, Dra. Paula sempre teve os animais como
 
 **Institucional:**
 Serviço especializado em transporte aéreo internacional de pets. Preparação de documentação completa para embarque a qualquer país do mundo. Combina conhecimento técnico veterinário com sensibilidade — cada animal é parte da família. Segurança e tranquilidade para tutores e pets.
+
+**Instagram:** https://www.instagram.com/drapaulafavaron?igsh=bGQzenJ6NjJ5cXBs
 
 ---
 
@@ -350,6 +404,8 @@ Formada em Letras e aposentada do funcionalismo público após 30 anos, Sandra A
 **Institucional:**
 A Sandra Tour oferece passeios seguros e confortáveis para pessoas acima dos 60 anos. Destinos como Jalapão e Rota das Emoções, com hospedagens de qualidade e seguro viagem. Cada detalhe é pensado para experiências únicas. A idade não é limite para viver.
 
+**Instagram:** https://www.instagram.com/sandraturturistando?igsh=YTZkaTE0aGdmcWRn
+
 ---
 
 ## 32. Gabriela Andrade
@@ -360,6 +416,8 @@ Em 2019, diagnosticada com burnout e síndrome do pânico, Gabriela Andrade prec
 
 **Institucional:**
 Metodologia que une técnica e propósito para construir marcas a partir da verdade de cada empreendedora. O processo começa na escuta interna. "Quando a gente se escuta, a marca se fortalece. E quando a marca nasce da verdade, ela se sustenta."
+
+**Instagram:** https://www.instagram.com/rgabrieladigital?igsh=MXQ2ZHhub2Y5c3dzaQ%3D%3D
 
 ---
 
@@ -372,6 +430,8 @@ Casado há 23 anos e pai de três filhos, Anderson se define como homem de fé e
 **Institucional:**
 Da recepção à gestão de barbearias, expansão de franquias e escola de estética — a trajetória de Anderson une criatividade e resultados. Missão: inspirar empreendedores a enxergarem além das dificuldades, entendendo que cada experiência carrega propósito.
 
+**Instagram:** https://www.instagram.com/eusouandersonsoaress?igsh=MXA4cnczdWJ3MWgwMg%3D%3D
+
 ---
 
 ## 34. Jorge Caroni
@@ -382,6 +442,8 @@ Advogado há 28 anos, Jorge Caroni construiu carreira focada em recuperação de
 
 **Institucional:**
 A Vitale Advogados é escritório boutique com mais de 25 anos, especializado em recuperação de empresas e reestruturação de dívidas. Atendimento sob medida para que empresas reorganizem finanças e retomem atividades de forma sustentável.
+
+**Instagram:** https://www.instagram.com/jorgecaroni?igsh=MTU4bGozZGtiNmNqYw%3D%3D
 
 ---
 
@@ -394,6 +456,8 @@ Aos 27 anos, Dra. Vitória representa uma nova geração de empreendedoras. Form
 **Institucional:**
 No Helbor Patteo Bosque Maia em Guarulhos, oferece tratamentos estéticos de alta qualidade: limpeza de pele, injetáveis, protocolos corporais e faciais. Filosofia: unir ciência, estética e cuidado humano. Exclusividade e atenção total a cada paciente.
 
+**Instagram:** https://www.instagram.com/_viseravalli?igsh=aGw5ZDMyaHFvMnFm
+
 ---
 
 ## 36. Hugo Madeira
@@ -404,6 +468,8 @@ Hugo Madeira não entrou no mercado financeiro por acaso. Graduado em Sistemas d
 
 **Institucional:**
 A Horcam Wealth oferece planejamento financeiro estruturado, estratégia de investimentos e visão patrimonial de longo prazo. Integra consultoria financeira, educação e mercado imobiliário de alto padrão. Patrimônio não se improvisa, se constrói.
+
+**Instagram:** https://www.instagram.com/hugoariedam?igsh=MTNudGFieXRyZmFpbw%3D%3D
 
 ---
 
@@ -416,6 +482,8 @@ Ale Vasconcelos é treinador de alto impacto e especialista em inteligência emo
 **Institucional:**
 Fundado há cinco anos, o Desafiando Limites é treinamento de alto impacto em inteligência emocional que já transformou vidas e empresas em todo o Brasil. Ajuda pessoas a quebrarem padrões, superarem medos e acessarem uma nova versão de si mesmas.
 
+**Instagram:** https://www.instagram.com/alevasconcelosmentor?igsh=MXhhYWJocWUxN2lraA==
+
 ---
 
 ## 38. Lucas Alves Nicolau
@@ -426,6 +494,8 @@ Aos 35 anos, Lucas carrega trajetória de trabalho e reinvenção. Filho de come
 
 **Institucional:**
 Atuação em compra, venda e reforma de imóveis, além de loteamentos no eixo Cunha-Paraty. Com habilidade de liderança comprovada em empresas com mais de 200 colaboradores, usa o mercado imobiliário como ferramenta de prosperidade e desenvolvimento sustentável.
+
+**Instagram:** https://www.instagram.com/lucasdlux?igsh=MXNveDM0OG1sbnVwMA%3D%3D
 
 ---
 
@@ -438,6 +508,8 @@ Filha de fotógrafo com mais de 50 anos de experiência, Sheylla Colombo cresceu
 **Institucional:**
 Fundada em 2010 e repaginada em 2024, a Épica atua com excelência em casamentos, debutantes, eventos corporativos e ensaios profissionais. Combina visão artística e gestão empresarial. Mais que registrar momentos, entrega experiência, planejamento e segurança.
 
+**Instagram:** https://www.instagram.com/epicafotoevideo?igsh=MThuNGlqaXdyNDl2aQ%3D%3D
+
 ---
 
 ## 40. Rogério dos Santos
@@ -448,6 +520,8 @@ Aos 13 anos, Rogério começou como entregador de folhetos em supermercado. Pass
 
 **Institucional:**
 Há quase 10 anos, a Royalle Contabilidade atende clientes em todo o Brasil. Do MEI a sociedades anônimas, com base sólida no comércio. Proximidade, confiança e atendimento personalizado. Parceira estratégica na construção de negócios que movimentam a economia.
+
+**Instagram:**
 
 ---
 
@@ -460,6 +534,8 @@ Com 45 anos, César carrega trajetória de reinvenção. Formado em jornalismo d
 **Institucional:**
 A SelfPrimeBrasil atua em eventos, videoclipes e cobertura fotográfica. O Portal TRENDTV BRASIL é espaço de notícias, entretenimento e negócios — finalista entre os cinco maiores sites de entretenimento do país em 2025. As duas empresas funcionam de forma integrada.
 
+**Instagram:**
+
 ---
 
 ## 42. Mônica Augusto
@@ -470,6 +546,8 @@ Formada pela Faculdade de Belas Artes de SP em 1987, Mônica sempre foi apaixona
 
 **Institucional:**
 Especialista em ambientações para casamentos, mini weddings, festas de 15 anos e celebrações intimistas. Sua assinatura: transformar ambientes simples em cenários sofisticados com o toque especial das flores. Arte e emoção que se tornam memória afetiva.
+
+**Instagram:** https://www.instagram.com/monicaaugustofloresefestas?igsh=NHM4Z3JhYjY1aDI1
 
 ---
 
@@ -482,6 +560,8 @@ Camila Cirilo construiu carreira com propósito claro: ajudar pessoas a realizar
 **Institucional:**
 Integrante da maior administradora de consórcios do Brasil, que contempla em média duas mil pessoas por mês. Ajuda empreendedores a alavancar capital e famílias a construírem aposentadoria imobiliária. Consórcio como ferramenta de transformação.
 
+**Instagram:** https://www.instagram.com/camilaciriloademicon/
+
 ---
 
 ## 44. Erik Bitencurt
@@ -492,6 +572,8 @@ Aos 24 anos, Erik já carrega trajetória marcada por coragem. Natural de Santos
 
 **Institucional:**
 A EMB Marketing é agência especializada em tráfego pago, com aproximadamente três milhões de reais em anúncios administrados. Foco em negócios locais — estéticas, hotéis, restaurantes — e e-commerces. Estratégias personalizadas para crescimento real.
+
+**Instagram:**
 
 ---
 
@@ -504,6 +586,8 @@ Aos 40 anos, Cláudio Cunha é formado em Administração com especializações 
 **Institucional:**
 Consultoria que leva gestão empresarial de forma descomplicada e prática. Já atuou em projetos na Comgás e em transformação industrial. Ajuda empresas a estruturarem processos, definirem estratégias e analisarem melhor suas finanças. Proximidade como diferencial.
 
+**Instagram:** https://www.instagram.com/claudiojcunha?igsh=MWM5a3N0dGxtY3Zudw%3D%3D
+
 ---
 
 ## 46. Caetano Tona
@@ -514,6 +598,8 @@ Caetano Tona transforma histórias em narrativas que conectam e emocionam. Há m
 
 **Institucional:**
 A Life Lab apoia empresas e líderes na construção de narrativas que inspiram. Já colaborou com Bauducco, Coca-Cola, Heineken, Johnson & Johnson e eventos como Web Summit e SXSW. Comunicação com propósito que fortalece marcas e pessoas.
+
+**Instagram:** https://www.instagram.com/caetanotona?igsh=MTBzNmhkbHdzeGthZA%3D%3D
 
 ---
 
@@ -526,6 +612,8 @@ Paulistana, casada, mãe de quatro e avó de três, Tânia Correya é formada em
 **Institucional:**
 Atua como psicanalista em grandes empresas, com foco em inteligência emocional corporativa. Empresária no setor de brindes e idealizadora de podcast. Cantora profissional em festas e eventos. Arte e terapia que caminham juntas para tocar vidas.
 
+**Instagram:** https://www.instagram.com/taniatreinadora?igsh=bTBnOGc4anNnc3o5
+
 ---
 
 ## 48. Vicente Ribeiro
@@ -537,6 +625,8 @@ Filho de família humilde com dez irmãos, Vicente cresceu como o mais velho ent
 **Institucional:**
 A AVIG360 é primeira linha da NR-01 atualizada, monitorando riscos psicossociais por meio de sua Control Tower. Transforma dados invisíveis em relatórios auditáveis. A Global Technologies lidera o maior projeto ferroviário do Brasil com fiscalização mobile.
 
+**Instagram:**
+
 ---
 
 ## 49. Julio (Festtime)
@@ -547,3 +637,45 @@ Criado no extremo sul de SP, Julio começou a trabalhar na infância. A perda da
 
 **Institucional:**
 Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Brasil e uma em Orlando. Projeta faturamento de R$ 70 milhões. Construção empresarial baseada em vendas, disciplina operacional e crescimento sustentável.
+
+**Instagram:**
+
+
+---
+
+## 50. Vagner Miramontes
+**Empresa:** — | **Cargo:** —
+
+**Bio:**
+(a preencher)
+
+**Institucional:**
+(a preencher)
+
+**Instagram:** https://www.instagram.com/vagnermiramontes?igsh=MXV3NHZpOWtsaXhqcw%3D%3D
+
+---
+
+## 51. Tatiane Cordeiro
+**Empresa:** Pannorama Financeiro | **Cargo:** —
+
+**Bio:**
+(a preencher)
+
+**Institucional:**
+(a preencher)
+
+**Instagram:** https://www.instagram.com/pannoramafinanceiro?igsh=djgxYno3MThrbjZs
+
+---
+
+## 52. Soraia Monteiro
+**Empresa:** — | **Cargo:** —
+
+**Bio:**
+(a preencher)
+
+**Institucional:**
+(a preencher)
+
+**Instagram:** https://www.instagram.com/soraiamonteirooficial?igsh=aTdxMjR3ejh3MHZm
