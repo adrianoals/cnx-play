@@ -92,7 +92,7 @@ Aos quarenta e três anos, mãe solo e empreendedora, Fernanda Pascucci carrega 
 **Institucional:**
 Fundada em 2019, a FP Soluções oferece administração condominial, consultoria para síndicos e manutenção preventiva e corretiva. Combina técnica e propósito — mais que gestão, promove confiança e comunidade. Referência em Guarulhos e São Paulo.
 
-**Instagram:**
+**Instagram:** @papodesindica
 
 ---
 
