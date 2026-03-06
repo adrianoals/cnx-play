@@ -92,7 +92,7 @@ Aos quarenta e três anos, mãe solo e empreendedora, Fernanda Pascucci carrega 
 **Institucional:**
 Fundada em 2019, a FP Soluções oferece administração condominial, consultoria para síndicos e manutenção preventiva e corretiva. Combina técnica e propósito — mais que gestão, promove confiança e comunidade. Referência em Guarulhos e São Paulo.
 
-**Instagram:** @papodesindica
+**Instagram:** https://www.instagram.com/papodesindica/
 
 ---
 
@@ -313,7 +313,7 @@ Aos 35 anos, Felipe Tolentino é designer e músico apaixonado pelo estilo clás
 **Institucional:**
 A Casa Filipo é alfaiataria de alto padrão para quem busca exclusividade. Cada peça transmite finesse e poder, com tecidos nobres e acabamentos personalizados. Na Zona Norte de SP, o espaço une luxo, atendimento personalizado e experiência VIP.
 
-**Instagram:** @casafilipo
+**Instagram:** https://www.instagram.com/casafilipo/
 
 ---
 
@@ -534,7 +534,7 @@ Com 45 anos, César carrega trajetória de reinvenção. Formado em jornalismo d
 **Institucional:**
 A SelfPrimeBrasil atua em eventos, videoclipes e cobertura fotográfica. O Portal TRENDTV BRASIL é espaço de notícias, entretenimento e negócios — finalista entre os cinco maiores sites de entretenimento do país em 2025. As duas empresas funcionam de forma integrada.
 
-**Instagram:**
+**Instagram:** https://www.instagram.com/cesarvirgiliooficial/
 
 ---
 
