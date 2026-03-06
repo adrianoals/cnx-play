@@ -162,3 +162,15 @@ body {
 .animate-twinkle {
   animation: twinkle 2s ease-in-out infinite;
 }
+
+/* Magazine page fixed dimensions */
+.magazine-page {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.magazine-flipbook {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
