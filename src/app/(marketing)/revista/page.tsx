@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import HTMLFlipBook from "react-pageflip"
 import { fetchActiveMagazineEntrepreneurs } from "@/services/magazine.service"
 import type { MagazineEntrepreneur } from "@/types"
 import MagazineCover from "@/components/magazine/MagazineCover"
-import MagazineEntrepreneurPage from "@/components/magazine/MagazineEntrepreneurPage"
+import { MagazinePhotoPage, MagazineTextPage } from "@/components/magazine/MagazineEntrepreneurPage"
 import MagazineBackCover from "@/components/magazine/MagazineBackCover"
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ export default function RevistaPage() {
   const [isMobile, setIsMobile] = useState(false)
   const flipBookRef = useRef<ReturnType<typeof HTMLFlipBook> | null>(null)
 
-  const totalPages = entrepreneurs.length + 2 // cover + entrepreneurs + back cover
+  const totalPages = (entrepreneurs.length * 2) + 2 // cover + (photo + text per entrepreneur) + back cover
 
   useEffect(() => {
     fetchActiveMagazineEntrepreneurs()
@@ -111,14 +111,19 @@ export default function RevistaPage() {
           {/* Cover */}
           <MagazineCover />
 
-          {/* Entrepreneur pages */}
-          {entrepreneurs.map((entrepreneur, index) => (
-            <MagazineEntrepreneurPage
-              key={entrepreneur.id}
+          {/* Entrepreneur pages — foto + texto */}
+          {entrepreneurs.flatMap((entrepreneur, index) => [
+            <MagazinePhotoPage
+              key={`photo-${entrepreneur.id}`}
               entrepreneur={entrepreneur}
-              pageNumber={index + 1}
-            />
-          ))}
+              pageNumber={index * 2 + 1}
+            />,
+            <MagazineTextPage
+              key={`text-${entrepreneur.id}`}
+              entrepreneur={entrepreneur}
+              pageNumber={index * 2 + 2}
+            />,
+          ])}
 
           {/* Back cover */}
           <MagazineBackCover />
