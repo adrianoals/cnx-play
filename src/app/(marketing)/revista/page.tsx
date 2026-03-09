@@ -7,8 +7,9 @@ import type { MagazineEntrepreneur } from "@/types"
 import MagazineCover from "@/components/magazine/MagazineCover"
 import { MagazinePhotoPage, MagazineTextPage } from "@/components/magazine/MagazineEntrepreneurPage"
 import MagazineBackCover from "@/components/magazine/MagazineBackCover"
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function RevistaPage() {
   const [entrepreneurs, setEntrepreneurs] = useState<MagazineEntrepreneur[]>([])
@@ -155,6 +156,19 @@ export default function RevistaPage() {
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
+      </div>
+
+      {/* CTA */}
+      <div className="mt-10 text-center space-y-3 max-w-md">
+        <p className="text-slate-300 text-sm md:text-base font-medium">
+          Quer fazer conexões que geram negócios?
+        </p>
+        <Link href="/landing">
+          <Button className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-full px-8 py-3 text-sm shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Faça Parte
+          </Button>
+        </Link>
       </div>
     </div>
   )
