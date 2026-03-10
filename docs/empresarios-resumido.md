@@ -15,6 +15,8 @@ Fundada em Balneário Camboriú, a Sarturi Solutions é uma hub de soluções co
 **Instagram:**
 https://www.instagram.com/dannisarturi?igsh=MXU5eHh6bHdncjE5MA==
 
+**Telefone:**
+
 ---
 
 ## 2. Lucas Luquetti
@@ -29,6 +31,8 @@ Fundada em 2024, a Clínica Nova Anália Estética Avançada é referência em S
 **Instagram:**
 https://www.instagram.com/dr.lucasluquettioficial?igsh=dnJveDN0MnJidTI5
 
+**Telefone:**
+
 ---
 
 ## 3. Flávia Hoelz
@@ -41,6 +45,9 @@ Há quatorze anos na medicina, a Dra. Flávia Freire Hoelz construiu uma trajet�
 Idealizada pela Dra. Flávia Hoelz, a Clínica Hoelz oferece atendimento completo, humano e resolutivo em Guarulhos. Com foco em cirurgias dermatológicas, combina técnica avançada e olhar estético. Cada paciente é tratado como único, com protocolos que priorizam excelência sem abrir mão da humanização.
 
 **Instagram:** https://www.instagram.com/dra_flaviafreirehoelz?igsh=ejRmZnByNXlrMzJy
+
+
+**Telefone:**
 
 ---
 
@@ -55,6 +62,9 @@ A Hoelz Assessoria nasceu de um incômodo: ver empresários trabalhados por uma 
 
 **Instagram:** https://www.instagram.com/filipihoelzcontador?igsh=MWpjdDB5ODFuajZvbw%3D%3D
 
+
+**Telefone:**
+
 ---
 
 ## 5. Alexandre da Silva
@@ -67,6 +77,9 @@ Aos quarenta anos, Alexandre Roberto da Silva carrega uma história que desafia 
 Fundada por Alexandre, a Amigão Saúde nasceu dentro de casa e hoje conta com duas lojas e uma corretora em São Miguel Paulista. Com mais de vinte anos de experiência, Alexandre ainda é o "vendedor pastinha" que vai até o cliente. Vendas humanas, emocionais e transformadoras.
 
 **Instagram:** https://www.instagram.com/eusoualexandreamigao?igsh=MXFuYnhvMTB5d3l2dQ%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -81,6 +94,9 @@ Localizada no CUBE em Guarulhos, a clínica une excelência técnica e acolhimen
 
 **Instagram:** https://www.instagram.com/alexandraaureasantos?igsh=a3lpZGM3OTcwaWI1
 
+
+**Telefone:**
+
 ---
 
 ## 7. Fernanda Pascucci
@@ -93,6 +109,9 @@ Aos quarenta e três anos, mãe solo e empreendedora, Fernanda Pascucci carrega 
 Fundada em 2019, a FP Soluções oferece administração condominial, consultoria para síndicos e manutenção preventiva e corretiva. Combina técnica e propósito — mais que gestão, promove confiança e comunidade. Referência em Guarulhos e São Paulo.
 
 **Instagram:** https://www.instagram.com/papodesindica/
+
+
+**Telefone:**
 
 ---
 
@@ -107,6 +126,9 @@ O Mulheres Desbravadoras é o maior ecossistema de empreendedorismo feminino de 
 
 **Instagram:**
 https://www.instagram.com/alinecintraoficial?igsh=MWF5ZXAxODNtdDF2dg%3D%3D
+
+**Telefone:**
+
 ---
 
 ## 9. Stephanie Georgia
@@ -119,6 +141,9 @@ Desde os nove anos, Stephanie Georgia já mostrava que empreender era sua essên
 Com vinte e três anos de mercado, a consultoria oferece soluções financeiras completas. Mais do que consórcios, atua como consultora da saúde financeira dos clientes, com acompanhamento personalizado. Cada decisão é orientada para segurança e clareza. Crédito que é confiança e futuro.
 
 **Instagram:** https://www.instagram.com/stephanie.secco?igsh=emNsdG5kM3c5N2Z6
+
+
+**Telefone:**
 
 ---
 
@@ -133,6 +158,9 @@ Fundado há 13 anos, o Skoberg Pires é um escritório boutique que oferece solu
 
 **Instagram:** https://www.instagram.com/brunopires.adv?igsh=MTV4aHBqNnM0NGUzbw==
 
+
+**Telefone:**
+
 ---
 
 ## 11. Camila Shiraiva
@@ -145,6 +173,9 @@ Aos seis anos, ouviu que deveria ser arquiteta e decidiu que esse seria seu cami
 A Camila Shiraiva Arquitetura nasceu da soma de conhecimento técnico e experiência prática. Cada cliente é acompanhado desde a escolha do terreno até a entrega da obra. Atua em arquitetura corporativa, comercial e residencial com foco em planejamento e excelência.
 
 **Instagram:** https://www.instagram.com/camilashiraiva.arq?igsh=NWxmOWwwcjNsODQ1
+
+
+**Telefone:**
 
 ---
 
@@ -159,6 +190,9 @@ A Prezervare transforma gestão de saúde e segurança do trabalho em ferramenta
 
 **Instagram:** https://www.instagram.com/sstcomfabricio?igsh=cGtyM284MGdieGNi
 
+
+**Telefone:**
+
 ---
 
 ## 13. Cláudia Plaza
@@ -171,6 +205,9 @@ Formada em Publicidade e Propaganda, com mais de vinte anos no meio corporativo,
 A Plaza Marketing Digital une estratégia e autenticidade. Atua em mídias sociais, sites, landing pages, fotos, vídeos e tráfego pago via Google Ads e Meta Ads. Conteúdo desenvolvido por jornalistas especializados. Marketing que inspira e conecta.
 
 **Instagram:** https://www.instagram.com/plaza_marketingdigital?igsh=MThmanExbTZ6NnI2MQ%3D%3D&utm_source=qr
+
+
+**Telefone:**
 
 ---
 
@@ -185,6 +222,9 @@ Fundada em 2021, a Kah Consultoria foi pensada para acolher mulheres empreendedo
 
 **Instagram:** https://www.instagram.com/karinaalmeidacontadora?igsh=OHVqNDlndnpkenEy
 
+
+**Telefone:**
+
 ---
 
 ## 15. Greice Marin
@@ -198,6 +238,9 @@ O trabalho de Greice transcende consultórios. Com 270 mil seguidores no Instagr
 
 **Instagram:**
 https://www.instagram.com/greicemarin?igsh=MWJqeXFzYXMyZ2FmdA==
+
+**Telefone:**
+
 ---
 
 ## 16. Gabriel Araujo
@@ -210,6 +253,9 @@ Autor do livro Fator K, Gabriel Araujo sempre acreditou que empreender é transf
 Fundada há três anos em Guarulhos, a Angulares Reformas é um hub de soluções para condomínios: pintura de fachadas, reformas de piscinas, impermeabilização e manutenção. Com registro no CREA e gestão trazida da experiência em grandes obras da Petrobras.
 
 **Instagram:** https://www.instagram.com/angularisreformas?igsh=MTgwYzVyaGUydTVibg%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -224,6 +270,9 @@ Fundada em 2006, a corretora mantém parcerias sólidas com diversas seguradoras
 
 **Instagram:** https://www.instagram.com/paulabraziliano?igsh=OWRiOHBidzEyamJl
 
+
+**Telefone:**
+
 ---
 
 ## 18. Lívia Maria
@@ -236,6 +285,9 @@ Desde pequena, Lívia cresceu acompanhando a Kaema, empresa fundada por seu pai 
 Fundada em 1993, a Kaema é pioneira na distribuição de EPIs no Alto Tietê. O diferencial é o atendimento consultivo: além de fornecer produtos, avalia se os EPIs são os mais adequados. Com 31 anos de história e 28 funcionários, é referência em segurança e proteção.
 
 **Instagram:** https://www.instagram.com/livia.kaema?igsh=MXVvemNuMG1vZ2tlbw%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -250,6 +302,9 @@ Atua em seguros empresariais de saúde com soluções inteligentes e personaliza
 
 **Instagram:** https://www.instagram.com/annyatx7?igsh=MXY5bGp6ZDZyeXNqaw%3D%3D
 
+
+**Telefone:**
+
 ---
 
 ## 20. Felipe Tolentino
@@ -262,6 +317,9 @@ Aos 35 anos, Felipe Tolentino é designer e músico apaixonado pelo estilo clás
 A Casa Filipo é alfaiataria de alto padrão para quem busca exclusividade. Cada peça transmite finesse e poder, com tecidos nobres e acabamentos personalizados. Na Zona Norte de SP, o espaço une luxo, atendimento personalizado e experiência VIP.
 
 **Instagram:** https://www.instagram.com/casafilipo/
+
+
+**Telefone:**
 
 ---
 
@@ -276,6 +334,9 @@ A BL Odontologia se destaca pela abordagem única em harmonização facial: real
 
 **Instagram:** https://www.instagram.com/laaamoura?igsh=aHI5YWJ3Z3liMzE2
 
+
+**Telefone:**
+
 ---
 
 ## 22. Valter Pacheco
@@ -288,6 +349,9 @@ Paulistano de família humilde, Valter Pacheco entrou no mercado de seguros em 1
 Fundada em 1998, a Champion Life atua em previdência, seguros, consórcios e planos de saúde. Com sede em SP e atuação também em SC, destaca-se pela versatilidade e processos digitalizados. Histórico limpo, premiada em diversas ocasiões. Referência em proteção e planejamento financeiro.
 
 **Instagram:** @valterpachecodosantos
+
+
+**Telefone:**
 
 ---
 
@@ -302,6 +366,9 @@ Consultoria completa para brasileiros que desejam migrar para os EUA. Vai além 
 
 **Instagram:** https://www.instagram.com/_giovannabalan?igsh=M2dwZ3VpbG5sOXpy
 
+
+**Telefone:**
+
 ---
 
 ## 24. Carlos Serpeloni
@@ -314,6 +381,9 @@ Nascido no interior do Paraná, Carlos enfrentou grandes desafios desde cedo. Ao
 O Instituto Serpeloni prepara pessoas para liderar, vender, atender e comunicar com eficiência. Treinamentos que unem técnica e emoção, mostrando que é possível produzir mais com harmonia e sem assédio. Reconhecido pelo impacto emocional e aplicabilidade prática.
 
 **Instagram:** https://www.instagram.com/carlosserpeloni?igsh=MWhpaDRydzg1NG9jOA%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -329,6 +399,8 @@ Acompanhamento terapêutico com foco em desenvolvimento emocional, autoconhecime
 **Instagram:**
 https://www.instagram.com/silviacosta_psico?igsh=MWJnZWw5aGttdXEzZg==
 
+**Telefone:**
+
 ---
 
 ## 26. Dra. Paula Favaron do Prado
@@ -341,6 +413,9 @@ Médica veterinária há mais de 30 anos, Dra. Paula sempre teve os animais como
 Serviço especializado em transporte aéreo internacional de pets. Preparação de documentação completa para embarque a qualquer país do mundo. Combina conhecimento técnico veterinário com sensibilidade — cada animal é parte da família. Segurança e tranquilidade para tutores e pets.
 
 **Instagram:** https://www.instagram.com/drapaulafavaron?igsh=bGQzenJ6NjJ5cXBs
+
+
+**Telefone:**
 
 ---
 
@@ -355,6 +430,9 @@ A Sandra Tour oferece passeios seguros e confortáveis para pessoas acima dos 60
 
 **Instagram:** https://www.instagram.com/sandraturturistando?igsh=YTZkaTE0aGdmcWRn
 
+
+**Telefone:**
+
 ---
 
 ## 28. Gabriela Andrade
@@ -367,6 +445,9 @@ Em 2019, diagnosticada com burnout e síndrome do pânico, Gabriela Andrade prec
 Metodologia que une técnica e propósito para construir marcas a partir da verdade de cada empreendedora. O processo começa na escuta interna. "Quando a gente se escuta, a marca se fortalece. E quando a marca nasce da verdade, ela se sustenta."
 
 **Instagram:** https://www.instagram.com/rgabrieladigital?igsh=MXQ2ZHhub2Y5c3dzaQ%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -381,6 +462,9 @@ Da recepção à gestão de barbearias, expansão de franquias e escola de esté
 
 **Instagram:** https://www.instagram.com/eusouandersonsoaress?igsh=MXA4cnczdWJ3MWgwMg%3D%3D
 
+
+**Telefone:**
+
 ---
 
 ## 30. Jorge Caroni
@@ -393,6 +477,9 @@ Advogado há 28 anos, Jorge Caroni construiu carreira focada em recuperação de
 A Vitale Advogados é escritório boutique com mais de 25 anos, especializado em recuperação de empresas e reestruturação de dívidas. Atendimento sob medida para que empresas reorganizem finanças e retomem atividades de forma sustentável.
 
 **Instagram:** https://www.instagram.com/jorgecaroni?igsh=MTU4bGozZGtiNmNqYw%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -407,6 +494,9 @@ No Helbor Patteo Bosque Maia em Guarulhos, oferece tratamentos estéticos de alt
 
 **Instagram:** https://www.instagram.com/_viseravalli?igsh=aGw5ZDMyaHFvMnFm
 
+
+**Telefone:**
+
 ---
 
 ## 32. Hugo Madeira
@@ -419,6 +509,9 @@ Hugo Madeira não entrou no mercado financeiro por acaso. Graduado em Sistemas d
 A Horcam Wealth oferece planejamento financeiro estruturado, estratégia de investimentos e visão patrimonial de longo prazo. Integra consultoria financeira, educação e mercado imobiliário de alto padrão. Patrimônio não se improvisa, se constrói.
 
 **Instagram:** https://www.instagram.com/hugoariedam?igsh=MTNudGFieXRyZmFpbw%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -433,6 +526,9 @@ Fundado há cinco anos, o Desafiando Limites é treinamento de alto impacto em i
 
 **Instagram:** https://www.instagram.com/alevasconcelosmentor?igsh=MXhhYWJocWUxN2lraA==
 
+
+**Telefone:**
+
 ---
 
 ## 34. Lucas Alves Nicolau
@@ -445,6 +541,9 @@ Aos 35 anos, Lucas carrega trajetória de trabalho e reinvenção. Filho de come
 Atuação em compra, venda e reforma de imóveis, além de loteamentos no eixo Cunha-Paraty. Com habilidade de liderança comprovada em empresas com mais de 200 colaboradores, usa o mercado imobiliário como ferramenta de prosperidade e desenvolvimento sustentável.
 
 **Instagram:** https://www.instagram.com/lucasdlux?igsh=MXNveDM0OG1sbnVwMA%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -459,6 +558,9 @@ Fundada em 2010 e repaginada em 2024, a Épica atua com excelência em casamento
 
 **Instagram:** https://www.instagram.com/epicafotoevideo?igsh=MThuNGlqaXdyNDl2aQ%3D%3D
 
+
+**Telefone:**
+
 ---
 
 ## 36. César Virgílio Conventi
@@ -471,6 +573,9 @@ Com 45 anos, César carrega trajetória de reinvenção. Formado em jornalismo d
 A SelfPrimeBrasil atua em eventos, videoclipes e cobertura fotográfica. O Portal TRENDTV BRASIL é espaço de notícias, entretenimento e negócios — finalista entre os cinco maiores sites de entretenimento do país em 2025. As duas empresas funcionam de forma integrada.
 
 **Instagram:** https://www.instagram.com/cesarvirgiliooficial/
+
+
+**Telefone:**
 
 ---
 
@@ -485,6 +590,9 @@ Especialista em ambientações para casamentos, mini weddings, festas de 15 anos
 
 **Instagram:** https://www.instagram.com/monicaaugustofloresefestas?igsh=NHM4Z3JhYjY1aDI1
 
+
+**Telefone:**
+
 ---
 
 ## 38. Camila Cirilo
@@ -497,6 +605,9 @@ Camila Cirilo construiu carreira com propósito claro: ajudar pessoas a realizar
 Integrante da maior administradora de consórcios do Brasil, que contempla em média duas mil pessoas por mês. Ajuda empreendedores a alavancar capital e famílias a construírem aposentadoria imobiliária. Consórcio como ferramenta de transformação.
 
 **Instagram:** https://www.instagram.com/camilaciriloademicon/
+
+
+**Telefone:**
 
 ---
 
@@ -511,6 +622,9 @@ Consultoria que leva gestão empresarial de forma descomplicada e prática. Já 
 
 **Instagram:** https://www.instagram.com/claudiojcunha?igsh=MWM5a3N0dGxtY3Zudw%3D%3D
 
+
+**Telefone:**
+
 ---
 
 ## 40. Caetano Tona
@@ -523,6 +637,9 @@ Caetano Tona transforma histórias em narrativas que conectam e emocionam. Há m
 A Life Lab apoia empresas e líderes na construção de narrativas que inspiram. Já colaborou com Bauducco, Coca-Cola, Heineken, Johnson & Johnson e eventos como Web Summit e SXSW. Comunicação com propósito que fortalece marcas e pessoas.
 
 **Instagram:** https://www.instagram.com/caetanotona?igsh=MTBzNmhkbHdzeGthZA%3D%3D
+
+
+**Telefone:**
 
 ---
 
@@ -537,6 +654,9 @@ Atua como psicanalista em grandes empresas, com foco em inteligência emocional 
 
 **Instagram:** https://www.instagram.com/taniatreinadora?igsh=bTBnOGc4anNnc3o5
 
+
+**Telefone:**
+
 ---
 
 ## 42. Tatiane Cordeiro
@@ -550,6 +670,9 @@ A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especia
 
 **Instagram:** https://www.instagram.com/pannoramafinanceiro?igsh=djgxYno3MThrbjZs
 
+
+**Telefone:**
+
 ---
 
 ## 43. Gabriela Argollo
@@ -562,6 +685,8 @@ Formada em Ciências Contábeis, Gabriela Argollo fundou a Pannorama Financeiro 
 A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
 
 **Instagram:** https://www.instagram.com/gabargollo?igsh=MXIzdWl2MHM0c2UycQ%3D%3D
+
+**Telefone:**
 
 
 
@@ -584,6 +709,9 @@ A empresa aplica neurociência à arquitetura — cada projeto é pensado para i
 
 **Instagram:**
 
+
+**Telefone:**
+
 ---
 
 ## 45. Roberto Mendes
@@ -596,6 +724,9 @@ Roberto Mendes descobriu cedo sua vocação no universo comercial. Construiu tra
 Há seis anos no mercado, a Casa Dei se consolidou como referência em brindes corporativos e materiais promocionais. Atendimento próximo e consultivo, ajudando marcas a se destacarem com brindes que surpreendem e fortalecem relacionamentos. Confiança, agilidade e cuidado.
 
 **Instagram:**
+
+
+**Telefone:**
 
 ---
 
@@ -610,6 +741,9 @@ O escritório atua em Direito Empresarial, Compliance Trabalhista, Assessoria Ju
 
 **Instagram:**
 
+
+**Telefone:**
+
 ---
 
 ## 47. Ana Cathalanni
@@ -622,6 +756,9 @@ Desde os três anos, Ana Cathalanni já escrevia histórias. Formou-se em jornal
 A Lumen nasceu da frustração com o mercado editorial distante e pouco humanizado. Voltada para títulos cristãos e de empreendedorismo, caminha junto com os autores em cada etapa. O nome vem do latim "luz" — ser luz na vida dos autores e dar forma às suas histórias.
 
 **Instagram:**
+
+
+**Telefone:**
 
 ---
 
@@ -636,6 +773,9 @@ Há quase 10 anos, a Royalle Contabilidade atende clientes em todo o Brasil. Do 
 
 **Instagram:**
 
+
+**Telefone:**
+
 ---
 
 ## 49. Erik Bitencurt
@@ -648,6 +788,9 @@ Aos 24 anos, Erik já carrega trajetória marcada por coragem. Natural de Santos
 A EMB Marketing é agência especializada em tráfego pago, com aproximadamente três milhões de reais em anúncios administrados. Foco em negócios locais — estéticas, hotéis, restaurantes — e e-commerces. Estratégias personalizadas para crescimento real.
 
 **Instagram:**
+
+
+**Telefone:**
 
 ---
 
@@ -662,6 +805,9 @@ A AVIG360 é primeira linha da NR-01 atualizada, monitorando riscos psicossociai
 
 **Instagram:**
 
+
+**Telefone:**
+
 ---
 
 ## 51. Julio (Festtime)
@@ -674,6 +820,8 @@ Criado no extremo sul de SP, Julio começou a trabalhar na infância. A perda da
 Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Brasil e uma em Orlando. Projeta faturamento de R$ 70 milhões. Construção empresarial baseada em vendas, disciplina operacional e crescimento sustentável.
 
 **Instagram:**
+
+**Telefone:**
 
 
 ---
@@ -689,6 +837,9 @@ Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Br
 
 **Instagram:** https://www.instagram.com/vagnermiramontes?igsh=MXV3NHZpOWtsaXhqcw%3D%3D
 
+
+**Telefone:**
+
 ---
 
 ## 53. Soraia Monteiro
@@ -701,5 +852,8 @@ Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Br
 (a preencher)
 
 **Instagram:** https://www.instagram.com/soraiamonteirooficial?igsh=aTdxMjR3ejh3MHZm
+
+
+**Telefone:**
 
 ---
