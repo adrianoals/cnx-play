@@ -452,8 +452,18 @@ export default function AdminRevistaPage() {
             </div>
 
             <div>
-              <Label>Telefone</Label>
-              <Input value={form.phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("phone", e.target.value)} placeholder="(11) 99999-9999" />
+              <Label>Telefone (WhatsApp)</Label>
+              <Input
+                value={form.phone}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const raw = e.target.value.replace(/\D/g, '').slice(0, 13)
+                  let masked = raw
+                  if (raw.length > 2) masked = `(${raw.slice(0,2)}) ${raw.slice(2)}`
+                  if (raw.length > 7) masked = `(${raw.slice(0,2)}) ${raw.slice(2,7)}-${raw.slice(7)}`
+                  updateField("phone", masked)
+                }}
+                placeholder="(11) 99999-9999"
+              />
             </div>
 
             <div>
