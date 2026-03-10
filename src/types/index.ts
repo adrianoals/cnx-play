@@ -214,6 +214,7 @@ export interface MagazineEntrepreneur {
   bio: string
   institutionalText: string | null
   instagram: string | null
+  phone: string | null
   displayOrder: number
   isActive: boolean
   createdAt: string

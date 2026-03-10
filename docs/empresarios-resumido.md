@@ -187,20 +187,7 @@ Fundada em 2021, a Kah Consultoria foi pensada para acolher mulheres empreendedo
 
 ---
 
-## 15. Kamila Estevam
-**Empresa:** Kamila Estevam Arquitetura | **Cargo:** Arquiteta
-
-**Bio:**
-Desde os doze anos sabia que queria ser arquiteta. Sem condições financeiras, fez pré-vestibular comunitário e conquistou 100% de bolsa pelo ProUni. Nunca precisou enviar currículo: construiu sua carreira com talento, disciplina e visão empreendedora. Com pós-graduação em Neurociência Aplicada à Arquitetura, é referência por unir técnica e sensibilidade. Sete anos empreendendo na zona sul de SP.
-
-**Institucional:**
-A empresa aplica neurociência à arquitetura — cada projeto é pensado para influenciar emoções e melhorar qualidade de vida. Forte em interiores e reformas de apartamentos e estúdios na Grande SP. Em 2025, entregou vinte estúdios no modelo "chave na mão".
-
-**Instagram:**
-
----
-
-## 16. Greice Marin
+## 15. Greice Marin
 **Empresa:** Greice Marin Terapia | **Cargo:** Terapeuta de Relacionamentos
 
 **Bio:**
@@ -213,7 +200,7 @@ O trabalho de Greice transcende consultórios. Com 270 mil seguidores no Instagr
 https://www.instagram.com/greicemarin?igsh=MWJqeXFzYXMyZ2FmdA==
 ---
 
-## 17. Gabriel Araujo
+## 16. Gabriel Araujo
 **Empresa:** Angulares Reformas | **Cargo:** Fundador
 
 **Bio:**
@@ -226,33 +213,7 @@ Fundada há três anos em Guarulhos, a Angulares Reformas é um hub de soluçõe
 
 ---
 
-## 18. Roberto Mendes
-**Empresa:** Casa Dei Personalizados | **Cargo:** Diretor Comercial
-
-**Bio:**
-Roberto Mendes descobriu cedo sua vocação no universo comercial. Construiu trajetória sólida em vendas e negociação, aprendendo na prática como entregar valor através de bom relacionamento. Ao lado da esposa Paloma, decidiu empreender e aplicar sua experiência em atendimento consultivo. Hoje é responsável pela área comercial da Casa Dei, empresa que em seis anos se tornou referência em brindes corporativos e kits personalizados.
-
-**Institucional:**
-Há seis anos no mercado, a Casa Dei se consolidou como referência em brindes corporativos e materiais promocionais. Atendimento próximo e consultivo, ajudando marcas a se destacarem com brindes que surpreendem e fortalecem relacionamentos. Confiança, agilidade e cuidado.
-
-**Instagram:**
-
----
-
-## 19. Dra. Ellen Juliana Cardoso
-**Empresa:** Rodrigues Lemos e Cardoso Advogados | **Cargo:** CEO
-
-**Bio:**
-Nascida em Belém do Pará, Ellen começou como técnica em segurança do trabalho em grandes multinacionais, ganhando disciplina e visão estratégica. Com o tempo, empreendeu com empresa própria de prestação de serviços. A inquietação a levou a Guarulhos, onde iniciou nova fase. Hoje é CEO da Rodrigues Lemos e Cardoso Sociedade de Advogados, especialista em Direito Criminal com ênfase em crimes empresariais.
-
-**Institucional:**
-O escritório atua em Direito Empresarial, Compliance Trabalhista, Assessoria Jurídica Corporativa e Direito Criminal. Parceiro estratégico que ajuda empresas a prevenir riscos e enfrentar desafios legais com segurança. Referência em Guarulhos.
-
-**Instagram:**
-
----
-
-## 20. Paula Braziliano
+## 17. Paula Braziliano
 **Empresa:** Corretora Paula Braziliano | **Cargo:** Corretora de Seguros
 
 **Bio:**
@@ -265,7 +226,7 @@ Fundada em 2006, a corretora mantém parcerias sólidas com diversas seguradoras
 
 ---
 
-## 21. Lívia Maria
+## 18. Lívia Maria
 **Empresa:** Kaema | **Cargo:** Sócia-Diretora Comercial
 
 **Bio:**
@@ -278,20 +239,7 @@ Fundada em 1993, a Kaema é pioneira na distribuição de EPIs no Alto Tietê. O
 
 ---
 
-## 22. Ana Cathalanni
-**Empresa:** Lumen Created Publishing | **Cargo:** Sócia-Fundadora
-
-**Bio:**
-Desde os três anos, Ana Cathalanni já escrevia histórias. Formou-se em jornalismo, mas a vida a levou para a gastronomia, onde virou chefe de cozinha. Mesmo com estabilidade, o chamado da escrita nunca parou de pulsar. Em um ato de coragem, largou tudo para escrever. O destino se confirmou quando Nay Lisboa a convidou para trabalhar em sua editora — juntas, fundaram a Lumen Created Publishing.
-
-**Institucional:**
-A Lumen nasceu da frustração com o mercado editorial distante e pouco humanizado. Voltada para títulos cristãos e de empreendedorismo, caminha junto com os autores em cada etapa. O nome vem do latim "luz" — ser luz na vida dos autores e dar forma às suas histórias.
-
-**Instagram:**
-
----
-
-## 23. Anny Teixeira
+## 19. Anny Teixeira
 **Empresa:** Seguros Empresariais de Saúde | **Cargo:** Consultora
 
 **Bio:**
@@ -304,7 +252,7 @@ Atua em seguros empresariais de saúde com soluções inteligentes e personaliza
 
 ---
 
-## 24. Felipe Tolentino
+## 20. Felipe Tolentino
 **Empresa:** Casa Filipo Alfaiataria | **Cargo:** Alfaiate / Fundador
 
 **Bio:**
@@ -317,7 +265,7 @@ A Casa Filipo é alfaiataria de alto padrão para quem busca exclusividade. Cada
 
 ---
 
-## 25. Dra. Larissa Moura
+## 21. Dra. Larissa Moura
 **Empresa:** BL Odontologia | **Cargo:** Cirurgiã-Dentista
 
 **Bio:**
@@ -330,7 +278,7 @@ A BL Odontologia se destaca pela abordagem única em harmonização facial: real
 
 ---
 
-## 26. Valter Pacheco
+## 22. Valter Pacheco
 **Empresa:** Champion Life Corretora | **Cargo:** Consultor / Planejador Patrimonial
 
 **Bio:**
@@ -343,7 +291,7 @@ Fundada em 1998, a Champion Life atua em previdência, seguros, consórcios e pl
 
 ---
 
-## 27. Giovanna Balan Tangarelli
+## 23. Giovanna Balan Tangarelli
 **Empresa:** Consultoria de Imigração | **Cargo:** Consultora Internacional
 
 **Bio:**
@@ -356,7 +304,7 @@ Consultoria completa para brasileiros que desejam migrar para os EUA. Vai além 
 
 ---
 
-## 28. Carlos Serpeloni
+## 24. Carlos Serpeloni
 **Empresa:** Instituto Serpeloni de Treinamentos | **Cargo:** CEO
 
 **Bio:**
@@ -369,7 +317,7 @@ O Instituto Serpeloni prepara pessoas para liderar, vender, atender e comunicar 
 
 ---
 
-## 29. Sílvia Costa
+## 25. Sílvia Costa
 **Empresa:** Sílvia Costa Terapia | **Cargo:** Psicóloga / Terapeuta
 
 **Bio:**
@@ -383,7 +331,7 @@ https://www.instagram.com/silviacosta_psico?igsh=MWJnZWw5aGttdXEzZg==
 
 ---
 
-## 30. Dra. Paula Favaron do Prado
+## 26. Dra. Paula Favaron do Prado
 **Empresa:** Transporte Internacional de Pets | **Cargo:** Médica Veterinária
 
 **Bio:**
@@ -396,7 +344,7 @@ Serviço especializado em transporte aéreo internacional de pets. Preparação 
 
 ---
 
-## 31. Sandra Arruda
+## 27. Sandra Arruda
 **Empresa:** Sandra Tour | **Cargo:** Guia de Turismo / Fundadora
 
 **Bio:**
@@ -409,7 +357,7 @@ A Sandra Tour oferece passeios seguros e confortáveis para pessoas acima dos 60
 
 ---
 
-## 32. Gabriela Andrade
+## 28. Gabriela Andrade
 **Empresa:** Consultoria de Branding | **Cargo:** Consultora de Marcas
 
 **Bio:**
@@ -422,7 +370,7 @@ Metodologia que une técnica e propósito para construir marcas a partir da verd
 
 ---
 
-## 33. Anderson Soares
+## 29. Anderson Soares
 **Empresa:** Bear's Cave | **Cargo:** Empreendedor
 
 **Bio:**
@@ -435,7 +383,7 @@ Da recepção à gestão de barbearias, expansão de franquias e escola de esté
 
 ---
 
-## 34. Jorge Caroni
+## 30. Jorge Caroni
 **Empresa:** Vitale Advogados | **Cargo:** Advogado
 
 **Bio:**
@@ -448,7 +396,7 @@ A Vitale Advogados é escritório boutique com mais de 25 anos, especializado em
 
 ---
 
-## 35. Dra. Vitória Seravalli
+## 31. Dra. Vitória Seravalli
 **Empresa:** Biomedicina Estética | **Cargo:** Biomédica Esteta
 
 **Bio:**
@@ -461,7 +409,7 @@ No Helbor Patteo Bosque Maia em Guarulhos, oferece tratamentos estéticos de alt
 
 ---
 
-## 36. Hugo Madeira
+## 32. Hugo Madeira
 **Empresa:** Horcam Wealth | **Cargo:** Planejador Financeiro CFP®
 
 **Bio:**
@@ -474,7 +422,7 @@ A Horcam Wealth oferece planejamento financeiro estruturado, estratégia de inve
 
 ---
 
-## 37. Ale Vasconcelos
+## 33. Ale Vasconcelos
 **Empresa:** Desafiando Limites | **Cargo:** Treinador / Fundador
 
 **Bio:**
@@ -487,7 +435,7 @@ Fundado há cinco anos, o Desafiando Limites é treinamento de alto impacto em i
 
 ---
 
-## 38. Lucas Alves Nicolau
+## 34. Lucas Alves Nicolau
 **Empresa:** Imobiliária / Empreendimentos | **Cargo:** Empreendedor
 
 **Bio:**
@@ -500,7 +448,7 @@ Atuação em compra, venda e reforma de imóveis, além de loteamentos no eixo C
 
 ---
 
-## 39. Sheylla Colombo
+## 35. Sheylla Colombo
 **Empresa:** Épica Foto e Vídeo | **Cargo:** Fotógrafa / CEO
 
 **Bio:**
@@ -513,20 +461,7 @@ Fundada em 2010 e repaginada em 2024, a Épica atua com excelência em casamento
 
 ---
 
-## 40. Rogério dos Santos
-**Empresa:** Royalle Contabilidade | **Cargo:** Contador / Sócio
-
-**Bio:**
-Aos 13 anos, Rogério começou como entregador de folhetos em supermercado. Passou por todas as funções: empacotador, repositor e contador. Percebeu que outros comércios também precisavam de profissionais contábeis e começou a construir uma rede de clientes. Hoje, aos 35, transformou aquela experiência em carreira sólida. Dedicação e visão podem transformar pequenos passos em grandes conquistas.
-
-**Institucional:**
-Há quase 10 anos, a Royalle Contabilidade atende clientes em todo o Brasil. Do MEI a sociedades anônimas, com base sólida no comércio. Proximidade, confiança e atendimento personalizado. Parceira estratégica na construção de negócios que movimentam a economia.
-
-**Instagram:**
-
----
-
-## 41. César Virgílio Conventi
+## 36. César Virgílio Conventi
 **Empresa:** SelfPrimeBrasil / Portal TRENDTV BRASIL | **Cargo:** Jornalista / Fotógrafo
 
 **Bio:**
@@ -539,7 +474,7 @@ A SelfPrimeBrasil atua em eventos, videoclipes e cobertura fotográfica. O Porta
 
 ---
 
-## 42. Mônica Augusto
+## 37. Mônica Augusto
 **Empresa:** Mônica Augusto Decorações | **Cargo:** Decoradora de Eventos
 
 **Bio:**
@@ -552,7 +487,7 @@ Especialista em ambientações para casamentos, mini weddings, festas de 15 anos
 
 ---
 
-## 43. Camila Cirilo
+## 38. Camila Cirilo
 **Empresa:** Consultoria de Consórcios | **Cargo:** Consultora Financeira
 
 **Bio:**
@@ -565,20 +500,7 @@ Integrante da maior administradora de consórcios do Brasil, que contempla em m�
 
 ---
 
-## 44. Erik Bitencurt
-**Empresa:** EMB Marketing | **Cargo:** CEO
-
-**Bio:**
-Aos 24 anos, Erik já carrega trajetória marcada por coragem. Natural de Santos, mudou-se para Tibaiá para cursar Direito na USP, mas percebeu que sua vocação estava no empreendedorismo. Trabalhou na administração de restaurante, como freelancer em hotéis, sempre buscando aprender. Com rotina de sete dias por semana, moldou sua identidade empreendedora. Juventude não é obstáculo quando há determinação.
-
-**Institucional:**
-A EMB Marketing é agência especializada em tráfego pago, com aproximadamente três milhões de reais em anúncios administrados. Foco em negócios locais — estéticas, hotéis, restaurantes — e e-commerces. Estratégias personalizadas para crescimento real.
-
-**Instagram:**
-
----
-
-## 45. Cláudio Cunha
+## 39. Cláudio Cunha
 **Empresa:** Consultoria de Gestão | **Cargo:** Consultor Empresarial
 
 **Bio:**
@@ -591,7 +513,7 @@ Consultoria que leva gestão empresarial de forma descomplicada e prática. Já 
 
 ---
 
-## 46. Caetano Tona
+## 40. Caetano Tona
 **Empresa:** Life Lab | **Cargo:** Fundador
 
 **Bio:**
@@ -604,7 +526,7 @@ A Life Lab apoia empresas e líderes na construção de narrativas que inspiram.
 
 ---
 
-## 47. Tânia Correia
+## 41. Tânia Correia
 **Empresa:** Tânia Correia Terapia & Empresas | **Cargo:** Psicanalista / Empresária
 
 **Bio:**
@@ -617,7 +539,119 @@ Atua como psicanalista em grandes empresas, com foco em inteligência emocional 
 
 ---
 
-## 48. Vicente Ribeiro
+## 42. Tatiane Cordeiro
+**Empresa:** Pannorama Financeiro | **Cargo:** Sócia
+
+**Bio:**
+Mãe, empreendedora e apaixonada por transformar a vida financeira de pequenas e médias empresas. Com 18 anos de experiência na área financeira, Tatiane é sócia da Pannorama Financeiro e coautora do livro "Mulheres Desbravadoras". Sua trajetória é marcada por superações pessoais que se transformaram em força e propósito — acredita que por trás de cada empresa existe uma história, uma família e um sonho.
+
+**Institucional:**
+A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
+
+**Instagram:** https://www.instagram.com/pannoramafinanceiro?igsh=djgxYno3MThrbjZs
+
+---
+
+## 43. Gabriela Argollo
+**Empresa:** Pannorama Financeiro | **Cargo:** Sócia-Fundadora
+
+**Bio:**
+Formada em Ciências Contábeis, Gabriela Argollo fundou a Pannorama Financeiro em 2019 após deixar o mundo CLT e desistir da carreira em concursos públicos. Transformou anos de experiência na área financeira em um negócio próprio de BPO financeiro — antes mesmo de saber que esse mercado existia. Com 34 anos, lidera a empresa ao lado da sócia Tatiane, unindo visão estratégica e paixão por organização financeira para ajudar empresários a dormirem tranquilos sabendo que seus números estão sob controle.
+
+**Institucional:**
+A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
+
+**Instagram:** https://www.instagram.com/gabargollo?igsh=MXIzdWl2MHM0c2UycQ%3D%3D
+
+
+
+---
+
+# ════════════════════════════════════════════════
+# PENDENTES - Falta inserir no banco (sem Instagram)
+# ════════════════════════════════════════════════
+
+---
+
+## 44. Kamila Estevam
+**Empresa:** Kamila Estevam Arquitetura | **Cargo:** Arquiteta
+
+**Bio:**
+Desde os doze anos sabia que queria ser arquiteta. Sem condições financeiras, fez pré-vestibular comunitário e conquistou 100% de bolsa pelo ProUni. Nunca precisou enviar currículo: construiu sua carreira com talento, disciplina e visão empreendedora. Com pós-graduação em Neurociência Aplicada à Arquitetura, é referência por unir técnica e sensibilidade. Sete anos empreendendo na zona sul de SP.
+
+**Institucional:**
+A empresa aplica neurociência à arquitetura — cada projeto é pensado para influenciar emoções e melhorar qualidade de vida. Forte em interiores e reformas de apartamentos e estúdios na Grande SP. Em 2025, entregou vinte estúdios no modelo "chave na mão".
+
+**Instagram:**
+
+---
+
+## 45. Roberto Mendes
+**Empresa:** Casa Dei Personalizados | **Cargo:** Diretor Comercial
+
+**Bio:**
+Roberto Mendes descobriu cedo sua vocação no universo comercial. Construiu trajetória sólida em vendas e negociação, aprendendo na prática como entregar valor através de bom relacionamento. Ao lado da esposa Paloma, decidiu empreender e aplicar sua experiência em atendimento consultivo. Hoje é responsável pela área comercial da Casa Dei, empresa que em seis anos se tornou referência em brindes corporativos e kits personalizados.
+
+**Institucional:**
+Há seis anos no mercado, a Casa Dei se consolidou como referência em brindes corporativos e materiais promocionais. Atendimento próximo e consultivo, ajudando marcas a se destacarem com brindes que surpreendem e fortalecem relacionamentos. Confiança, agilidade e cuidado.
+
+**Instagram:**
+
+---
+
+## 46. Dra. Ellen Juliana Cardoso
+**Empresa:** Rodrigues Lemos e Cardoso Advogados | **Cargo:** CEO
+
+**Bio:**
+Nascida em Belém do Pará, Ellen começou como técnica em segurança do trabalho em grandes multinacionais, ganhando disciplina e visão estratégica. Com o tempo, empreendeu com empresa própria de prestação de serviços. A inquietação a levou a Guarulhos, onde iniciou nova fase. Hoje é CEO da Rodrigues Lemos e Cardoso Sociedade de Advogados, especialista em Direito Criminal com ênfase em crimes empresariais.
+
+**Institucional:**
+O escritório atua em Direito Empresarial, Compliance Trabalhista, Assessoria Jurídica Corporativa e Direito Criminal. Parceiro estratégico que ajuda empresas a prevenir riscos e enfrentar desafios legais com segurança. Referência em Guarulhos.
+
+**Instagram:**
+
+---
+
+## 47. Ana Cathalanni
+**Empresa:** Lumen Created Publishing | **Cargo:** Sócia-Fundadora
+
+**Bio:**
+Desde os três anos, Ana Cathalanni já escrevia histórias. Formou-se em jornalismo, mas a vida a levou para a gastronomia, onde virou chefe de cozinha. Mesmo com estabilidade, o chamado da escrita nunca parou de pulsar. Em um ato de coragem, largou tudo para escrever. O destino se confirmou quando Nay Lisboa a convidou para trabalhar em sua editora — juntas, fundaram a Lumen Created Publishing.
+
+**Institucional:**
+A Lumen nasceu da frustração com o mercado editorial distante e pouco humanizado. Voltada para títulos cristãos e de empreendedorismo, caminha junto com os autores em cada etapa. O nome vem do latim "luz" — ser luz na vida dos autores e dar forma às suas histórias.
+
+**Instagram:**
+
+---
+
+## 48. Rogério dos Santos
+**Empresa:** Royalle Contabilidade | **Cargo:** Contador / Sócio
+
+**Bio:**
+Aos 13 anos, Rogério começou como entregador de folhetos em supermercado. Passou por todas as funções: empacotador, repositor e contador. Percebeu que outros comércios também precisavam de profissionais contábeis e começou a construir uma rede de clientes. Hoje, aos 35, transformou aquela experiência em carreira sólida. Dedicação e visão podem transformar pequenos passos em grandes conquistas.
+
+**Institucional:**
+Há quase 10 anos, a Royalle Contabilidade atende clientes em todo o Brasil. Do MEI a sociedades anônimas, com base sólida no comércio. Proximidade, confiança e atendimento personalizado. Parceira estratégica na construção de negócios que movimentam a economia.
+
+**Instagram:**
+
+---
+
+## 49. Erik Bitencurt
+**Empresa:** EMB Marketing | **Cargo:** CEO
+
+**Bio:**
+Aos 24 anos, Erik já carrega trajetória marcada por coragem. Natural de Santos, mudou-se para Tibaiá para cursar Direito na USP, mas percebeu que sua vocação estava no empreendedorismo. Trabalhou na administração de restaurante, como freelancer em hotéis, sempre buscando aprender. Com rotina de sete dias por semana, moldou sua identidade empreendedora. Juventude não é obstáculo quando há determinação.
+
+**Institucional:**
+A EMB Marketing é agência especializada em tráfego pago, com aproximadamente três milhões de reais em anúncios administrados. Foco em negócios locais — estéticas, hotéis, restaurantes — e e-commerces. Estratégias personalizadas para crescimento real.
+
+**Instagram:**
+
+---
+
+## 50. Vicente Ribeiro
 **Empresa:** AVIG360 / Global Technologies | **Cargo:** Fundador
 
 **Bio:**
@@ -630,7 +664,7 @@ A AVIG360 é primeira linha da NR-01 atualizada, monitorando riscos psicossociai
 
 ---
 
-## 49. Julio (Festtime)
+## 51. Julio (Festtime)
 **Empresa:** Festtime | **Cargo:** Sócio-Fundador
 
 **Bio:**
@@ -644,7 +678,7 @@ Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Br
 
 ---
 
-## 50. Vagner Miramontes
+## 52. Vagner Miramontes
 **Empresa:** — | **Cargo:** —
 
 **Bio:**
@@ -657,20 +691,7 @@ Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Br
 
 ---
 
-## 51. Tatiane Cordeiro
-**Empresa:** Pannorama Financeiro | **Cargo:** Sócia
-
-**Bio:**
-Mãe, empreendedora e apaixonada por transformar a vida financeira de pequenas e médias empresas. Com 18 anos de experiência na área financeira, Tatiane é sócia da Pannorama Financeiro e coautora do livro "Mulheres Desbravadoras". Sua trajetória é marcada por superações pessoais que se transformaram em força e propósito — acredita que por trás de cada empresa existe uma história, uma família e um sonho.
-
-**Institucional:**
-A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
-
-**Instagram:** https://www.instagram.com/pannoramafinanceiro?igsh=djgxYno3MThrbjZs
-
----
-
-## 52. Soraia Monteiro
+## 53. Soraia Monteiro
 **Empresa:** — | **Cargo:** —
 
 **Bio:**
@@ -682,16 +703,3 @@ A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especia
 **Instagram:** https://www.instagram.com/soraiamonteirooficial?igsh=aTdxMjR3ejh3MHZm
 
 ---
-
-## 53. Gabriela Argollo
-**Empresa:** Pannorama Financeiro | **Cargo:** Sócia-Fundadora
-
-**Bio:**
-Formada em Ciências Contábeis, Gabriela Argollo fundou a Pannorama Financeiro em 2019 após deixar o mundo CLT e desistir da carreira em concursos públicos. Transformou anos de experiência na área financeira em um negócio próprio de BPO financeiro — antes mesmo de saber que esse mercado existia. Com 34 anos, lidera a empresa ao lado da sócia Tatiane, unindo visão estratégica e paixão por organização financeira para ajudar empresários a dormirem tranquilos sabendo que seus números estão sob controle.
-
-**Institucional:**
-A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
-
-**Instagram:** https://www.instagram.com/gabargollo?igsh=MXIzdWl2MHM0c2UycQ%3D%3D
-
-

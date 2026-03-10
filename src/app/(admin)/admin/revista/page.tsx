@@ -54,6 +54,7 @@ interface EntrepreneurForm {
   bio: string
   institutional_text: string
   instagram: string
+  phone: string
   photo_url: string
   is_active: boolean
 }
@@ -65,6 +66,7 @@ const emptyForm: EntrepreneurForm = {
   bio: "",
   institutional_text: "",
   instagram: "",
+  phone: "",
   photo_url: "",
   is_active: true,
 }
@@ -187,6 +189,7 @@ export default function AdminRevistaPage() {
       bio: item.bio,
       institutional_text: item.institutionalText || "",
       instagram: item.instagram || "",
+      phone: item.phone || "",
       photo_url: item.photoUrl,
       is_active: item.isActive,
     })
@@ -241,6 +244,7 @@ export default function AdminRevistaPage() {
           bio: form.bio,
           institutional_text: form.institutional_text || null,
           instagram: form.instagram || null,
+          phone: form.phone || null,
           photo_url: photoUrl,
           is_active: form.is_active,
         })
@@ -255,6 +259,7 @@ export default function AdminRevistaPage() {
           bio: form.bio,
           institutional_text: form.institutional_text || undefined,
           instagram: form.instagram || undefined,
+          phone: form.phone || undefined,
           photo_url: photoUrl,
           display_order: nextOrder,
           is_active: form.is_active,
@@ -444,6 +449,11 @@ export default function AdminRevistaPage() {
             <div>
               <Label>Instagram</Label>
               <Input value={form.instagram} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("instagram", e.target.value)} placeholder="@usuario ou URL do perfil" />
+            </div>
+
+            <div>
+              <Label>Telefone</Label>
+              <Input value={form.phone} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField("phone", e.target.value)} placeholder="(11) 99999-9999" />
             </div>
 
             <div>

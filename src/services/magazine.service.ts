@@ -11,6 +11,7 @@ function mapEntrepreneur(row: Record<string, unknown>): MagazineEntrepreneur {
     bio: row.bio as string,
     institutionalText: (row.institutional_text as string) || null,
     instagram: (row.instagram as string) || null,
+    phone: (row.phone as string) || null,
     displayOrder: row.display_order as number,
     isActive: row.is_active as boolean,
     createdAt: row.created_at as string,
@@ -50,6 +51,7 @@ export async function createMagazineEntrepreneur(
     bio: string
     institutional_text?: string
     instagram?: string
+    phone?: string
     display_order: number
     is_active?: boolean
   }
@@ -75,6 +77,7 @@ export async function updateMagazineEntrepreneur(
     bio?: string
     institutional_text?: string | null
     instagram?: string | null
+    phone?: string | null
     display_order?: number
     is_active?: boolean
   }
