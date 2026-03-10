@@ -603,11 +603,11 @@ A Life Lab apoia empresas e líderes na construção de narrativas que inspiram.
 
 ---
 
-## 47. Tânia Correya
-**Empresa:** Tânia Correya Terapia & Empresas | **Cargo:** Psicanalista / Empresária
+## 47. Tânia Correia
+**Empresa:** Tânia Correia Terapia & Empresas | **Cargo:** Psicanalista / Empresária
 
 **Bio:**
-Paulistana, casada, mãe de quatro e avó de três, Tânia Correya é formada em Psicanálise e Psicoterapia, professora de inglês e cantora profissional. Já impactou mais de mil e quinhentas pessoas com atendimento terapêutico. Atende grandes empresas com foco em inteligência emocional e é idealizadora do podcast ESPON*TANIA*MENTE. Sua vida é mosaico de experiências: da música ao atendimento terapêutico.
+Paulistana, casada, mãe de quatro e avó de três, Tânia Correia é formada em Psicanálise e Psicoterapia, professora de inglês e cantora profissional. Já impactou mais de mil e quinhentas pessoas com atendimento terapêutico. Atende grandes empresas com foco em inteligência emocional e é idealizadora do podcast ESPON*TANIA*MENTE. Sua vida é mosaico de experiências: da música ao atendimento terapêutico.
 
 **Institucional:**
 Atua como psicanalista em grandes empresas, com foco em inteligência emocional corporativa. Empresária no setor de brindes e idealizadora de podcast. Cantora profissional em festas e eventos. Arte e terapia que caminham juntas para tocar vidas.
