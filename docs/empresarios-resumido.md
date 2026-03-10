@@ -680,3 +680,18 @@ A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especia
 (a preencher)
 
 **Instagram:** https://www.instagram.com/soraiamonteirooficial?igsh=aTdxMjR3ejh3MHZm
+
+---
+
+## 53. Gabriela Argollo
+**Empresa:** Pannorama Financeiro | **Cargo:** Sócia-Fundadora
+
+**Bio:**
+Formada em Ciências Contábeis, Gabriela Argollo fundou a Pannorama Financeiro em 2019 após deixar o mundo CLT e desistir da carreira em concursos públicos. Transformou anos de experiência na área financeira em um negócio próprio de BPO financeiro — antes mesmo de saber que esse mercado existia. Com 34 anos, lidera a empresa ao lado da sócia Tatiane, unindo visão estratégica e paixão por organização financeira para ajudar empresários a dormirem tranquilos sabendo que seus números estão sob controle.
+
+**Institucional:**
+A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
+
+**Instagram:** https://www.instagram.com/gabargollo?igsh=MXIzdWl2MHM0c2UycQ%3D%3D
+
+
