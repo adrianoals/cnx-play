@@ -379,6 +379,7 @@ Psicóloga, psicopedagoga e terapeuta formada na metodologia Louise Hay, Sílvia
 Acompanhamento terapêutico com foco em desenvolvimento emocional, autoconhecimento e ressignificação de padrões internos. Integra psicologia e metodologia Louise Hay, trabalhando crenças, merecimento e relação com a própria história. Abordagem humanizada e estratégica.
 
 **Instagram:**
+https://www.instagram.com/silviacosta_psico?igsh=MWJnZWw5aGttdXEzZg==
 
 ---
 
