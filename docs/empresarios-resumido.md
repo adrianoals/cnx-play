@@ -657,13 +657,13 @@ Fundada em 2008 com um único caminhão, a Festtime hoje tem sete unidades no Br
 ---
 
 ## 51. Tatiane Cordeiro
-**Empresa:** Pannorama Financeiro | **Cargo:** —
+**Empresa:** Pannorama Financeiro | **Cargo:** Sócia
 
 **Bio:**
-(a preencher)
+Mãe, empreendedora e apaixonada por transformar a vida financeira de pequenas e médias empresas. Com 18 anos de experiência na área financeira, Tatiane é sócia da Pannorama Financeiro e coautora do livro "Mulheres Desbravadoras". Sua trajetória é marcada por superações pessoais que se transformaram em força e propósito — acredita que por trás de cada empresa existe uma história, uma família e um sonho.
 
 **Institucional:**
-(a preencher)
+A Pannorama Financeiro é uma empresa de BPO financeiro fundada em 2019, especializada em terceirização, controle e organização financeira de empresas. Com atendimento humanizado, estratégico e personalizado, atende clientes de todo o Brasil, ajudando empresários a terem clareza dos seus números para que possam focar no crescimento do negócio. Fundada por Gabriela e Tatiane, a Pannorama nasceu do propósito de mostrar que organizar o financeiro é o caminho para manter o negócio vivo, saudável e lucrativo — porque o financeiro é o coração da empresa.
 
 **Instagram:** https://www.instagram.com/pannoramafinanceiro?igsh=djgxYno3MThrbjZs
 
