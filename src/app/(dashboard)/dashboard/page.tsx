@@ -311,7 +311,7 @@ export default function DashboardPage() {
 
                     <div className="flex items-center gap-2 ml-13 sm:ml-0">
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-lg border border-border">
-                        {match.timeSlot}
+                        {match.timeSlot === "07:00" ? "Manhã" : "Tarde"}
                       </span>
 
                       {match.status === "completed" ? (

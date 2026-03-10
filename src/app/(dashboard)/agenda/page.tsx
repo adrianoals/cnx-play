@@ -261,7 +261,7 @@ export default function AgendaPage() {
                       </p>
                     </div>
 
-                    {/* Slot 07:00 */}
+                    {/* Slot Manhã */}
                     <button
                       disabled={disabled}
                       onClick={() => handleToggle(date, "07")}
@@ -276,11 +276,11 @@ export default function AgendaPage() {
                       {saving === date + "07" ? (
                         <Loader2 className="h-3 w-3 animate-spin mx-auto" />
                       ) : (
-                        "07:00"
+                        "Manhã"
                       )}
                     </button>
 
-                    {/* Slot 19:00 */}
+                    {/* Slot Tarde */}
                     <button
                       disabled={disabled}
                       onClick={() => handleToggle(date, "19")}
@@ -295,7 +295,7 @@ export default function AgendaPage() {
                       {saving === date + "19" ? (
                         <Loader2 className="h-3 w-3 animate-spin mx-auto" />
                       ) : (
-                        "19:00"
+                        "Tarde"
                       )}
                     </button>
                   </motion.div>

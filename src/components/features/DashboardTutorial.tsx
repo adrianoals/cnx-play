@@ -9,7 +9,7 @@ const steps = [
   { title: "O Hub Principal", description: "Aqui no Dashboard você tem uma visão geral de suas métricas, reuniões e o valor total gerado pela comunidade.", icon: LayoutDashboard, color: "bg-blue-500" },
   { title: "Conexões do Dia", description: "Todo dia você recebe parceiros para conectar. Confirme a reunião quando realizada — ambos precisam confirmar para ganhar o ponto.", icon: Handshake, color: "bg-green-500" },
   { title: "Mural de Negócios", description: "Fechou contrato? Registre no Mural de Conquistas. Aumenta sua visibilidade.", icon: Trophy, color: "bg-yellow-500" },
-  { title: "Agenda", description: "Configure sua disponibilidade semanal (07:00 e 19:00) e acompanhe o histórico de conexões realizadas.", icon: Calendar, color: "bg-purple-500" },
+  { title: "Agenda", description: "Configure sua disponibilidade semanal (Manhã e Tarde) e acompanhe o histórico de conexões realizadas.", icon: Calendar, color: "bg-purple-500" },
   { title: "Navegação Completa", description: "Use o menu lateral para buscar empresas, gerenciar conta ou acessar suporte.", icon: Menu, color: "bg-slate-500" },
 ]
 

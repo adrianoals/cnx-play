@@ -240,7 +240,7 @@ export default function AdminConexoesPage() {
           <span className="font-semibold text-foreground">{filteredMatches.filter(m => m.timeSlot === "07:00").length}</span> manhã
         </span>
         <span className="text-muted-foreground">
-          <span className="font-semibold text-foreground">{filteredMatches.filter(m => m.timeSlot === "19:00").length}</span> noite
+          <span className="font-semibold text-foreground">{filteredMatches.filter(m => m.timeSlot === "19:00").length}</span> tarde
         </span>
       </div>
 
@@ -275,8 +275,8 @@ export default function AdminConexoesPage() {
               {filteredMatches.map(match => (
                 <TableRow key={match.id}>
                   <TableCell>
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {match.timeSlot}
+                    <Badge variant="outline" className="text-xs">
+                      {match.timeSlot === "07:00" ? "Manhã" : "Tarde"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -366,14 +366,14 @@ export default function AdminConexoesPage() {
                   size="sm"
                   onClick={() => { setManualSlot("07:00"); setAvailableUsers([]) }}
                 >
-                  07:00
+                  Manhã
                 </Button>
                 <Button
                   variant={manualSlot === "19:00" ? "default" : "outline"}
                   size="sm"
                   onClick={() => { setManualSlot("19:00"); setAvailableUsers([]) }}
                 >
-                  19:00
+                  Tarde
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleOpenCreate}>
                   <RefreshCw className="h-3.5 w-3.5 mr-1" />
