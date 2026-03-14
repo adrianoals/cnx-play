@@ -34,8 +34,8 @@ const FIELD_LIMITS = {
   name: 60,
   company_name: 80,
   role_title: 60,
-  bio: 800,
-  institutional_text: 600,
+  bio: 500,
+  institutional_text: 300,
 }
 
 function CharCounter({ current, max }: { current: number; max: number }) {
@@ -52,7 +52,9 @@ interface EntrepreneurForm {
   company_name: string
   role_title: string
   bio: string
+  bio_full: string
   institutional_text: string
+  institutional_text_full: string
   instagram: string
   phone: string
   photo_url: string
@@ -64,7 +66,9 @@ const emptyForm: EntrepreneurForm = {
   company_name: "",
   role_title: "",
   bio: "",
+  bio_full: "",
   institutional_text: "",
+  institutional_text_full: "",
   instagram: "",
   phone: "",
   photo_url: "",
@@ -187,7 +191,9 @@ export default function AdminRevistaPage() {
       company_name: item.companyName,
       role_title: item.roleTitle,
       bio: item.bio,
+      bio_full: item.bioFull || "",
       institutional_text: item.institutionalText || "",
+      institutional_text_full: item.institutionalTextFull || "",
       instagram: item.instagram || "",
       phone: item.phone || "",
       photo_url: item.photoUrl,
@@ -242,7 +248,9 @@ export default function AdminRevistaPage() {
           company_name: form.company_name,
           role_title: form.role_title,
           bio: form.bio,
+          bio_full: form.bio_full || null,
           institutional_text: form.institutional_text || null,
+          institutional_text_full: form.institutional_text_full || null,
           instagram: form.instagram || null,
           phone: form.phone || null,
           photo_url: photoUrl,
@@ -257,7 +265,9 @@ export default function AdminRevistaPage() {
           company_name: form.company_name,
           role_title: form.role_title,
           bio: form.bio,
+          bio_full: form.bio_full || undefined,
           institutional_text: form.institutional_text || undefined,
+          institutional_text_full: form.institutional_text_full || undefined,
           instagram: form.instagram || undefined,
           phone: form.phone || undefined,
           photo_url: photoUrl,
@@ -439,11 +449,23 @@ export default function AdminRevistaPage() {
             </div>
 
             <div>
+              <Label>Bio Completa</Label>
+              <p className="text-xs text-muted-foreground mb-1">Texto completo exibido no modal &quot;Saiba mais&quot; (opcional)</p>
+              <Textarea value={form.bio_full} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm(prev => ({ ...prev, bio_full: e.target.value }))} placeholder="Texto completo da bio do empresario" rows={5} />
+            </div>
+
+            <div>
               <div className="flex items-center justify-between">
                 <Label>Texto Institucional</Label>
                 <CharCounter current={form.institutional_text.length} max={FIELD_LIMITS.institutional_text} />
               </div>
               <Textarea value={form.institutional_text} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateField("institutional_text", e.target.value)} placeholder="Mensagem institucional (opcional)" rows={4} />
+            </div>
+
+            <div>
+              <Label>Texto Institucional Completo</Label>
+              <p className="text-xs text-muted-foreground mb-1">Texto institucional completo exibido no modal &quot;Saiba mais&quot; (opcional)</p>
+              <Textarea value={form.institutional_text_full} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm(prev => ({ ...prev, institutional_text_full: e.target.value }))} placeholder="Texto institucional completo" rows={5} />
             </div>
 
             <div>

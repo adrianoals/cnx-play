@@ -9,7 +9,9 @@ function mapEntrepreneur(row: Record<string, unknown>): MagazineEntrepreneur {
     roleTitle: row.role_title as string,
     photoUrl: row.photo_url as string,
     bio: row.bio as string,
+    bioFull: (row.bio_full as string) || null,
     institutionalText: (row.institutional_text as string) || null,
+    institutionalTextFull: (row.institutional_text_full as string) || null,
     instagram: (row.instagram as string) || null,
     phone: (row.phone as string) || null,
     displayOrder: row.display_order as number,
@@ -49,7 +51,9 @@ export async function createMagazineEntrepreneur(
     role_title: string
     photo_url: string
     bio: string
+    bio_full?: string
     institutional_text?: string
+    institutional_text_full?: string
     instagram?: string
     phone?: string
     display_order: number
@@ -75,7 +79,9 @@ export async function updateMagazineEntrepreneur(
     role_title?: string
     photo_url?: string
     bio?: string
+    bio_full?: string | null
     institutional_text?: string | null
+    institutional_text_full?: string | null
     instagram?: string | null
     phone?: string | null
     display_order?: number

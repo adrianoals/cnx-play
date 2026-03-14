@@ -4,6 +4,7 @@ import type { MagazineEntrepreneur } from "@/types"
 interface Props {
   entrepreneur: MagazineEntrepreneur
   pageNumber: number
+  onOpenModal?: (entrepreneur: MagazineEntrepreneur) => void
 }
 
 export const MagazinePhotoPage = React.forwardRef<HTMLDivElement, Props>(
@@ -33,7 +34,8 @@ export const MagazinePhotoPage = React.forwardRef<HTMLDivElement, Props>(
 )
 
 export const MagazineTextPage = React.forwardRef<HTMLDivElement, Props>(
-  function MagazineTextPage({ entrepreneur, pageNumber }, ref) {
+  function MagazineTextPage({ entrepreneur, pageNumber, onOpenModal }, ref) {
+    const hasFullText = !!(entrepreneur.bioFull || entrepreneur.institutionalTextFull)
     return (
       <div ref={ref} className="magazine-page bg-[#0a1628] flex flex-col relative overflow-hidden">
         {/* Top accent */}
@@ -63,6 +65,18 @@ export const MagazineTextPage = React.forwardRef<HTMLDivElement, Props>(
                   &ldquo;{entrepreneur.institutionalText}&rdquo;
                 </p>
               </div>
+            )}
+
+            {/* Saiba mais */}
+            {hasFullText && onOpenModal && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpenModal(entrepreneur) }}
+                onTouchEnd={(e) => { e.stopPropagation(); onOpenModal(entrepreneur) }}
+                className="inline-flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors relative z-10 mt-1"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                Saiba mais
+              </button>
             )}
 
           </div>

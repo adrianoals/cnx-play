@@ -38,7 +38,9 @@
       "Bash(openspec status:*)",
       "Bash(openspec instructions:*)",
       "Bash(mkdir:*)",
-      "Bash(/Users/adriano/Desktop/Cnxplay/cnx-play/empresarios-resumido.md:*)"
+      "Bash(/Users/adriano/Desktop/Cnxplay/cnx-play/empresarios-resumido.md:*)",
+      "Bash(grep:*)",
+      "Bash(kill:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
