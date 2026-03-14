@@ -7,6 +7,7 @@ import type { MagazineEntrepreneur } from "@/types"
 import MagazineCover from "@/components/magazine/MagazineCover"
 import { MagazinePhotoPage, MagazineTextPage } from "@/components/magazine/MagazineEntrepreneurPage"
 import MagazineBackCover from "@/components/magazine/MagazineBackCover"
+import EntrepreneurModal from "@/components/magazine/EntrepreneurModal"
 import { ChevronLeft, ChevronRight, Loader2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -16,6 +17,7 @@ export default function RevistaPage() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  const [modalEntrepreneur, setModalEntrepreneur] = useState<MagazineEntrepreneur | null>(null)
   const flipBookRef = useRef<ReturnType<typeof HTMLFlipBook> | null>(null)
 
   const totalPages = (entrepreneurs.length * 2) + 2 // cover + (photo + text per entrepreneur) + back cover
@@ -123,6 +125,7 @@ export default function RevistaPage() {
               key={`text-${entrepreneur.id}`}
               entrepreneur={entrepreneur}
               pageNumber={index * 2 + 2}
+              onOpenModal={setModalEntrepreneur}
             />,
           ])}
 
@@ -170,6 +173,13 @@ export default function RevistaPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Modal texto completo */}
+      <EntrepreneurModal
+        entrepreneur={modalEntrepreneur}
+        open={!!modalEntrepreneur}
+        onOpenChange={(open) => { if (!open) setModalEntrepreneur(null) }}
+      />
     </div>
   )
 }

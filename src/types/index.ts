@@ -212,7 +212,9 @@ export interface MagazineEntrepreneur {
   roleTitle: string
   photoUrl: string
   bio: string
+  bioFull: string | null
   institutionalText: string | null
+  institutionalTextFull: string | null
   instagram: string | null
   phone: string | null
   displayOrder: number
