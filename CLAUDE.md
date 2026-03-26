@@ -5,13 +5,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev       # Start dev server (http://localhost:3000)
-npm run build     # Production build
-npm start         # Serve production build
-npm run lint      # ESLint (flat config, Next.js core-web-vitals + TypeScript)
+npm run dev        # Start dev server (http://localhost:3000)
+npm run build      # Production build
+npm start          # Serve production build
+npm run lint       # ESLint (flat config, Next.js core-web-vitals + TypeScript)
+npm test           # Run tests once (Vitest)
+npm run test:watch # Run tests in watch mode
 ```
 
-No test framework is configured.
+Tests live in `__tests__/` directories next to source files (e.g. `src/lib/__tests__/utils.test.ts`).
 
 ## Architecture
 

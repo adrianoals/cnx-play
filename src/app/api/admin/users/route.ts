@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { titleCase } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   // 1. Verify service role key is configured
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
     password,
     email_confirm: true,
     user_metadata: {
-      full_name: fullName,
+      full_name: titleCase(fullName),
       phone: phone || '',
     },
   })
