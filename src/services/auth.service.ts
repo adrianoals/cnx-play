@@ -1,6 +1,7 @@
 import type { User } from '@/types'
 import { createClient } from '@/lib/supabase'
 import { mapProfile } from '@/lib/map-profile'
+import { titleCase } from '@/lib/utils'
 
 /** Fetch user profile from public.users */
 export async function fetchProfile(userId: string): Promise<User | null> {
@@ -63,7 +64,7 @@ export async function register(data: {
     password: data.password,
     options: {
       data: {
-        full_name: data.name,
+        full_name: titleCase(data.name),
         phone: data.phone,
       },
     },
@@ -89,8 +90,8 @@ export async function register(data: {
     // Trigger may not have fired yet, build profile from auth data
     const fallback: User = {
       id: authData.user.id,
-      name: data.name,
-      fullName: data.name,
+      name: titleCase(data.name),
+      fullName: titleCase(data.name),
       email: data.email,
       phone: data.phone,
       role: 'user',

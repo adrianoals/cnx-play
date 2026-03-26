@@ -47,6 +47,7 @@ const Sidebar = React.memo(function Sidebar({ isOpen, onClose, status = "active"
       { icon: Users, label: "Usuários", path: "/admin/users" },
       { icon: Building2, label: "Empresas", path: "/admin/empresas" },
       { icon: Link2, label: "Conexões do Dia", path: "/admin/conexoes" },
+      { icon: Calendar, label: "Agendas", path: "/admin/agendas" },
       { icon: Gift, label: "Indicações", path: "/admin/indicacoes" },
       { icon: Handshake, label: "Negócios", path: "/admin/negocios" },
       { icon: BookOpen, label: "Revista", path: "/admin/revista" },
