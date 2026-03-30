@@ -218,8 +218,27 @@ export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> 
   if (error) throw error
   if (!data || data.length === 0) return []
 
+  // Excluir conexões criadas automaticamente pelo match diário
+  const { data: matchPairs } = await supabase()
+    .from('daily_matches')
+    .select('user_id, suggested_user_id')
+    .or(`user_id.eq.${me},suggested_user_id.eq.${me}`)
+
+  const matchPairKeys = new Set<string>()
+  for (const m of matchPairs || []) {
+    const key = [m.user_id as string, m.suggested_user_id as string].sort().join('|')
+    matchPairKeys.add(key)
+  }
+
+  const filteredData = data.filter(row => {
+    const key = [row.requester_id as string, row.requested_id as string].sort().join('|')
+    return !matchPairKeys.has(key)
+  })
+
+  if (filteredData.length === 0) return []
+
   // Coletar IDs dos parceiros
-  const partnerIds = data.map(row =>
+  const partnerIds = filteredData.map(row =>
     (row.requester_id as string) === me ? (row.requested_id as string) : (row.requester_id as string)
   )
   const uniqueIds = [...new Set(partnerIds)]
@@ -246,7 +265,7 @@ export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> 
     compMap.set(c.user_id, { name: c.name, categoryName: cat?.name || '', contactPhone: c.contact_phone })
   }
 
-  return data.map(row => {
+  return filteredData.map(row => {
     const partnerId = (row.requester_id as string) === me
       ? (row.requested_id as string)
       : (row.requester_id as string)
