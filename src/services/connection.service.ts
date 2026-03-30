@@ -218,21 +218,15 @@ export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> 
   if (error) throw error
   if (!data || data.length === 0) return []
 
-  // Excluir conexões criadas automaticamente pelo match diário
-  const { data: matchPairs } = await supabase()
-    .from('daily_matches')
-    .select('user_id, suggested_user_id')
-    .or(`user_id.eq.${me},suggested_user_id.eq.${me}`)
-
-  const matchPairKeys = new Set<string>()
-  for (const m of matchPairs || []) {
-    const key = [m.user_id as string, m.suggested_user_id as string].sort().join('|')
-    matchPairKeys.add(key)
-  }
-
+  // Excluir conexões criadas automaticamente pelo match diário.
+  // Conexões automáticas são criadas e aceitas no mesmo instante (diferença < 5s).
+  // Conexões da busca passam por solicitação → aceitação (diferença maior).
   const filteredData = data.filter(row => {
-    const key = [row.requester_id as string, row.requested_id as string].sort().join('|')
-    return !matchPairKeys.has(key)
+    const created = new Date(row.created_at as string).getTime()
+    const responded = row.responded_at ? new Date(row.responded_at as string).getTime() : created
+    const diffMs = Math.abs(responded - created)
+    // Se foi criada e aceita em menos de 5 segundos, é automática do match
+    return diffMs > 5000
   })
 
   if (filteredData.length === 0) return []
