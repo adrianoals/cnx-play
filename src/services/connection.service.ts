@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase'
-import type { Connection } from '@/types'
+import type { Connection, AcceptedConnection } from '@/types'
 
 const supabase = () => createClient()
 
@@ -204,6 +204,69 @@ export async function fetchConnectionsMap(): Promise<
 }
 
 // Helper: enrich connection rows with user/company info
+/** Busca conexões aceitas com dados completos do parceiro (nome, empresa, telefone) */
+export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> {
+  const me = await getMyId()
+
+  const { data, error } = await supabase()
+    .from('connections')
+    .select('id, requester_id, requested_id, created_at, responded_at')
+    .eq('status', 'accepted')
+    .or(`requester_id.eq.${me},requested_id.eq.${me}`)
+    .order('responded_at', { ascending: false })
+
+  if (error) throw error
+  if (!data || data.length === 0) return []
+
+  // Coletar IDs dos parceiros
+  const partnerIds = data.map(row =>
+    (row.requester_id as string) === me ? (row.requested_id as string) : (row.requester_id as string)
+  )
+  const uniqueIds = [...new Set(partnerIds)]
+
+  const { data: users } = await supabase()
+    .from('users')
+    .select('id, full_name, avatar_url, phone')
+    .in('id', uniqueIds)
+
+  const { data: companies } = await supabase()
+    .from('companies')
+    .select('user_id, name, contact_phone, category_id, is_primary, categories(name)')
+    .in('user_id', uniqueIds)
+    .order('is_primary', { ascending: false })
+
+  const userMap = new Map<string, { full_name: string; avatar_url: string | null; phone: string | null }>()
+  for (const u of users || []) userMap.set(u.id, u)
+
+  const compMap = new Map<string, { name: string; categoryName: string; contactPhone: string | null }>()
+  for (const c of companies || []) {
+    if (compMap.has(c.user_id)) continue
+    const raw = c.categories as unknown
+    const cat = Array.isArray(raw) ? (raw[0] as { name: string } | undefined) : (raw as { name: string } | null)
+    compMap.set(c.user_id, { name: c.name, categoryName: cat?.name || '', contactPhone: c.contact_phone })
+  }
+
+  return data.map(row => {
+    const partnerId = (row.requester_id as string) === me
+      ? (row.requested_id as string)
+      : (row.requester_id as string)
+    const partner = userMap.get(partnerId)
+    const comp = compMap.get(partnerId)
+    const phone = partner?.phone || comp?.contactPhone || null
+
+    return {
+      connectionId: row.id as string,
+      partnerId,
+      partnerName: partner?.full_name || '',
+      partnerAvatar: partner?.avatar_url ?? null,
+      partnerCompany: comp?.name || '',
+      partnerCategory: comp?.categoryName || '',
+      partnerPhone: phone,
+      connectedAt: (row.responded_at as string) || (row.created_at as string),
+    }
+  })
+}
+
 async function enrichConnections(
   rows: Array<Record<string, unknown>>,
   userIds: Set<string>

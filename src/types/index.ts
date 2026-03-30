@@ -105,6 +105,18 @@ export interface MatchHistoryItem extends DailyMatchRow {
   bothConfirmed: boolean
 }
 
+/** Conexão aceita — dados do parceiro para listagem */
+export interface AcceptedConnection {
+  connectionId: string
+  partnerId: string
+  partnerName: string
+  partnerAvatar: string | null
+  partnerCompany: string
+  partnerCategory: string
+  partnerPhone: string | null
+  connectedAt: string
+}
+
 /** Conexão do dia — dados completos do parceiro para exibição */
 export interface TodayConnection {
   matchId: string
