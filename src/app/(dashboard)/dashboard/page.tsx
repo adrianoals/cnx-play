@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { useCurrentUser } from "@/hooks/use-current-user"
-import type { UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal, DailyMatchRow } from "@/types"
+import type { UserStats, PlatformTotals, LeaderboardRow, SupabaseDeal, TodayConnection } from "@/types"
 import {
   registerDeal,
   fetchDashboardBundle,
@@ -15,7 +15,7 @@ import {
   Search, Trophy, ArrowRight, Clock,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
   TrendingUp, Video, AlertTriangle,
-  UserCircle, Crown, MessageCircle, CheckCircle2, Calendar, Link2,
+  UserCircle, Crown, CheckCircle2, Link2, Phone, Building2 as Building2Icon, Tag,
 } from "lucide-react"
 
 import dynamic from "next/dynamic"
@@ -23,8 +23,8 @@ import useSWR from "swr"
 
 const FirstLoginWelcome = dynamic(() => import("@/components/features/FirstLoginWelcome"), { ssr: false })
 const DashboardTutorial = dynamic(() => import("@/components/features/DashboardTutorial"), { ssr: false })
-import { getCompaniesByUserId, fetchMyCompanies } from "@/services/company.service"
-import { confirmMatch, ensureMatchConnection } from "@/services/daily-match.service"
+import { fetchMyCompanies } from "@/services/company.service"
+import { fetchTodayConnection, markPresence } from "@/services/daily-match.service"
 import type { AdminCompany } from "@/types"
 
 export default function DashboardPage() {
@@ -53,9 +53,43 @@ export default function DashboardPage() {
   const platformTotals: PlatformTotals | null = dashData?.totals ?? null
   const leaderboard: LeaderboardRow[] = dashData?.board ?? []
   const deals: SupabaseDeal[] = dashData?.recentDeals ?? []
-  const todayMatches: DailyMatchRow[] = dashData?.matches ?? []
-
   const currentScore = stats?.score ?? 0
+
+  // Conexão do dia (v2)
+  const [todayConn, setTodayConn] = useState<TodayConnection | null>(null)
+  const [connLoading, setConnLoading] = useState(true)
+  const [marking, setMarking] = useState(false)
+
+  const loadTodayConn = useCallback(async () => {
+    try {
+      setConnLoading(true)
+      const data = await fetchTodayConnection()
+      setTodayConn(data)
+    } catch {
+      // silent
+    } finally {
+      setConnLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isActive) loadTodayConn()
+  }, [isActive, loadTodayConn])
+
+  const handleMarkPresence = async () => {
+    if (!todayConn) return
+    try {
+      setMarking(true)
+      await markPresence(todayConn.matchId)
+      setTodayConn(prev => prev ? { ...prev, status: "completed" } : null)
+      toast({ title: "Presenca marcada!", className: "bg-green-600 text-white" })
+      mutate()
+    } catch {
+      toast({ title: "Erro ao marcar presenca", variant: "destructive" })
+    } finally {
+      setMarking(false)
+    }
+  }
 
   const handleRegisterDeal = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,40 +118,6 @@ export default function DashboardPage() {
     }
   }
 
-  const handleConfirmMatch = async (matchId: string) => {
-    try {
-      const { bothConfirmed } = await confirmMatch(matchId)
-      // Optimistic update via SWR
-      mutate(
-        dashData
-          ? {
-              ...dashData,
-              matches: dashData.matches.map(m =>
-                m.id === matchId ? { ...m, status: 'completed' as const } : m
-              ),
-            }
-          : undefined,
-        false,
-      )
-      if (bothConfirmed) {
-        toast({
-          title: "Reunião confirmada por ambos!",
-          description: "+1 ponto no seu score. Continue fazendo conexões!",
-          className: "bg-green-600 text-white",
-        })
-        // Reload stats to reflect new score
-        mutate()
-      } else {
-        toast({
-          title: "Confirmado!",
-          description: "Aguardando seu parceiro confirmar para computar o ponto.",
-          className: "bg-amber-600 text-white",
-        })
-      }
-    } catch {
-      toast({ title: "Erro ao confirmar", variant: "destructive" })
-    }
-  }
 
   // Pending user view
   if (currentUser?.status === "pending") {
@@ -202,8 +202,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Complete Profile Banner */}
-      {currentUser && getCompaniesByUserId(currentUser.id).length === 0 && (
+      {/* Complete Profile Banner — só para quem não tem empresa */}
+      {currentUser && myCompanies.length === 0 && (
         <motion.div
           initial={{ y: -10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -258,14 +258,14 @@ export default function DashboardPage() {
         </Button>
       </motion.div>
 
-      {/* Conexões do Dia */}
-      {!loadingData && (
+      {/* Conexão do Dia (v2) */}
+      {!connLoading && (
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}>
           <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Link2 className="h-5 w-5 text-blue-500" />
-                <h2 className="text-lg font-bold">Conexões do Dia</h2>
+                <h2 className="text-lg font-bold">Conexao do Dia</h2>
               </div>
               <Button
                 variant="ghost"
@@ -273,101 +273,84 @@ export default function DashboardPage() {
                 onClick={() => router.push("/agenda")}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
-                <Calendar className="h-4 w-4 mr-1" />
-                Agenda
+                Ver detalhes
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
               </Button>
             </div>
 
-            {todayMatches.length > 0 ? (
-              <div className="space-y-3">
-                {todayMatches.map(match => (
-                  <div
-                    key={match.id}
-                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border transition-colors ${
-                      match.status === "completed"
-                        ? "bg-green-500/5 border-green-500/20"
-                        : "bg-secondary/30 border-border hover:bg-secondary/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        match.status === "completed"
-                          ? "bg-green-500/10"
-                          : "bg-blue-500/10"
-                      }`}>
-                        {match.partnerAvatar ? (
-                          <img src={match.partnerAvatar} alt="" className="w-10 h-10 rounded-full object-cover" />
-                        ) : (
-                          <UserCircle className={`h-5 w-5 ${match.status === "completed" ? "text-green-500" : "text-blue-500"}`} />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{match.partnerName || "Parceiro"}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {match.partnerCompany || ""}{match.partnerCategory ? ` · ${match.partnerCategory}` : ""}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-13 sm:ml-0">
-                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-lg border border-border">
-                        {match.timeSlot === "07:00" ? "Manhã" : "Tarde"}
-                      </span>
-
-                      {match.status === "completed" ? (
-                        <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 font-medium">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Realizada
-                        </span>
+            {todayConn ? (
+              <div className={`p-4 rounded-xl border transition-colors ${
+                todayConn.status === "completed"
+                  ? "bg-green-500/5 border-green-500/20"
+                  : "bg-secondary/30 border-border"
+              }`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-secondary border border-border shrink-0">
+                      {todayConn.partnerAvatar ? (
+                        <img src={todayConn.partnerAvatar} alt="" className="w-12 h-12 rounded-full object-cover" />
                       ) : (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={async () => {
-                              try {
-                                await ensureMatchConnection(match.suggestedUserId)
-                                router.push(`/conexoes?chat=${match.suggestedUserId}`)
-                              } catch {
-                                toast({ title: "Erro ao abrir chat", variant: "destructive" })
-                              }
-                            }}
-                            className="text-xs h-8 rounded-lg"
-                          >
-                            <MessageCircle className="h-3.5 w-3.5 mr-1" />
-                            Abrir Chat
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleConfirmMatch(match.id)}
-                            className="text-xs h-8 rounded-lg bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                            Reunião Realizada
-                          </Button>
-                        </>
+                        <UserCircle className="h-6 w-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{todayConn.partnerName}</p>
+                      {todayConn.partnerCompany && (
+                        <p className="text-muted-foreground text-xs flex items-center gap-1">
+                          <Building2Icon className="h-3 w-3" />
+                          {todayConn.partnerCompany}
+                        </p>
+                      )}
+                      {todayConn.partnerCategory && (
+                        <p className="text-muted-foreground text-xs flex items-center gap-1">
+                          <Tag className="h-3 w-3" />
+                          {todayConn.partnerCategory}
+                        </p>
                       )}
                     </div>
                   </div>
-                ))}
-                <p className="text-xs text-muted-foreground text-center pt-1">
-                  Converse pelo chat e combinem a reunião por fora (WhatsApp, Meet, presencial).
-                </p>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {todayConn.partnerPhone && (
+                      <a
+                        href={`https://wa.me/${todayConn.partnerPhone.replace(/\D/g, "").replace(/^(?!55)/, "55")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg hover:bg-green-500/20 transition-colors"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    )}
+
+                    {todayConn.status === "completed" ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-lg">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Presenca marcada
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={handleMarkPresence}
+                        disabled={marking}
+                        className="text-xs h-8 rounded-lg bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {marking ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                        )}
+                        Marcar Presenca
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-6">
-                <p className="text-muted-foreground text-sm mb-3">
-                  Nenhuma conexão para hoje. Configure sua disponibilidade na agenda.
+                <p className="text-muted-foreground text-sm">
+                  Nenhuma conexao para hoje. O administrador realizara o sorteio em breve.
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push("/agenda")}
-                  className="rounded-xl"
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Configurar Agenda
-                </Button>
               </div>
             )}
           </div>

@@ -1,7 +1,15 @@
 import { createClient } from '@/lib/supabase'
-import type { DailyMatchRow, MatchHistoryItem } from '@/types'
+import type { DailyMatchRow, MatchHistoryItem, TodayConnection } from '@/types'
 
 const supabase = () => createClient()
+
+function todayLocal(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 async function getMyId(): Promise<string> {
   const { data: { user } } = await supabase().auth.getUser()
@@ -88,7 +96,7 @@ export async function confirmMatch(matchId: string): Promise<{ bothConfirmed: bo
 
 export async function fetchMatchHistory(): Promise<MatchHistoryItem[]> {
   const me = await getMyId()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayLocal()
 
   const { data, error } = await supabase()
     .from('daily_matches')
@@ -198,4 +206,82 @@ export async function ensureMatchConnection(partnerId: string): Promise<void> {
     })
 
   if (error) throw error
+}
+
+// ── Conexão do Dia (v2) ──────────────────────────────────
+
+/** Busca a conexão do dia atual com dados completos do parceiro */
+export async function fetchTodayConnection(): Promise<TodayConnection | null> {
+  const me = await getMyId()
+  const today = todayLocal()
+
+  const { data: match, error } = await supabase()
+    .from('daily_matches')
+    .select('id, user_id, suggested_user_id, match_date, time_slot, status')
+    .eq('user_id', me)
+    .eq('match_date', today)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!match) return null
+
+  const partnerId = match.suggested_user_id as string
+
+  // Buscar dados do parceiro
+  const { data: partner } = await supabase()
+    .from('users')
+    .select('id, full_name, avatar_url, phone')
+    .eq('id', partnerId)
+    .single()
+
+  const { data: company } = await supabase()
+    .from('companies')
+    .select('name, contact_phone, category_id, categories(name)')
+    .eq('user_id', partnerId)
+    .order('is_primary', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const raw = company?.categories as unknown
+  const cat = Array.isArray(raw) ? (raw[0] as { name: string } | undefined) : (raw as { name: string } | null)
+
+  // Telefone: prioridade para phone do user, depois contact_phone da empresa
+  const phone = partner?.phone || company?.contact_phone || null
+
+  return {
+    matchId: match.id as string,
+    matchDate: match.match_date as string,
+    timeSlot: match.time_slot as '07:00' | '19:00',
+    status: match.status as 'pending' | 'completed',
+    partnerId,
+    partnerName: partner?.full_name || '',
+    partnerAvatar: partner?.avatar_url ?? null,
+    partnerCompany: company?.name || '',
+    partnerCategory: cat?.name || '',
+    partnerPhone: phone,
+  }
+}
+
+/** Marca presença na conexão do dia (muda status para completed) */
+export async function markPresence(matchId: string): Promise<void> {
+  const { error } = await supabase()
+    .from('daily_matches')
+    .update({ status: 'completed' })
+    .eq('id', matchId)
+
+  if (error) throw error
+}
+
+/** Verifica se o usuário já marcou presença */
+export async function checkPresenceStatus(matchId: string): Promise<boolean> {
+  const { data, error } = await supabase()
+    .from('daily_matches')
+    .select('status')
+    .eq('id', matchId)
+    .single()
+
+  if (error) throw error
+  return data?.status === 'completed'
 }

@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase"
 import { fetchCategories } from "@/services/category.service"
 import { fetchConnectionsMap, requestConnection, deleteConnection } from "@/services/connection.service"
 import type { Category, Connection } from "@/types"
-import { Search, MapPin, Mail, MessageCircle, UserPlus, X, Loader2, Building2, Clock, Users } from "lucide-react"
+import { Search, MapPin, Mail, UserPlus, X, Loader2, Building2, Clock, Users, Check } from "lucide-react"
 
 interface SearchCompany {
   id: string
@@ -226,13 +226,10 @@ export default function SearchPage() {
 
     if (info.status === 'accepted') {
       return (
-        <Button
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white gap-2"
-          onClick={() => router.push(`/conexoes?chat=${company.userId}`)}
-        >
-          <MessageCircle className="h-4 w-4" />
-          Mensagem
-        </Button>
+        <Badge variant="outline" className="flex-1 justify-center py-2 text-sm gap-2 cursor-default bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30">
+          <Check className="h-4 w-4" />
+          Conectado
+        </Badge>
       )
     }
 
@@ -407,15 +404,15 @@ export default function SearchPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Solicitar Conexão</AlertDialogTitle>
             <AlertDialogDescription>
-              Para solicitar conexão com <strong>{confirmTarget?.name}</strong>, será consumido <strong>1 ponto</strong> do seu score.
-              {myScore <= 1 && " Atenção: você está com poucos pontos!"}
-              {" "}Deseja continuar?
+              Deseja solicitar conexao com <strong>{confirmTarget?.name}</strong>?
+              {myScore <= 1 && " Atencao: voce esta com poucos pontos!"}
+              {" "}E necessario ter pelo menos 1 ponto de score.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmConnection}>
-              Confirmar (-1 ponto)
+              Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

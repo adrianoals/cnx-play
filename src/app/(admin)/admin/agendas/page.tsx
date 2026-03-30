@@ -1,76 +1,65 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import {
-  fetchUsersWithAvailabilityForDate,
-  adminUpsertAvailability,
-  adminEnableAllForDate,
-  fetchUserWeekAvailability,
-  adminEnableWeekForUser,
-  type AdminUserWithAvailability,
+  fetchUsersGroupedByCompany,
+  fetchDailyMatchesAdmin,
+  createManualMatch,
+  deleteDailyMatch,
+  type UserForMatch,
+  type AdminDailyMatch,
 } from "@/services/admin.service"
 import {
-  Calendar, ChevronLeft, ChevronRight, Loader2, Search, Users, User, CheckCheck, Sun, Moon,
+  Calendar, ChevronLeft, ChevronRight, Loader2, Search,
+  Building2, AlertTriangle, Link2, X, Trash2, UserCircle, History,
 } from "lucide-react"
 
-function SlotToggle({ label, icon: Icon, checked, onChange, colorOff }: {
-  label: string
-  icon: React.ElementType
-  checked: boolean
-  onChange: () => void
-  colorOff: string
-}) {
-  return (
-    <button
-      onClick={onChange}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${
-        checked
-          ? "bg-green-500/30 text-green-500 dark:text-green-400 font-bold border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)] hover:bg-green-500/40"
-          : colorOff
-      }`}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {label}
-    </button>
-  )
-}
-
 function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10)
+  // Usar timezone local para evitar pular de dia com UTC
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
-function formatDateBR(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00")
-  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })
+function todayBR(): string {
+  // Horário de Brasília (UTC-3)
+  const now = new Date()
+  const brTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
+  return formatDate(brTime)
 }
 
-function getWeekStart(d: Date): Date {
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  return new Date(d.getFullYear(), d.getMonth(), diff)
-}
-
-// ── Tab: Por Data ──────────────────────────────────────────────
-
-function TabPorData() {
+export default function AdminAgendasPage() {
   const { toast } = useToast()
   const [date, setDate] = useState(() => formatDate(new Date()))
-  const [users, setUsers] = useState<AdminUserWithAvailability[]>([])
+  const [withCompany, setWithCompany] = useState<UserForMatch[]>([])
+  const [withoutCompany, setWithoutCompany] = useState<Array<{ id: string; name: string }>>([])
+  const [matches, setMatches] = useState<AdminDailyMatch[]>([])
   const [loading, setLoading] = useState(true)
-  const [enabling, setEnabling] = useState(false)
   const [search, setSearch] = useState("")
+
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+
+  const isPastDate = date < todayBR()
 
   const load = useCallback(async (d: string) => {
     setLoading(true)
+    setSelectedUserId(null)
     try {
-      const data = await fetchUsersWithAvailabilityForDate(d)
-      setUsers(data)
+      const [grouped, matchData] = await Promise.all([
+        fetchUsersGroupedByCompany(d),
+        fetchDailyMatchesAdmin(d),
+      ])
+      setWithCompany(grouped.withCompany)
+      setWithoutCompany(grouped.withoutCompany)
+      setMatches(matchData)
     } catch {
-      toast({ title: "Erro", description: "Falha ao carregar agendas.", variant: "destructive" })
+      toast({ title: "Erro", description: "Falha ao carregar dados.", variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -84,75 +73,92 @@ function TabPorData() {
     setDate(formatDate(d))
   }
 
-  async function toggleSlot(userId: string, slot: "07" | "19", current: boolean) {
-    const user = users.find(u => u.id === userId)
-    if (!user) return
-
-    const newSlot07 = slot === "07" ? !current : user.slot07
-    const newSlot19 = slot === "19" ? !current : user.slot19
-
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, slot07: newSlot07, slot19: newSlot19 } : u))
-
-    try {
-      await adminUpsertAvailability(userId, date, newSlot07, newSlot19)
-    } catch {
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, slot07: user.slot07, slot19: user.slot19 } : u))
-      toast({ title: "Erro", description: "Falha ao atualizar.", variant: "destructive" })
-    }
+  const matchedUserIds = new Set<string>()
+  for (const m of matches) {
+    matchedUserIds.add(m.userId)
+    matchedUserIds.add(m.suggestedUserId)
   }
 
-  async function handleEnableAll() {
-    setEnabling(true)
+  const availableUsers = withCompany.filter(u => !matchedUserIds.has(u.id))
+
+  const filteredAvailable = search
+    ? availableUsers.filter(u =>
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.company.toLowerCase().includes(search.toLowerCase())
+      )
+    : availableUsers
+  const filteredWithoutCompany = search
+    ? withoutCompany.filter(u => u.name.toLowerCase().includes(search.toLowerCase()))
+    : withoutCompany
+
+  async function handleUserClick(userId: string) {
+    if (creating || isPastDate) return
+
+    if (!selectedUserId) {
+      setSelectedUserId(userId)
+      return
+    }
+
+    if (selectedUserId === userId) {
+      setSelectedUserId(null)
+      return
+    }
+
+    setCreating(true)
     try {
-      await adminEnableAllForDate(date)
+      await createManualMatch(selectedUserId, userId, date, "07:00")
+      toast({ title: "Dupla formada com sucesso!", className: "bg-green-600 border-green-500 text-white" })
+      setSelectedUserId(null)
       await load(date)
-      toast({ title: "Todos habilitados", className: "bg-green-600 border-green-500 text-white" })
-    } catch {
-      toast({ title: "Erro", description: "Falha ao habilitar todos.", variant: "destructive" })
+    } catch (err) {
+      toast({
+        title: "Erro ao formar dupla",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      })
     } finally {
-      setEnabling(false)
+      setCreating(false)
     }
   }
 
-  const morningCount = users.filter(u => u.slot07).length
-  const afternoonCount = users.filter(u => u.slot19).length
-
-  const filtered = search
-    ? users.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.company.toLowerCase().includes(search.toLowerCase()))
-    : users
-
-  const available = filtered.filter(u => u.slot07 || u.slot19)
-  const unavailable = filtered.filter(u => !u.slot07 && !u.slot19)
-
-  function renderUser(user: AdminUserWithAvailability) {
-    return (
-      <div key={user.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-card">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate">{user.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{user.company}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <SlotToggle
-            label="Manha"
-            icon={Sun}
-            checked={user.slot07}
-            onChange={() => toggleSlot(user.id, "07", user.slot07)}
-            colorOff="bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/30"
-          />
-          <SlotToggle
-            label="Tarde"
-            icon={Moon}
-            checked={user.slot19}
-            onChange={() => toggleSlot(user.id, "19", user.slot19)}
-            colorOff="bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/30"
-          />
-        </div>
-      </div>
-    )
+  async function handleDeleteMatch(matchId: string) {
+    try {
+      await deleteDailyMatch(matchId)
+      toast({ title: "Conexao removida" })
+      await load(date)
+    } catch (err) {
+      toast({
+        title: "Erro ao remover",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      })
+    }
   }
+
+  const selectedUser = availableUsers.find(u => u.id === selectedUserId)
+
+  const dateLabel = new Date(date + "T12:00:00").toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  })
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Link2 className="h-6 w-6 text-primary" />
+          Formar Duplas
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          {isPastDate
+            ? "Visualizando historico de conexoes."
+            : "Clique em um usuario, depois em outro para formar a conexao do dia."
+          }
+        </p>
+      </div>
+
       {/* Date selector */}
       <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-3 shadow-sm">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftDate(-1)}>
@@ -166,362 +172,346 @@ function TabPorData() {
             onChange={e => setDate(e.target.value)}
             className="bg-transparent border-none text-sm font-bold text-foreground focus:outline-none"
           />
+          <span className="text-xs text-muted-foreground capitalize hidden sm:inline">
+            {dateLabel}
+          </span>
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftDate(1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Search + Enable All */}
-      <div className="flex gap-3">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-            placeholder="Buscar por nome ou empresa..."
-            className="pl-9 bg-card shadow-sm"
-          />
+      {/* Past date banner */}
+      {isPastDate && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 flex items-center gap-2">
+          <History className="h-4 w-4 text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Voce esta visualizando um dia passado. As duplas nao podem ser alteradas.
+          </p>
         </div>
-        <Button onClick={handleEnableAll} disabled={enabling} size="sm" className="shrink-0 gap-1.5">
-          {enabling ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
-          <span className="hidden sm:inline">Habilitar Todos</span>
-        </Button>
-      </div>
+      )}
 
-      {/* Summary */}
-      <div className="flex gap-4 text-sm bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
-        <span className="flex items-center gap-1.5">
-          <Sun className="h-3.5 w-3.5 text-amber-500" />
-          <span className="font-bold text-foreground">{morningCount}</span>
-          <span className="text-muted-foreground">manha</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Moon className="h-3.5 w-3.5 text-blue-500" />
-          <span className="font-bold text-foreground">{afternoonCount}</span>
-          <span className="text-muted-foreground">tarde</span>
-        </span>
-        <span className="text-muted-foreground">
-          de <span className="font-bold text-foreground">{users.length}</span>
-        </span>
-      </div>
+      {/* ── DUPLAS FORMADAS ── */}
+      {matches.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+              <p className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                Duplas formadas — {matches.length}
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {matchedUserIds.size} usuarios pareados
+            </span>
+          </div>
 
-      {/* User list */}
+          <div className="space-y-3 max-w-2xl mx-auto">
+            {matches.map(match => (
+              <motion.div
+                key={match.id}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-card border-2 border-amber-500/30 rounded-2xl p-5 shadow-sm"
+              >
+                {/* Pair display */}
+                <div className="flex items-center gap-4">
+                  {/* User A */}
+                  <div className="flex-1 min-w-0 text-center">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 border ${
+                      match.userAStatus === "completed"
+                        ? "bg-green-500/15 border-green-500/30"
+                        : "bg-blue-500/10 border-blue-500/20"
+                    }`}>
+                      <UserCircle className={`h-6 w-6 ${
+                        match.userAStatus === "completed"
+                          ? "text-green-500"
+                          : "text-blue-500"
+                      }`} />
+                    </div>
+                    <p className="text-sm font-bold truncate">{match.userAName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{match.userACompany}</p>
+                    {match.userACategory && (
+                      <p className="text-[10px] text-muted-foreground/60 truncate">{match.userACategory}</p>
+                    )}
+                  </div>
+
+                  {/* Connector */}
+                  <div className="flex flex-col items-center gap-1 shrink-0 px-2">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                      <Link2 className="h-5 w-5 text-blue-500" />
+                    </div>
+                  </div>
+
+                  {/* User B */}
+                  <div className="flex-1 min-w-0 text-center">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 border ${
+                      match.userBStatus === "completed"
+                        ? "bg-green-500/15 border-green-500/30"
+                        : "bg-blue-500/10 border-blue-500/20"
+                    }`}>
+                      <UserCircle className={`h-6 w-6 ${
+                        match.userBStatus === "completed"
+                          ? "text-green-500"
+                          : "text-blue-500"
+                      }`} />
+                    </div>
+                    <p className="text-sm font-bold truncate">{match.userBName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{match.userBCompany}</p>
+                    {match.userBCategory && (
+                      <p className="text-[10px] text-muted-foreground/60 truncate">{match.userBCategory}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info footer */}
+                <div className="mt-4 pt-3 border-t border-border space-y-3">
+                  {/* Repeat count */}
+                  <div className="text-center">
+                    {match.repeatCount > 1 ? (
+                      <span className="text-xs text-foreground bg-secondary px-3 py-1.5 rounded-lg border border-border inline-flex items-center gap-1.5">
+                        <History className="h-3 w-3 text-blue-500" />
+                        Esta e a <strong>{match.repeatCount}a</strong> conexao entre eles
+                      </span>
+                    ) : (
+                      <span className="text-xs text-foreground bg-secondary px-3 py-1.5 rounded-lg border border-border inline-flex items-center gap-1.5">
+                        <History className="h-3 w-3 text-blue-500" />
+                        Primeira conexao entre eles
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Individual status */}
+                  <div className="space-y-1.5">
+                    <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg border ${
+                      match.userAStatus === "completed"
+                        ? "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20"
+                        : "text-foreground bg-secondary border-border"
+                    }`}>
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${
+                        match.userAStatus === "completed" ? "bg-green-500" : "bg-muted-foreground/30"
+                      }`} />
+                      <span className="font-semibold">{match.userAName.split(" ")[0]}</span>
+                      {match.userAStatus === "completed"
+                        ? <span>confirmou a conexao do dia</span>
+                        : <span className="text-muted-foreground">ainda nao confirmou a conexao do dia</span>
+                      }
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg border ${
+                      match.userBStatus === "completed"
+                        ? "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20"
+                        : "text-foreground bg-secondary border-border"
+                    }`}>
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${
+                        match.userBStatus === "completed" ? "bg-green-500" : "bg-muted-foreground/30"
+                      }`} />
+                      <span className="font-semibold">{match.userBName.split(" ")[0]}</span>
+                      {match.userBStatus === "completed"
+                        ? <span>confirmou a conexao do dia</span>
+                        : <span className="text-muted-foreground">ainda nao confirmou a conexao do dia</span>
+                      }
+                    </div>
+                  </div>
+
+                  {/* Remove button */}
+                  {!isPastDate && (
+                    <div className="text-center pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-500 border-red-500/30 hover:bg-red-500/10 hover:text-red-600 text-xs gap-1.5"
+                        onClick={() => handleDeleteMatch(match.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Remover conexao
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── SELEÇÃO ATIVA ── */}
+      <AnimatePresence>
+        {selectedUserId && !isPastDate && (
+          <motion.div
+            initial={{ y: -8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -8, opacity: 0 }}
+            className="bg-blue-500/10 border border-blue-500/30 rounded-xl px-4 py-3 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <UserCircle className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                  {selectedUser?.name}
+                  <span className="text-xs font-normal text-muted-foreground ml-2">
+                    {selectedUser?.company}
+                  </span>
+                </p>
+                <p className="text-xs text-blue-500/70">
+                  Agora clique no parceiro para formar a dupla
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-blue-500 hover:text-blue-700"
+              onClick={() => setSelectedUserId(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── BUSCA + RESUMO ── */}
+      {!isPastDate && (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou empresa..."
+              className="pl-9 bg-card shadow-sm"
+            />
+          </div>
+
+          <div className="flex gap-4 text-sm bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <Link2 className="h-3.5 w-3.5 text-amber-500" />
+              <span className="font-bold text-foreground">{matches.length}</span>
+              <span className="text-muted-foreground">duplas</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-green-500" />
+              <span className="font-bold text-foreground">{availableUsers.length}</span>
+              <span className="text-muted-foreground">disponiveis</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+              <span className="font-bold text-foreground">{withoutCompany.length}</span>
+              <span className="text-muted-foreground">sem empresa</span>
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* ── LISTA DE DISPONÍVEIS ── */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p>Nenhum usuario com empresa encontrado.</p>
+      ) : isPastDate ? (
+        // Past date: only show matches (already above), no available list
+        matches.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground">
+            <History className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p>Nenhuma dupla formada neste dia.</p>
+          </div>
+        )
+      ) : filteredAvailable.length === 0 && filteredWithoutCompany.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          {availableUsers.length === 0 && matches.length > 0 ? (
+            <>
+              <Link2 className="h-10 w-10 mx-auto mb-3 text-green-500 opacity-60" />
+              <p className="font-medium text-green-600 dark:text-green-400">
+                Todos os usuarios foram pareados!
+              </p>
+              <p className="text-xs mt-1">Todas as duplas estao formadas para este dia.</p>
+            </>
+          ) : (
+            <>
+              <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p>Nenhum usuario encontrado.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-8">
-          {available.length > 0 && (
+          {filteredAvailable.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-2 w-2 rounded-full bg-green-500" />
                 <p className="text-xs font-bold text-green-600 dark:text-green-400 uppercase tracking-wide">
-                  Disponiveis ({available.length})
+                  Disponiveis para match ({filteredAvailable.length})
                 </p>
               </div>
               <div className="border border-green-500/30 dark:border-green-500/20 rounded-xl overflow-hidden divide-y divide-border shadow-sm">
-                {available.map(renderUser)}
+                {filteredAvailable.map(user => {
+                  const isSelected = selectedUserId === user.id
+                  const canBePartner = selectedUserId && selectedUserId !== user.id
+
+                  return (
+                    <button
+                      key={user.id}
+                      onClick={() => handleUserClick(user.id)}
+                      disabled={creating}
+                      className={`w-full flex items-center justify-between gap-3 px-4 py-3 transition-all text-left ${
+                        isSelected
+                          ? "bg-blue-500/10 border-l-4 border-l-blue-500"
+                          : canBePartner
+                            ? "bg-card hover:bg-green-500/5 cursor-pointer border-l-4 border-l-transparent hover:border-l-green-500"
+                            : "bg-card hover:bg-accent cursor-pointer"
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">{user.name}</p>
+                          {isSelected && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-md shrink-0">
+                              Selecionado
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.company}{user.category ? ` · ${user.category}` : ""}
+                        </p>
+                      </div>
+                      {canBePartner && (
+                        <span className="text-[10px] font-semibold text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-md shrink-0">
+                          Formar dupla
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
-          {unavailable.length > 0 && (
+
+          {filteredWithoutCompany.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="h-2 w-2 rounded-full bg-red-500" />
                 <p className="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wide">
-                  Sem disponibilidade ({unavailable.length})
+                  Sem Empresa — Regularizar ({filteredWithoutCompany.length})
                 </p>
               </div>
               <div className="border border-red-500/30 dark:border-red-500/20 rounded-xl overflow-hidden divide-y divide-border shadow-sm">
-                {unavailable.map(renderUser)}
+                {filteredWithoutCompany.map(u => (
+                  <div key={u.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-card">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{u.name}</p>
+                      <p className="text-xs text-red-500/70">Sem empresa cadastrada</p>
+                    </div>
+                    <span className="text-[10px] font-semibold text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md">
+                      Inapto
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-// ── Tab: Por Usuario ───────────────────────────────────────────
-
-interface UserOption {
-  id: string
-  name: string
-  company: string
-}
-
-function TabPorUsuario() {
-  const { toast } = useToast()
-  const [allUsers, setAllUsers] = useState<UserOption[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(true)
-  const [search, setSearch] = useState("")
-  const [selectedUser, setSelectedUser] = useState<UserOption | null>(null)
-
-  const [weekStart, setWeekStart] = useState(() => formatDate(getWeekStart(new Date())))
-  const [weekData, setWeekData] = useState<Map<string, { slot07: boolean; slot19: boolean }>>(new Map())
-  const [loadingWeek, setLoadingWeek] = useState(false)
-  const [enablingWeek, setEnablingWeek] = useState(false)
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const today = formatDate(new Date())
-        const data = await fetchUsersWithAvailabilityForDate(today)
-        setAllUsers(data.map(u => ({ id: u.id, name: u.name, company: u.company })))
-      } catch {
-        toast({ title: "Erro", description: "Falha ao carregar usuarios.", variant: "destructive" })
-      } finally {
-        setLoadingUsers(false)
-      }
-    }
-    load()
-  }, [toast])
-
-  const loadWeek = useCallback(async (userId: string, ws: string) => {
-    setLoadingWeek(true)
-    try {
-      const data = await fetchUserWeekAvailability(userId, ws)
-      const map = new Map<string, { slot07: boolean; slot19: boolean }>()
-      for (const d of data) map.set(d.date, { slot07: d.slot07, slot19: d.slot19 })
-      setWeekData(map)
-    } catch {
-      toast({ title: "Erro", description: "Falha ao carregar semana.", variant: "destructive" })
-    } finally {
-      setLoadingWeek(false)
-    }
-  }, [toast])
-
-  useEffect(() => {
-    if (selectedUser) loadWeek(selectedUser.id, weekStart)
-  }, [selectedUser, weekStart, loadWeek])
-
-  function shiftWeek(weeks: number) {
-    const d = new Date(weekStart + "T12:00:00")
-    d.setDate(d.getDate() + weeks * 7)
-    setWeekStart(formatDate(d))
-  }
-
-  async function toggleDaySlot(dateStr: string, slot: "07" | "19") {
-    if (!selectedUser) return
-    const current = weekData.get(dateStr) || { slot07: false, slot19: false }
-    const newSlot07 = slot === "07" ? !current.slot07 : current.slot07
-    const newSlot19 = slot === "19" ? !current.slot19 : current.slot19
-
-    setWeekData(prev => {
-      const next = new Map(prev)
-      next.set(dateStr, { slot07: newSlot07, slot19: newSlot19 })
-      return next
-    })
-
-    try {
-      await adminUpsertAvailability(selectedUser.id, dateStr, newSlot07, newSlot19)
-    } catch {
-      setWeekData(prev => {
-        const next = new Map(prev)
-        next.set(dateStr, current)
-        return next
-      })
-      toast({ title: "Erro", description: "Falha ao atualizar.", variant: "destructive" })
-    }
-  }
-
-  async function handleEnableWeek() {
-    if (!selectedUser) return
-    setEnablingWeek(true)
-    try {
-      await adminEnableWeekForUser(selectedUser.id, weekStart)
-      await loadWeek(selectedUser.id, weekStart)
-      toast({ title: "Semana habilitada", className: "bg-green-600 border-green-500 text-white" })
-    } catch {
-      toast({ title: "Erro", description: "Falha ao habilitar semana.", variant: "destructive" })
-    } finally {
-      setEnablingWeek(false)
-    }
-  }
-
-  const weekDays: string[] = []
-  const ws = new Date(weekStart + "T12:00:00")
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(ws)
-    d.setDate(d.getDate() + i)
-    weekDays.push(formatDate(d))
-  }
-
-  const weekEndDate = new Date(ws)
-  weekEndDate.setDate(weekEndDate.getDate() + 6)
-
-  const filteredUsers = search
-    ? allUsers.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.company.toLowerCase().includes(search.toLowerCase()))
-    : allUsers
-
-  if (loadingUsers) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  // User not selected — show list
-  if (!selectedUser) {
-    return (
-      <div className="space-y-5">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-            placeholder="Buscar usuario..."
-            className="pl-9 bg-card shadow-sm"
-          />
-        </div>
-        <div className="border border-border rounded-xl overflow-hidden divide-y divide-border shadow-sm">
-          {filteredUsers.map(u => (
-            <button
-              key={u.id}
-              onClick={() => setSelectedUser(u)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left bg-card"
-            >
-              <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{u.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{u.company}</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // User selected — week view
-  return (
-    <div className="space-y-5">
-      {/* Back */}
-      <button
-        onClick={() => { setSelectedUser(null); setSearch("") }}
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Voltar
-      </button>
-
-      {/* User card */}
-      <div className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-          <User className="h-4 w-4 text-primary" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold truncate">{selectedUser.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{selectedUser.company}</p>
-        </div>
-      </div>
-
-      {/* Week navigation */}
-      <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-3 shadow-sm">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftWeek(-1)}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2 flex-1 justify-center">
-          <Calendar className="h-4 w-4 text-primary" />
-          <span className="text-sm font-bold text-foreground">
-            {ws.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} - {weekEndDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-          </span>
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => shiftWeek(1)}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Enable week */}
-      <Button onClick={handleEnableWeek} disabled={enablingWeek} size="sm" className="w-full gap-1.5">
-        {enablingWeek ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
-        Habilitar Semana Toda
-      </Button>
-
-      {/* Week grid */}
-      {loadingWeek ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <div className="border border-border rounded-xl overflow-hidden divide-y divide-border shadow-sm">
-          {weekDays.map(day => {
-            const avail = weekData.get(day) || { slot07: false, slot19: false }
-            return (
-              <div key={day} className="flex items-center justify-between gap-3 px-4 py-3 bg-card">
-                <p className="text-sm font-medium capitalize min-w-[80px]">{formatDateBR(day)}</p>
-                <div className="flex items-center gap-2">
-                  <SlotToggle
-                    label="Manha"
-                    icon={Sun}
-                    checked={avail.slot07}
-                    onChange={() => toggleDaySlot(day, "07")}
-  
-                    colorOff="bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/30"
-                  />
-                  <SlotToggle
-                    label="Tarde"
-                    icon={Moon}
-                    checked={avail.slot19}
-                    onChange={() => toggleDaySlot(day, "19")}
-  
-                    colorOff="bg-muted/50 text-muted-foreground border-border hover:border-muted-foreground/30"
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Page ───────────────────────────────────────────────────────
-
-export default function AdminAgendasPage() {
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Calendar className="h-6 w-6 text-primary" />
-          Agendas
-        </h1>
-        <p className="text-muted-foreground text-sm">Configure a disponibilidade dos participantes.</p>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="data">
-        <TabsList className="w-full">
-          <TabsTrigger value="data" className="flex-1 gap-2">
-            <Calendar className="h-4 w-4" />
-            Por Data
-          </TabsTrigger>
-          <TabsTrigger value="usuario" className="flex-1 gap-2">
-            <Users className="h-4 w-4" />
-            Por Usuario
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="data" className="mt-4">
-          <TabPorData />
-        </TabsContent>
-        <TabsContent value="usuario" className="mt-4">
-          <TabPorUsuario />
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

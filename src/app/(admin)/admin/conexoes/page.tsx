@@ -22,16 +22,16 @@ import {
 } from "lucide-react"
 
 function formatDateInput(d: Date): string {
-  return d.toISOString().slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
 export default function AdminConexoesPage() {
   const { toast } = useToast()
 
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  const [selectedDate, setSelectedDate] = useState(formatDateInput(tomorrow))
+  const [selectedDate, setSelectedDate] = useState(formatDateInput(new Date()))
   const [matches, setMatches] = useState<AdminDailyMatch[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")

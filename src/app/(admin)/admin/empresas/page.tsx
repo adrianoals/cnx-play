@@ -21,6 +21,7 @@ import type { User, AdminCompany, Category } from "@/types"
 import {
   Search, Trash2, Edit, Calendar, MoreHorizontal, Plus, MapPin,
   Loader2, Building2, Mail, Phone, Linkedin, Star, X, Image as ImageIcon,
+  Users as UsersIcon, UserCheck, UserX, Building,
 } from "lucide-react"
 
 const MAX_GALLERY = 5
@@ -83,7 +84,17 @@ export default function AdminEmpresasPage() {
     )
   })
 
-  const { paginatedItems: paginatedCompanies, currentPage, totalPages, setCurrentPage } = usePagination(filteredCompanies)
+  // Ordenar por nome do responsável para agrupar empresas do mesmo dono
+  const sortedCompanies = [...filteredCompanies].sort((a, b) => {
+    const cmp = a.ownerName.localeCompare(b.ownerName)
+    if (cmp !== 0) return cmp
+    // Dentro do mesmo dono, principal primeiro
+    if (a.isPrimary && !b.isPrimary) return -1
+    if (!a.isPrimary && b.isPrimary) return 1
+    return a.name.localeCompare(b.name)
+  })
+
+  const { paginatedItems: paginatedCompanies, currentPage, totalPages, setCurrentPage } = usePagination(sortedCompanies)
 
   const openCreateCompany = () => {
     setEditingCompanyId(null)
@@ -177,6 +188,19 @@ export default function AdminEmpresasPage() {
     try { return new Date(dateStr).toLocaleDateString("pt-BR") } catch { return "N/A" }
   }
 
+  // Métricas
+  const activeUsers = users.filter(u => u.status === "active")
+  const usersWithCompany = new Set(companies.map(c => c.userId))
+  const usersWithCompanyCount = activeUsers.filter(u => usersWithCompany.has(u.id)).length
+  const usersWithoutCompanyCount = activeUsers.length - usersWithCompanyCount
+
+  // Usuários com mais de 1 empresa
+  const companiesPerUser = new Map<string, number>()
+  for (const c of companies) {
+    companiesPerUser.set(c.userId, (companiesPerUser.get(c.userId) || 0) + 1)
+  }
+  const usersMultipleCompanies = Array.from(companiesPerUser.values()).filter(v => v > 1).length
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <div>
@@ -185,6 +209,46 @@ export default function AdminEmpresasPage() {
         </h1>
         <p className="text-muted-foreground">Gerenciamento de empresas cadastradas.</p>
       </div>
+
+      {/* Summary cards */}
+      {!loadingCompanies && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <UsersIcon className="h-4 w-4 text-blue-500" />
+              <p className="text-xs text-muted-foreground font-medium">Usuarios aprovados</p>
+            </div>
+            <p className="text-2xl font-bold">{activeUsers.length}</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <UserCheck className="h-4 w-4 text-green-500" />
+              <p className="text-xs text-muted-foreground font-medium">Com empresa</p>
+            </div>
+            <p className="text-2xl font-bold">{usersWithCompanyCount}</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <UserX className="h-4 w-4 text-red-500" />
+              <p className="text-xs text-muted-foreground font-medium">Sem empresa</p>
+            </div>
+            <p className="text-2xl font-bold">{usersWithoutCompanyCount}</p>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <Building className="h-4 w-4 text-amber-500" />
+              <p className="text-xs text-muted-foreground font-medium">Total de empresas</p>
+            </div>
+            <p className="text-2xl font-bold">{companies.length}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              pertencentes a {usersWithCompanyCount} usuario(s)
+              {usersMultipleCompanies > 0 && (
+                <span> · {usersMultipleCompanies} com mais de uma</span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Actions bar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -303,8 +367,7 @@ export default function AdminEmpresasPage() {
             </Table>
             <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
               <span>
-                Mostrando {filteredCompanies.length === 0 ? 0 : (currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, filteredCompanies.length)} de {filteredCompanies.length}
-                {" · "}{companies.filter(c => c.isPrimary).length} principal(is)
+                Mostrando {sortedCompanies.length === 0 ? 0 : (currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, sortedCompanies.length)} de {sortedCompanies.length}
               </span>
               <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>

@@ -106,6 +106,19 @@ export async function createCompanyForUser(input: {
   gallery?: string[]
 }): Promise<AdminCompany> {
   const supabase = createClient()
+
+  // Se é a primeira empresa do usuário, forçar como primária
+  let isPrimary = input.isPrimary ?? true
+  const { data: existing } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('user_id', input.userId)
+    .limit(1)
+
+  if (!existing || existing.length === 0) {
+    isPrimary = true
+  }
+
   const { data, error } = await supabase
     .from('companies')
     .insert({
@@ -118,7 +131,7 @@ export async function createCompanyForUser(input: {
       contact_email: input.contactEmail || null,
       contact_phone: input.contactPhone || null,
       linkedin: input.linkedin || null,
-      is_primary: input.isPrimary ?? true,
+      is_primary: isPrimary,
       gallery: input.gallery || [],
     })
     .select('*, categories(name), users(full_name, email)')
@@ -248,6 +261,8 @@ export interface AdminDailyMatch extends DailyMatchRow {
   userBCompany: string
   userACategory: string
   userBCategory: string
+  userAStatus: 'pending' | 'completed'
+  userBStatus: 'pending' | 'completed'
   repeatCount: number
 }
 
@@ -304,6 +319,12 @@ export async function fetchDailyMatchesAdmin(date: string): Promise<AdminDailyMa
     pairCounts.set(key, (pairCounts.get(key) || 0) + 1)
   }
 
+  // Build status map: key = "userId_matchDate_timeSlot" → status
+  const statusMap = new Map<string, 'pending' | 'completed'>()
+  for (const m of matches) {
+    statusMap.set(`${m.user_id}_${m.match_date}_${m.time_slot}`, m.status as 'pending' | 'completed')
+  }
+
   // Dedupe: only return one row per pair (user_id < suggested_user_id)
   const seen = new Set<string>()
   const result: AdminDailyMatch[] = []
@@ -315,6 +336,9 @@ export async function fetchDailyMatchesAdmin(date: string): Promise<AdminDailyMa
 
     const compA = compMap.get(row.user_id)
     const compB = compMap.get(row.suggested_user_id)
+
+    const userAStatus = statusMap.get(`${row.user_id}_${row.match_date}_${row.time_slot}`) || 'pending'
+    const userBStatus = statusMap.get(`${row.suggested_user_id}_${row.match_date}_${row.time_slot}`) || 'pending'
 
     result.push({
       id: row.id,
@@ -330,6 +354,8 @@ export async function fetchDailyMatchesAdmin(date: string): Promise<AdminDailyMa
       userBCompany: compB?.name || '',
       userACategory: compA?.categoryName || '',
       userBCategory: compB?.categoryName || '',
+      userAStatus,
+      userBStatus,
       repeatCount: pairCounts.get(pairKey) || 0,
     })
   }
@@ -368,6 +394,29 @@ export async function createManualMatch(
 ): Promise<void> {
   const supabase = createClient()
 
+  // Validação: máximo 1 match por dia por usuário
+  const { data: existingA } = await supabase
+    .from('daily_matches')
+    .select('id')
+    .eq('user_id', userA)
+    .eq('match_date', date)
+    .limit(1)
+
+  if (existingA && existingA.length > 0) {
+    throw new Error('Usuário A já possui um match neste dia.')
+  }
+
+  const { data: existingB } = await supabase
+    .from('daily_matches')
+    .select('id')
+    .eq('user_id', userB)
+    .eq('match_date', date)
+    .limit(1)
+
+  if (existingB && existingB.length > 0) {
+    throw new Error('Usuário B já possui um match neste dia.')
+  }
+
   const { data: { user: admin } } = await supabase.auth.getUser()
 
   const { error } = await supabase
@@ -386,6 +435,34 @@ export async function createManualMatch(
       { user_id: userA, shown_user_id: userB, shown_date: date },
       { user_id: userB, shown_user_id: userA, shown_date: date },
     ])
+
+  // Criar conexão aceita automaticamente
+  const { data: existingConn } = await supabase
+    .from('connections')
+    .select('id, status')
+    .or(
+      `and(requester_id.eq.${userA},requested_id.eq.${userB}),and(requester_id.eq.${userB},requested_id.eq.${userA})`
+    )
+    .limit(1)
+    .maybeSingle()
+
+  if (existingConn) {
+    if (existingConn.status !== 'accepted') {
+      await supabase
+        .from('connections')
+        .update({ status: 'accepted', responded_at: new Date().toISOString() })
+        .eq('id', existingConn.id)
+    }
+  } else {
+    await supabase
+      .from('connections')
+      .insert({
+        requester_id: userA,
+        requested_id: userB,
+        status: 'accepted',
+        responded_at: new Date().toISOString(),
+      })
+  }
 }
 
 export async function swapMatch(
@@ -501,8 +578,8 @@ export async function fetchUsersWithAvailabilityForDate(
 
   const { data: companies, error: cErr } = await supabase
     .from('companies')
-    .select('user_id, name')
-    .eq('is_primary', true)
+    .select('user_id, name, is_primary')
+    .order('is_primary', { ascending: false })
 
   if (cErr) throw new Error(cErr.message)
 
@@ -557,11 +634,10 @@ export async function adminEnableAllForDate(
 ): Promise<void> {
   const supabase = createClient()
 
-  // Get all active users with companies
+  // Get all active users with companies (any company counts)
   const { data: companies } = await supabase
     .from('companies')
     .select('user_id')
-    .eq('is_primary', true)
 
   const { data: users } = await supabase
     .from('users')
@@ -639,4 +715,72 @@ export async function adminEnableWeekForUser(
     .upsert(rows, { onConflict: 'user_id,available_date' })
 
   if (error) throw new Error(error.message)
+}
+
+// ── Usuários agrupados por empresa (v2) ───────────────────
+
+export interface UserForMatch {
+  id: string
+  name: string
+  company: string
+  category: string
+  hasMatchToday: boolean
+}
+
+export async function fetchUsersGroupedByCompany(
+  date: string
+): Promise<{ withCompany: UserForMatch[]; withoutCompany: Array<{ id: string; name: string }> }> {
+  const supabase = createClient()
+
+  const { data: users, error: uErr } = await supabase
+    .from('users')
+    .select('id, full_name')
+    .eq('status', 'active')
+    .order('full_name')
+
+  if (uErr) throw new Error(uErr.message)
+  if (!users) return { withCompany: [], withoutCompany: [] }
+
+  // Busca todas as empresas (prioriza primária para exibição)
+  const { data: companies } = await supabase
+    .from('companies')
+    .select('user_id, name, category_id, is_primary, categories(name)')
+    .order('is_primary', { ascending: false })
+
+  const compMap = new Map<string, { name: string; categoryName: string }>()
+  for (const c of companies || []) {
+    // Só guarda a primeira encontrada por usuário (primária vem primeiro pela ordenação)
+    if (compMap.has(c.user_id)) continue
+    const raw = c.categories as unknown
+    const cat = Array.isArray(raw) ? (raw[0] as { name: string } | undefined) : (raw as { name: string } | null)
+    compMap.set(c.user_id, { name: c.name, categoryName: cat?.name || '' })
+  }
+
+  // Verificar quem já tem match no dia
+  const { data: todayMatches } = await supabase
+    .from('daily_matches')
+    .select('user_id')
+    .eq('match_date', date)
+
+  const matchedIds = new Set((todayMatches || []).map(m => m.user_id))
+
+  const withCompany: UserForMatch[] = []
+  const withoutCompany: Array<{ id: string; name: string }> = []
+
+  for (const u of users) {
+    const comp = compMap.get(u.id)
+    if (comp) {
+      withCompany.push({
+        id: u.id,
+        name: u.full_name,
+        company: comp.name,
+        category: comp.categoryName,
+        hasMatchToday: matchedIds.has(u.id),
+      })
+    } else {
+      withoutCompany.push({ id: u.id, name: u.full_name })
+    }
+  }
+
+  return { withCompany, withoutCompany }
 }

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2, BookOpen } from "lucide-react"
+import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2, BookOpen, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -31,11 +31,11 @@ const Sidebar = React.memo(function Sidebar({ isOpen, onClose, status = "active"
 
   const baseItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
-    { icon: Calendar, label: "Agenda", path: "/agenda" },
+    { icon: Link2, label: "Conexao do Dia", path: "/agenda" },
     { icon: Search, label: "Pesquisar Empresas", path: "/search" },
     { icon: User, label: "Minha Conta", path: "/account" },
     { icon: Users, label: "Conexões", path: "/conexoes" },
-    { icon: Gift, label: "Indique e Ganhe", path: "/referral" },
+    { icon: Trophy, label: "Regras de Pontuacao", path: "/referral" },
   ]
   const adminItems = [{ icon: ShieldCheck, label: "Administração", path: "/admin/users" }]
   const footerItems = [{ icon: MessageCircle, label: "Suporte WhatsApp", path: "https://wa.me/5511950222063", external: true }]
@@ -46,8 +46,8 @@ const Sidebar = React.memo(function Sidebar({ isOpen, onClose, status = "active"
       { icon: Home, label: "Dashboard", path: "/dashboard" },
       { icon: Users, label: "Usuários", path: "/admin/users" },
       { icon: Building2, label: "Empresas", path: "/admin/empresas" },
-      { icon: Link2, label: "Conexões do Dia", path: "/admin/conexoes" },
-      { icon: Calendar, label: "Agendas", path: "/admin/agendas" },
+      { icon: Link2, label: "Formar Duplas", path: "/admin/agendas" },
+      { icon: Trophy, label: "Pontuacao", path: "/admin/pontuacao" },
       { icon: Gift, label: "Indicações", path: "/admin/indicacoes" },
       { icon: Handshake, label: "Negócios", path: "/admin/negocios" },
       { icon: BookOpen, label: "Revista", path: "/admin/revista" },
