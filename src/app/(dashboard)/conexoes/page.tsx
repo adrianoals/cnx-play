@@ -116,7 +116,7 @@ export default function ConexoesPage() {
           </TabsTrigger>
           <TabsTrigger value="realizadas" className="flex-1 gap-2">
             <Handshake className="h-4 w-4" />
-            Realizadas
+            Aceitas
             {acceptedConnections.length > 0 && (
               <span className="text-[10px] font-bold text-muted-foreground">
                 ({acceptedConnections.length})
@@ -210,7 +210,7 @@ export default function ConexoesPage() {
           </div>
         </TabsContent>
 
-        {/* Tab: Conexões Realizadas */}
+        {/* Tab: Conexões Aceitas */}
         <TabsContent value="realizadas" className="mt-6">
           <div className="max-w-3xl space-y-3">
             {acceptedConnections.length === 0 ? (
