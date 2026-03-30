@@ -40,7 +40,9 @@
       "Bash(mkdir:*)",
       "Bash(/Users/adriano/Desktop/Cnxplay/cnx-play/empresarios-resumido.md:*)",
       "Bash(grep:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "Bash(npm test:*)",
+      "Bash(grep -r \"\\\\.from\\(\" src/services/*.ts)"
     ]
   },
   "enableAllProjectMcpServers": true,
