@@ -472,10 +472,13 @@ export async function fetchDailyMatchesAdmin(date: string): Promise<AdminDailyMa
     compMap.set(c.user_id, { name: c.name, categoryName: cat?.name || '' })
   }
 
-  // Get repeat counts from history
+  // Repeat counts: filtrar history apenas pelos userIds do dia atual.
+  // Sem o filtro essa query carrega a tabela inteira (cresce DIÁRIO).
   const { data: history } = await supabase
     .from('daily_match_history')
     .select('user_id, shown_user_id')
+    .in('user_id', ids)
+    .in('shown_user_id', ids)
 
   const pairCounts = new Map<string, number>()
   for (const h of history || []) {

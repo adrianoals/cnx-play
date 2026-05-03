@@ -35,6 +35,7 @@ export default function AdminConexoesPage() {
   const [matches, setMatches] = useState<AdminDailyMatch[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
 
   // Manual match dialog
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -71,8 +72,16 @@ export default function AdminConexoesPage() {
     loadMatches()
   }, [loadMatches])
 
+  // Debounce do termo de busca (400ms) — busca client-side mas evita
+  // re-render a cada tecla quando a lista é grande
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400)
+    return () => clearTimeout(t)
+  }, [search])
+
   const filteredMatches = matches.filter(m => {
-    const term = search.toLowerCase()
+    const term = debouncedSearch.toLowerCase()
+    if (!term) return true
     return (
       m.userAName.toLowerCase().includes(term) ||
       m.userBName.toLowerCase().includes(term) ||

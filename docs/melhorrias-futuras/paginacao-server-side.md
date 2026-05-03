@@ -1,8 +1,18 @@
 # Paginação server-side em listagens
 
-**Status:** pendente
+**Status:** parcialmente concluído (3 das 4 vermelhas implementadas; 4ª teve análise revisada)
 **Criado em:** 2026-05-03
 **Prioridade:** alta — escala mal a partir de ~200-300 registros por entidade
+
+## Concluído
+- ✅ `/search` (commit `c0103d2`)
+- ✅ `/admin/users` (commit `6e204a9`)
+- ✅ `/admin/empresas` (commit `5bef17b`)
+- ⚠️ `/admin/conexoes` — análise revisada: já filtra por data nativamente, max ~20 matches/dia
+  (após dedupe ~10 linhas). Não vale `.range()` aqui. Em vez disso,
+  otimizamos a query de `daily_match_history` (que carregava a tabela inteira)
+  para filtrar pelos `userIds` do dia atual. Mais detalhes na seção
+  "Trade-offs e exceções" abaixo.
 
 ## Problema
 
