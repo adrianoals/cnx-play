@@ -42,7 +42,8 @@
       "Bash(grep:*)",
       "Bash(kill:*)",
       "Bash(npm test:*)",
-      "Bash(grep -r \"\\\\.from\\(\" src/services/*.ts)"
+      "Bash(grep -r \"\\\\.from\\(\" src/services/*.ts)",
+      "Bash(gh auth *)"
     ]
   },
   "enableAllProjectMcpServers": true,
