@@ -11,7 +11,7 @@ import { createReferral, fetchMyReferrals } from "@/services/referral.service"
 import type { SupabaseReferral } from "@/types"
 import {
   Gift, Send, Loader2, UserPlus, Trophy,
-  Video, Handshake, Clock, CheckCircle2, XCircle, Info,
+  Video, Handshake, Clock, CheckCircle2, XCircle, Info, Users,
 } from "lucide-react"
 
 function getReferralStatusBadge(status: string) {
@@ -267,14 +267,23 @@ export default function ReferralPage() {
           <Info className="h-5 w-5 text-purple-400" />
           <h2 className="text-lg font-bold">Regras de Pontuação</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
             <div className="p-2 bg-blue-500/10 rounded-lg shrink-0">
               <Video className="h-5 w-5 text-blue-500" />
             </div>
             <div>
               <p className="font-semibold text-sm">+1 ponto</p>
-              <p className="text-xs text-muted-foreground">Por reunião realizada</p>
+              <p className="text-xs text-muted-foreground">Por reunião realizada (presença marcada)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
+            <div className="p-2 bg-amber-500/10 rounded-lg shrink-0">
+              <Users className="h-5 w-5 text-amber-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">+1 bônus</p>
+              <p className="text-xs text-muted-foreground">Quando ambos marcam presença na conexão do dia</p>
             </div>
           </div>
           <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
@@ -292,7 +301,16 @@ export default function ReferralPage() {
             </div>
             <div>
               <p className="font-semibold text-sm">+5 pontos</p>
-              <p className="text-xs text-muted-foreground">Por negócio fechado</p>
+              <p className="text-xs text-muted-foreground">Por negócio aprovado</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 bg-background/50 rounded-xl p-4 border border-border">
+            <div className="p-2 bg-red-500/10 rounded-lg shrink-0">
+              <Send className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">−1 ponto</p>
+              <p className="text-xs text-muted-foreground">Por solicitação de conexão enviada</p>
             </div>
           </div>
         </div>

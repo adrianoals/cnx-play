@@ -40,9 +40,19 @@ Plataforma premium de networking para empresários, líderes e donos de negócio
 
 ### Sistema de Pontuação
 
-- +1 ponto por reunião confirmada (bilateral)
-- +1 ponto por indicação aprovada
-- +5 pontos por negócio fechado (aprovado)
+A pontuação é calculada pela view `v_user_stats` no Postgres, com piso de `0` (nunca fica negativa):
+
+- **+1** por reunião marcada como `completed` (contada por `meetings.organizer_id`)
+- **Match diário — marcação de presença:**
+  - Marcar presença cria uma meeting → **+1**
+  - Quando **os dois** marcam presença no match espelhado, é inserida uma meeting bônus para cada um → **+2 para cada** (confirmação bilateral)
+- **+1** por indicação aprovada
+- **+5** por negócio aprovado
+- **−1** por solicitação de conexão enviada (conta todas as linhas em `connections.requester_id`, independentemente do status — pending, accepted e rejected descontam ponto da mesma forma)
+
+A página `/search` bloqueia novas solicitações de conexão quando a pontuação fica abaixo de 1.
+
+**Níveis:** Platina (0-49) · Safira (50-150) · Diamante (151+).
 
 ## Estrutura do Projeto
 

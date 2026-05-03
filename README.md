@@ -40,9 +40,19 @@ Premium networking platform for entrepreneurs, leaders, and business owners. Con
 
 ### Scoring System
 
-- +1 point per confirmed meeting (bilateral)
-- +1 point per approved referral
-- +5 points per approved deal
+Score is calculated by the `v_user_stats` Postgres view, with a floor of `0` (never negative):
+
+- **+1** per meeting marked as `completed` (counted by `meetings.organizer_id`)
+- **Daily match — presence:**
+  - Marking presence creates a meeting → **+1**
+  - When **both** users mark presence on the mirrored match, a bonus meeting is inserted for each → **+2 each** (bilateral confirmation)
+- **+1** per approved referral
+- **+5** per approved deal
+- **−1** per connection request sent (counts every row in `connections.requester_id`, regardless of status — pending, accepted and rejected all subtract a point)
+
+`/search` blocks new connection requests when the user's score is below 1.
+
+**Levels:** Platina (0-49) · Safira (50-150) · Diamante (151+).
 
 ## Project Structure
 
