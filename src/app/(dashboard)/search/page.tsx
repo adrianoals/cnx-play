@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase"
 import { fetchCategories } from "@/services/category.service"
 import { fetchConnectionsMap, requestConnection, deleteConnection } from "@/services/connection.service"
 import type { Category, Connection } from "@/types"
-import { Search, MapPin, Mail, UserPlus, X, Loader2, Building2, Clock, Users, Check } from "lucide-react"
+import { Search, MapPin, Mail, UserPlus, X, Loader2, Building2, Clock, Users, Check, Pencil } from "lucide-react"
 
 interface SearchCompany {
   id: string
@@ -30,6 +30,7 @@ interface SearchCompany {
   contactEmail: string
   gallery: string[]
   score: number
+  isOwn: boolean
 }
 
 export default function SearchPage() {
@@ -77,9 +78,8 @@ export default function SearchPage() {
           setMyScore(scoreMap.get(user.id) || 0)
         }
 
-        // Map and filter out current user's companies
+        // Map all companies (including the current user's, marked as isOwn)
         const mapped: SearchCompany[] = (companiesData || [])
-          .filter((row: Record<string, unknown>) => row.user_id !== user?.id)
           .map((row: Record<string, unknown>) => {
             const userRel = row.users as Record<string, unknown> | null
             const catRel = row.categories as Record<string, unknown> | null
@@ -97,10 +97,15 @@ export default function SearchPage() {
               contactEmail: (row.contact_email as string) || "",
               gallery: (row.gallery as string[]) || [],
               score: scoreMap.get(userId) || 0,
+              isOwn: !!user && userId === user.id,
             }
           })
 
-        mapped.sort((a, b) => b.score - a.score)
+        // Pin own companies at the top, others sorted by score desc
+        mapped.sort((a, b) => {
+          if (a.isOwn !== b.isOwn) return a.isOwn ? -1 : 1
+          return b.score - a.score
+        })
         setCompanies(mapped)
 
         // Fetch categories for filter badges
@@ -186,6 +191,19 @@ export default function SearchPage() {
   }
 
   const renderActionButtons = (company: SearchCompany) => {
+    if (company.isOwn) {
+      return (
+        <Button
+          variant="outline"
+          className="flex-1 gap-2"
+          onClick={() => router.push("/account")}
+        >
+          <Pencil className="h-4 w-4" />
+          Editar empresa
+        </Button>
+      )
+    }
+
     const info = connectionsMap.get(company.userId)
     const isProcessing = connecting === company.userId
 
@@ -310,6 +328,11 @@ export default function SearchPage() {
           filteredCompanies.slice(0, visibleCount).map(company => (
             <div key={company.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col h-full">
               <div className="relative h-32 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
+                {company.isOwn && (
+                  <div className="absolute top-4 left-4 bg-primary/90 text-primary-foreground backdrop-blur-sm px-2 py-1 rounded-md text-xs font-semibold border border-primary/30 shadow-sm">
+                    Sua empresa
+                  </div>
+                )}
                 <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-semibold border border-border">
                   {company.categoryName}
                 </div>

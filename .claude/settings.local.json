@@ -43,7 +43,8 @@
       "Bash(kill:*)",
       "Bash(npm test:*)",
       "Bash(grep -r \"\\\\.from\\(\" src/services/*.ts)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(npx eslint *)"
     ]
   },
   "enableAllProjectMcpServers": true,
