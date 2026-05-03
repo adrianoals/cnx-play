@@ -10,12 +10,16 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase"
 import { fetchCategories } from "@/services/category.service"
 import { fetchConnectionsMap, requestConnection, deleteConnection } from "@/services/connection.service"
 import type { Category, Connection } from "@/types"
-import { Search, MapPin, Mail, UserPlus, X, Loader2, Building2, Clock, Users, Check, Pencil } from "lucide-react"
+import Image from "next/image"
+import { Search, MapPin, UserPlus, X, Loader2, Building2, Clock, Users, Check, Pencil, Eye } from "lucide-react"
 
 interface SearchCompany {
   id: string
@@ -27,7 +31,6 @@ interface SearchCompany {
   categoryName: string
   location: string
   description: string
-  contactEmail: string
   gallery: string[]
   score: number
   isOwn: boolean
@@ -46,6 +49,7 @@ export default function SearchPage() {
   const [myScore, setMyScore] = useState(0)
   const [connecting, setConnecting] = useState<string | null>(null)
   const [confirmTarget, setConfirmTarget] = useState<SearchCompany | null>(null)
+  const [detailsCompany, setDetailsCompany] = useState<SearchCompany | null>(null)
   const [visibleCount, setVisibleCount] = useState(24)
 
   useEffect(() => {
@@ -57,7 +61,7 @@ export default function SearchPage() {
         // Fetch companies with joins (paginated at DB level)
         const { data: companiesData, error: companiesError } = await supabase
           .from("companies")
-          .select("id, name, user_id, location, description, contact_email, gallery, categories(name), users!inner(full_name, email, avatar_url, status)")
+          .select("id, name, user_id, location, description, gallery, categories(name), users!inner(full_name, email, avatar_url, status)")
           .eq("users.status", "active")
           .order("created_at", { ascending: false })
 
@@ -94,7 +98,6 @@ export default function SearchPage() {
               categoryName: catRel ? ((catRel.name as string) || "Diversos") : "Diversos",
               location: (row.location as string) || "Brasil",
               description: (row.description as string) || "",
-              contactEmail: (row.contact_email as string) || "",
               gallery: (row.gallery as string[]) || [],
               score: scoreMap.get(userId) || 0,
               isOwn: !!user && userId === user.id,
@@ -326,7 +329,11 @@ export default function SearchPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCompanies.length > 0 ? (
           filteredCompanies.slice(0, visibleCount).map(company => (
-            <div key={company.id} className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col h-full">
+            <div
+              key={company.id}
+              onClick={() => setDetailsCompany(company)}
+              className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col h-full cursor-pointer"
+            >
               <div className="relative h-32 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
                 {company.isOwn && (
                   <div className="absolute top-4 left-4 bg-primary/90 text-primary-foreground backdrop-blur-sm px-2 py-1 rounded-md text-xs font-semibold border border-primary/30 shadow-sm">
@@ -359,19 +366,21 @@ export default function SearchPage() {
                     <MapPin className="h-3 w-3" />
                     <span className="truncate">{company.location}</span>
                   </div>
-                  {company.contactEmail && (
-                    <div className="flex items-center gap-1 text-muted-foreground text-xs mt-1" title={company.contactEmail}>
-                      <Mail className="h-3 w-3" />
-                      <span className="truncate max-w-[200px]">{company.contactEmail}</span>
-                    </div>
-                  )}
                 </div>
 
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-6 flex-1">
                   {company.description || `Empresa de ${company.ownerName || "membro"}`}
                 </p>
 
-                <div className="flex gap-3 mb-6">
+                <div className="flex flex-col gap-2 mb-6" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="outline"
+                    className="flex-1 gap-2"
+                    onClick={() => setDetailsCompany(company)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ver detalhes
+                  </Button>
                   {renderActionButtons(company)}
                 </div>
               </div>
@@ -420,6 +429,80 @@ export default function SearchPage() {
           </Button>
         </div>
       )}
+
+      {/* Company details dialog */}
+      <Dialog open={!!detailsCompany} onOpenChange={(open) => { if (!open) setDetailsCompany(null) }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {detailsCompany && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-2xl">
+                  {detailsCompany.name}
+                  {detailsCompany.isOwn && (
+                    <Badge className="bg-primary/90 text-primary-foreground">Sua empresa</Badge>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-2">
+                {/* Gallery */}
+                {detailsCompany.gallery.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {detailsCompany.gallery.map((url, idx) => (
+                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                        <Image
+                          src={url}
+                          alt={`${detailsCompany.name} — imagem ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Owner + category */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={detailsCompany.ownerAvatar || undefined} className="object-cover" />
+                    <AvatarFallback>{detailsCompany.ownerName.charAt(0) || "?"}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    {detailsCompany.ownerName && (
+                      <p className="font-semibold text-foreground">{detailsCompany.ownerName}</p>
+                    )}
+                    <Badge variant="outline" className="mt-1">{detailsCompany.categoryName}</Badge>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>{detailsCompany.location}</span>
+                </div>
+
+                {/* Description */}
+                {detailsCompany.description ? (
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">Sobre a empresa</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                      {detailsCompany.description}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm italic text-muted-foreground">Sem descrição cadastrada.</p>
+                )}
+
+                {/* Connection action */}
+                <div className="pt-2 border-t border-border">
+                  {renderActionButtons(detailsCompany)}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Connection confirmation dialog */}
       <AlertDialog open={!!confirmTarget} onOpenChange={(open) => { if (!open) setConfirmTarget(null) }}>
