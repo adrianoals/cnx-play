@@ -1,13 +1,16 @@
 import React from "react"
+import Image from "next/image"
 
 const MagazineCover = React.forwardRef<HTMLDivElement>(function MagazineCover(_props, ref) {
   return (
     <div ref={ref} className="magazine-page relative overflow-hidden">
       {/* Background photo */}
-      <img
+      <Image
         src="/revista/vagner-miramontes.jpeg"
         alt="Vagner Miramontes"
-        className="absolute inset-0 w-full h-full object-cover"
+        fill
+        priority
+        className="object-cover"
       />
 
       {/* Dark overlay */}
@@ -20,7 +23,7 @@ const MagazineCover = React.forwardRef<HTMLDivElement>(function MagazineCover(_p
       <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8">
         {/* Top: Logo + Title */}
         <div className="text-center space-y-3">
-          <img src="/icon.svg" alt="Conexao Play" className="w-14 h-14 mx-auto drop-shadow-lg" />
+          <Image src="/icon.svg" alt="Conexao Play" width={56} height={56} className="w-14 h-14 mx-auto drop-shadow-lg" />
           <div>
             <p className="text-[10px] uppercase tracking-[0.3em] text-blue-300 font-medium">Conexão Play apresenta</p>
           </div>

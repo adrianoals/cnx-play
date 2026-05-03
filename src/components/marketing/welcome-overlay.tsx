@@ -1,20 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Rocket, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function WelcomeOverlay() {
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === "undefined") return false
     const hasSeenIntro = sessionStorage.getItem("has_seen_intro_v1")
-    if (!hasSeenIntro) {
-      setIsVisible(true)
-      sessionStorage.setItem("has_seen_intro_v1", "true")
-    }
-  }, [])
+    if (hasSeenIntro) return false
+    sessionStorage.setItem("has_seen_intro_v1", "true")
+    return true
+  })
 
   const handleClose = () => {
     setIsVisible(false)

@@ -21,7 +21,6 @@ export default async function OGImage() {
         }}
       >
         {/* Background image */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://horizons-cdn.hostinger.com/069f5e4f-58ed-423f-9c80-0c6cd4f85a01/eddfc832ca27ba52405ce133d722146f.jpg"
           alt=""

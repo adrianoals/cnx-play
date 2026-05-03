@@ -83,7 +83,6 @@ export default function RevistaPage() {
             : 'translateX(0)',
         }}
       >
-        {/* @ts-ignore react-pageflip type mismatch with ref */}
         <HTMLFlipBook
           ref={flipBookRef}
           width={pageWidth}

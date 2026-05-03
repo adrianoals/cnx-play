@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useMemo } from "react"
+import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
 import { Bell, Menu, Gift, User, LogOut, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -77,7 +78,7 @@ const Header = React.memo(function Header({ onMenuToggle, userInitials = "US" }:
             <Menu className="h-6 w-6" />
           </Button>
           <div className="hidden md:flex items-center gap-2 font-bold text-xl tracking-tight">
-            <img src="/icon.svg" alt="ConectaPlay" className="w-8 h-8" />
+            <Image src="/icon.svg" alt="ConectaPlay" width={32} height={32} className="w-8 h-8" />
             <span className="text-foreground">Conecta<span className="text-blue-600">Play</span></span>
           </div>
         </div>

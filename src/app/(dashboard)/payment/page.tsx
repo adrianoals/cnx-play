@@ -110,19 +110,18 @@ export default function PaymentPage() {
   const { toast } = useToast()
   const [selectedPlan, setSelectedPlan] = useState("visionary")
   const [loading, setLoading] = useState(false)
-  const [ready, setReady] = useState(false)
+
+  // Active users shouldn't see the payment page; redirect them.
+  // Read once during state init so we can render synchronously without setState-in-effect.
+  const [shouldRedirect] = useState(() => {
+    if (typeof window === "undefined") return false
+    const stored = JSON.parse(localStorage.getItem("current_user") || "{}")
+    return stored.status === "active"
+  })
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("current_user") || "{}")
-
-    // Active user: redirect to dashboard
-    if (user.status === "active") {
-      router.replace("/dashboard")
-      return
-    }
-
-    setReady(true)
-  }, [router])
+    if (shouldRedirect) router.replace("/dashboard")
+  }, [shouldRedirect, router])
 
   const handlePayment = () => {
     setLoading(true)
@@ -146,7 +145,7 @@ export default function PaymentPage() {
     }, 1500)
   }
 
-  if (!ready) {
+  if (shouldRedirect) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

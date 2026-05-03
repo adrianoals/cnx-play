@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { useCurrentUser } from "@/hooks/use-current-user"
@@ -121,9 +122,11 @@ export default function AgendaPage() {
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full flex items-center justify-center bg-secondary shrink-0 border-2 border-primary/20">
                 {connection.partnerAvatar ? (
-                  <img
+                  <Image
                     src={connection.partnerAvatar}
                     alt={connection.partnerName}
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                 ) : (

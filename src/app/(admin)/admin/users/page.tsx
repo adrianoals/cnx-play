@@ -19,7 +19,7 @@ import {
 } from "@/services/admin.service"
 import type { User } from "@/types"
 import {
-  Search, Trash2, Edit, UserCog, FileSpreadsheet, Calendar,
+  Search, Trash2, Edit, FileSpreadsheet, Calendar,
   MoreHorizontal, UserPlus, Clock, CheckCircle, XCircle,
   Phone, Fingerprint, Plus, MapPin,
   ShieldAlert, Lock, Loader2, Users,

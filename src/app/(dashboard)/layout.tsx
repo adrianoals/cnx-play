@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import Header from "@/components/layout/Header"
@@ -28,15 +28,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [loading, user, router])
 
-  const handleClose = useCallback(() => setMenuOpen(false), [])
-  const handleToggle = useCallback(() => setMenuOpen(prev => !prev), [])
+  const handleClose = () => setMenuOpen(false)
+  const handleToggle = () => setMenuOpen(prev => !prev)
 
   const status = user?.status === "pending" ? "pending" : "active"
 
-  const userInitials = useMemo(() => {
-    if (!user?.fullName) return "US"
-    return user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
-  }, [user?.fullName])
+  const userInitials = !user?.fullName
+    ? "US"
+    : user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
 
   if (loading || !user) {
     return (

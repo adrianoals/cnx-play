@@ -1,4 +1,5 @@
 import React from "react"
+import Image from "next/image"
 
 const MagazineBackCover = React.forwardRef<HTMLDivElement>(function MagazineBackCover(_props, ref) {
   return (
@@ -12,7 +13,7 @@ const MagazineBackCover = React.forwardRef<HTMLDivElement>(function MagazineBack
 
       <div className="relative z-10 text-center space-y-6">
         <div className="space-y-3">
-          <img src="/icon.svg" alt="Conexao Play" className="w-16 h-16 mx-auto" />
+          <Image src="/icon.svg" alt="Conexao Play" width={64} height={64} className="w-16 h-16 mx-auto" />
           <h2 className="text-xl font-bold">Conexao Play</h2>
           <div className="w-12 h-0.5 bg-primary mx-auto" />
         </div>

@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Calendar, Link2, BookOpen, Trophy } from "lucide-react"
+import { X, Home, User, CreditCard, Search, MessageCircle, LogOut, ShieldCheck, Sun, Moon, Gift, Users, Building2, Handshake, Link2, BookOpen, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -19,13 +19,8 @@ const Sidebar = React.memo(function Sidebar({ isOpen, onClose, status = "active"
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const { user: authUser, logout } = useAuth()
-  const [isAdmin, setIsAdmin] = useState(false)
 
-  useEffect(() => {
-    if (authUser) {
-      setIsAdmin(authUser.role === "admin")
-    }
-  }, [authUser, isOpen])
+  const isAdmin = authUser?.role === "admin"
 
   const isAdminPanel = pathname.startsWith("/admin")
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { MessageCircle, X, Send, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -58,7 +59,7 @@ export default function SupportChat() {
             <div className="bg-slate-800 p-4 flex items-center justify-between border-b border-slate-700">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-blue-500 shadow-md">
-                  <img src="https://images.unsplash.com/photo-1650562853066-0d930a688ebd?w=80&h=80&fit=crop&crop=face" alt="Sofia" className="w-full h-full object-cover" />
+                  <Image src="https://images.unsplash.com/photo-1650562853066-0d930a688ebd?w=80&h=80&fit=crop&crop=face" alt="Sofia" width={40} height={40} className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">Sofia (Atendente IA)</h3>

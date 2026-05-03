@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
+import { useMemo, use } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { ArrowLeft, Building2, MapPin, Mail, Phone, Share2, MessageCircle, Globe } from "lucide-react"
@@ -25,70 +25,63 @@ interface ProfileUser {
   isMock?: boolean
 }
 
+function resolveProfile(id: string): ProfileUser | null {
+  // Try mock companies first
+  const mockCompany = companies.find(c => c.id?.toString() === id)
+  if (mockCompany) {
+    return {
+      id: mockCompany.id,
+      fullName: mockCompany.name,
+      companyName: mockCompany.name,
+      segment: mockCompany.segment,
+      description: mockCompany.description,
+      contact: mockCompany.contact,
+      avatar: mockCompany.image,
+      gallery: [mockCompany.image],
+      isMock: true,
+    }
+  }
+
+  if (typeof window === "undefined") return null
+
+  // Try real companies from localStorage (legacy)
+  const realCompanies = getAllCompanies()
+  const realCompany = realCompanies.find(c => c.id?.toString() === id)
+  if (realCompany) {
+    const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
+    const owner = allUsers.find((u: { id: string }) => String(u.id) === String(realCompany.userId))
+    return {
+      id: realCompany.id,
+      fullName: realCompany.name,
+      companyName: realCompany.name,
+      segment: realCompany.category,
+      description: realCompany.description,
+      contact: {
+        email: realCompany.contactEmail || "",
+        phone: realCompany.contactPhone || "",
+        linkedin: realCompany.linkedin,
+      },
+      avatar: owner?.avatar || null,
+      gallery: realCompany.gallery,
+      phone: realCompany.contactPhone,
+      email: realCompany.contactEmail,
+      address: realCompany.location,
+    }
+  }
+
+  // Fallback: try registered users (legacy)
+  const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
+  const registeredUser = allUsers.find((u: { id: string }) => String(u.id) === id) as ProfileUser | undefined
+  return registeredUser ?? null
+}
+
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const { toast } = useToast()
-  const [user, setUser] = useState<ProfileUser | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Try mock companies first
-    const mockCompany = companies.find(c => c.id?.toString() === id)
-    if (mockCompany) {
-      setUser({
-        id: mockCompany.id,
-        fullName: mockCompany.name,
-        companyName: mockCompany.name,
-        segment: mockCompany.segment,
-        description: mockCompany.description,
-        contact: mockCompany.contact,
-        avatar: mockCompany.image,
-        gallery: [mockCompany.image],
-        isMock: true,
-      })
-      setLoading(false)
-      return
-    }
-
-    // Try real companies from localStorage
-    const realCompanies = getAllCompanies()
-    const realCompany = realCompanies.find(c => c.id?.toString() === id)
-    if (realCompany) {
-      const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-      const owner = allUsers.find((u: { id: string }) => String(u.id) === String(realCompany.userId))
-      setUser({
-        id: realCompany.id,
-        fullName: realCompany.name,
-        companyName: realCompany.name,
-        segment: realCompany.category,
-        description: realCompany.description,
-        contact: {
-          email: realCompany.contactEmail || "",
-          phone: realCompany.contactPhone || "",
-          linkedin: realCompany.linkedin,
-        },
-        avatar: owner?.avatar || null,
-        gallery: realCompany.gallery,
-        phone: realCompany.contactPhone,
-        email: realCompany.contactEmail,
-        address: realCompany.location,
-      })
-      setLoading(false)
-      return
-    }
-
-    // Fallback: try registered users
-    const allUsers = JSON.parse(localStorage.getItem("users") || "[]")
-    const registeredUser = allUsers.find((u: { id: string }) => String(u.id) === id)
-    if (registeredUser) {
-      setUser(registeredUser)
-      setLoading(false)
-      return
-    }
-
-    setLoading(false)
-  }, [id])
+  const user = useMemo(() => resolveProfile(id), [id])
+  const loading = false
 
   const handleShare = async () => {
     const url = window.location.href

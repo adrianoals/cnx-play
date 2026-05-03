@@ -1,4 +1,5 @@
 import React from "react"
+import Image from "next/image"
 import type { MagazineEntrepreneur } from "@/types"
 
 interface Props {
@@ -12,10 +13,11 @@ export const MagazinePhotoPage = React.forwardRef<HTMLDivElement, Props>(
     return (
       <div ref={ref} className="magazine-page bg-slate-900 relative overflow-hidden">
         {/* Full photo — absolute para preencher 100% da pagina */}
-        <img
+        <Image
           src={entrepreneur.photoUrl}
           alt={entrepreneur.name}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          className="object-cover"
         />
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />

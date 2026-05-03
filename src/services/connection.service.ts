@@ -9,35 +9,6 @@ async function getMyId(): Promise<string> {
   return user.id
 }
 
-function mapRow(row: Record<string, unknown>): Connection {
-  const reqUser = row.requester as Record<string, unknown> | null
-  const reqComp = row.requester_company as Record<string, unknown> | null
-  const tgtUser = row.requested as Record<string, unknown> | null
-  const tgtComp = row.requested_company as Record<string, unknown> | null
-  return {
-    id: row.id as string,
-    requesterId: row.requester_id as string,
-    requestedId: row.requested_id as string,
-    status: row.status as Connection['status'],
-    createdAt: row.created_at as string,
-    respondedAt: (row.responded_at as string) || null,
-    requesterName: reqUser ? (reqUser.full_name as string) : undefined,
-    requesterAvatar: reqUser ? (reqUser.avatar_url as string | null) : undefined,
-    requesterCompany: reqComp ? (reqComp.name as string) : undefined,
-    requestedName: tgtUser ? (tgtUser.full_name as string) : undefined,
-    requestedAvatar: tgtUser ? (tgtUser.avatar_url as string | null) : undefined,
-    requestedCompany: tgtComp ? (tgtComp.name as string) : undefined,
-  }
-}
-
-const CONNECTION_SELECT = `
-  id, requester_id, requested_id, status, created_at, responded_at,
-  requester:users!connections_requester_id_fkey(full_name, avatar_url),
-  requester_company:companies!inner(name)...(requester_id),
-  requested:users!connections_requested_id_fkey(full_name, avatar_url)
-`
-
-// Simpler select that avoids complex join syntax
 const SIMPLE_SELECT = 'id, requester_id, requested_id, status, created_at, responded_at'
 
 export async function fetchMyConnections(): Promise<Connection[]> {

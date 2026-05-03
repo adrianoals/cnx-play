@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 
 import dynamic from "next/dynamic"
+import Image from "next/image"
 import useSWR from "swr"
 
 const FirstLoginWelcome = dynamic(() => import("@/components/features/FirstLoginWelcome"), { ssr: false })
@@ -288,7 +289,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center bg-secondary border border-border shrink-0">
                       {todayConn.partnerAvatar ? (
-                        <img src={todayConn.partnerAvatar} alt="" className="w-12 h-12 rounded-full object-cover" />
+                        <Image src={todayConn.partnerAvatar} alt="" width={48} height={48} className="w-12 h-12 rounded-full object-cover" />
                       ) : (
                         <UserCircle className="h-6 w-6 text-muted-foreground" />
                       )}

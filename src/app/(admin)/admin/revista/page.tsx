@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
+import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -103,7 +104,7 @@ function SortableRow({
       </TableCell>
       <TableCell className="w-12">
         {item.photoUrl ? (
-          <img src={item.photoUrl} alt={item.name} className="h-10 w-10 rounded-full object-cover" />
+          <Image src={item.photoUrl} alt={item.name} width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
         ) : (
           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
             <ImageIcon className="h-5 w-5 text-muted-foreground" />
@@ -161,11 +162,7 @@ export default function AdminRevistaPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  useEffect(() => {
-    loadEntrepreneurs()
-  }, [])
-
-  async function loadEntrepreneurs() {
+  const loadEntrepreneurs = useCallback(async () => {
     try {
       const data = await fetchAllMagazineEntrepreneurs()
       setEntrepreneurs(data)
@@ -174,7 +171,11 @@ export default function AdminRevistaPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    loadEntrepreneurs()
+  }, [loadEntrepreneurs])
 
   function openCreate() {
     setEditingId(null)
@@ -492,7 +493,7 @@ export default function AdminRevistaPage() {
               <Label>Foto *</Label>
               <div className="mt-2 flex items-center gap-4">
                 {photoPreview ? (
-                  <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-lg object-cover border" />
+                  <Image src={photoPreview} alt="Preview" width={80} height={80} className="h-20 w-20 rounded-lg object-cover border" />
                 ) : (
                   <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center border border-dashed">
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
