@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase'
-import type { Connection, AcceptedConnection } from '@/types'
+import type { Connection, ConnectionListItem } from '@/types'
 
 const supabase = () => createClient()
 
@@ -10,66 +10,6 @@ async function getMyId(): Promise<string> {
 }
 
 const SIMPLE_SELECT = 'id, requester_id, requested_id, status, created_at, responded_at'
-
-export async function fetchMyConnections(): Promise<Connection[]> {
-  const me = await getMyId()
-  const { data, error } = await supabase()
-    .from('connections')
-    .select(SIMPLE_SELECT)
-    .eq('status', 'accepted')
-    .or(`requester_id.eq.${me},requested_id.eq.${me}`)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-
-  // Enrich with user/company data
-  const userIds = new Set<string>()
-  for (const row of data || []) {
-    userIds.add(row.requester_id)
-    userIds.add(row.requested_id)
-  }
-
-  const enriched = await enrichConnections(data || [], userIds)
-  return enriched
-}
-
-export async function fetchPendingReceived(): Promise<Connection[]> {
-  const me = await getMyId()
-  const { data, error } = await supabase()
-    .from('connections')
-    .select(SIMPLE_SELECT)
-    .eq('requested_id', me)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-
-  const userIds = new Set<string>()
-  for (const row of data || []) {
-    userIds.add(row.requester_id)
-    userIds.add(row.requested_id)
-  }
-  return enrichConnections(data || [], userIds)
-}
-
-export async function fetchPendingSent(): Promise<Connection[]> {
-  const me = await getMyId()
-  const { data, error } = await supabase()
-    .from('connections')
-    .select(SIMPLE_SELECT)
-    .eq('requester_id', me)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-
-  const userIds = new Set<string>()
-  for (const row of data || []) {
-    userIds.add(row.requester_id)
-    userIds.add(row.requested_id)
-  }
-  return enrichConnections(data || [], userIds)
-}
 
 export async function requestConnection(targetId: string): Promise<Connection> {
   const me = await getMyId()
@@ -111,28 +51,6 @@ export async function deleteConnection(connectionId: string): Promise<void> {
   if (error) throw error
 }
 
-export async function getConnectionStatus(
-  targetId: string
-): Promise<{ connectionId: string; status: Connection['status']; iRequested: boolean } | null> {
-  const me = await getMyId()
-  const { data, error } = await supabase()
-    .from('connections')
-    .select('id, requester_id, status')
-    .or(`and(requester_id.eq.${me},requested_id.eq.${targetId}),and(requester_id.eq.${targetId},requested_id.eq.${me})`)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (error) throw error
-  if (!data) return null
-
-  return {
-    connectionId: data.id,
-    status: data.status,
-    iRequested: data.requester_id === me,
-  }
-}
-
 export async function fetchConnectionsMap(): Promise<
   Map<string, { connectionId: string; status: Connection['status']; iRequested: boolean }>
 > {
@@ -153,38 +71,50 @@ export async function fetchConnectionsMap(): Promise<
   return map
 }
 
-// Helper: enrich connection rows with user/company info
-/** Busca conexões aceitas com dados completos do parceiro (nome, empresa, telefone) */
-export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> {
+/** Busca todas as conexões em que o usuário é o destinatário (qualquer status) — ordem decrescente */
+export async function fetchReceivedConnections(): Promise<ConnectionListItem[]> {
   const me = await getMyId()
 
   const { data, error } = await supabase()
     .from('connections')
-    .select('id, requester_id, requested_id, created_at, responded_at')
-    .eq('status', 'accepted')
-    .or(`requester_id.eq.${me},requested_id.eq.${me}`)
-    .order('responded_at', { ascending: false })
+    .select('id, requester_id, requested_id, status, created_at, responded_at')
+    .eq('requested_id', me)
+    .order('created_at', { ascending: false })
 
   if (error) throw error
-  if (!data || data.length === 0) return []
+  return enrichPartnerCentric(data || [], me)
+}
 
-  // Excluir conexões criadas automaticamente pelo match diário.
-  // Conexões automáticas são criadas e aceitas no mesmo instante (diferença < 5s).
-  // Conexões da busca passam por solicitação → aceitação (diferença maior).
-  const filteredData = data.filter(row => {
-    const created = new Date(row.created_at as string).getTime()
-    const responded = row.responded_at ? new Date(row.responded_at as string).getTime() : created
-    const diffMs = Math.abs(responded - created)
-    // Se foi criada e aceita em menos de 5 segundos, é automática do match
-    return diffMs > 5000
+/** Busca todas as conexões em que o usuário é o solicitante (qualquer status) — ordem decrescente */
+export async function fetchSentConnections(): Promise<ConnectionListItem[]> {
+  const me = await getMyId()
+
+  const { data, error } = await supabase()
+    .from('connections')
+    .select('id, requester_id, requested_id, status, created_at, responded_at')
+    .eq('requester_id', me)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return enrichPartnerCentric(data || [], me)
+}
+
+async function enrichPartnerCentric(
+  rows: Array<{ id: string; requester_id: string; requested_id: string; status: string; created_at: string; responded_at: string | null }>,
+  me: string
+): Promise<ConnectionListItem[]> {
+  if (rows.length === 0) return []
+
+  // Excluir conexões criadas automaticamente pelo match diário (created/responded < 5s)
+  const filtered = rows.filter(row => {
+    const created = new Date(row.created_at).getTime()
+    const responded = row.responded_at ? new Date(row.responded_at).getTime() : created
+    return Math.abs(responded - created) > 5000 || row.responded_at === null
   })
 
-  if (filteredData.length === 0) return []
+  if (filtered.length === 0) return []
 
-  // Coletar IDs dos parceiros
-  const partnerIds = filteredData.map(row =>
-    (row.requester_id as string) === me ? (row.requested_id as string) : (row.requester_id as string)
-  )
+  const partnerIds = filtered.map(r => (r.requester_id === me ? r.requested_id : r.requester_id))
   const uniqueIds = [...new Set(partnerIds)]
 
   const { data: users } = await supabase()
@@ -194,7 +124,7 @@ export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> 
 
   const { data: companies } = await supabase()
     .from('companies')
-    .select('user_id, name, contact_phone, category_id, is_primary, categories(name)')
+    .select('user_id, name, contact_phone, is_primary, categories(name)')
     .in('user_id', uniqueIds)
     .order('is_primary', { ascending: false })
 
@@ -209,68 +139,25 @@ export async function fetchAcceptedConnections(): Promise<AcceptedConnection[]> 
     compMap.set(c.user_id, { name: c.name, categoryName: cat?.name || '', contactPhone: c.contact_phone })
   }
 
-  return filteredData.map(row => {
-    const partnerId = (row.requester_id as string) === me
-      ? (row.requested_id as string)
-      : (row.requester_id as string)
+  return filtered.map(row => {
+    const partnerId = row.requester_id === me ? row.requested_id : row.requester_id
     const partner = userMap.get(partnerId)
     const comp = compMap.get(partnerId)
     const phone = partner?.phone || comp?.contactPhone || null
 
     return {
-      connectionId: row.id as string,
+      connectionId: row.id,
       partnerId,
       partnerName: partner?.full_name || '',
       partnerAvatar: partner?.avatar_url ?? null,
       partnerCompany: comp?.name || '',
       partnerCategory: comp?.categoryName || '',
       partnerPhone: phone,
-      connectedAt: (row.responded_at as string) || (row.created_at as string),
+      status: row.status as ConnectionListItem['status'],
+      createdAt: row.created_at,
+      respondedAt: row.responded_at,
     }
   })
 }
 
-async function enrichConnections(
-  rows: Array<Record<string, unknown>>,
-  userIds: Set<string>
-): Promise<Connection[]> {
-  if (userIds.size === 0) return []
-
-  const ids = Array.from(userIds)
-
-  const { data: users } = await supabase()
-    .from('users')
-    .select('id, full_name, avatar_url')
-    .in('id', ids)
-
-  const { data: comps } = await supabase()
-    .from('companies')
-    .select('user_id, name')
-    .eq('is_primary', true)
-    .in('user_id', ids)
-
-  const userMap = new Map<string, { full_name: string; avatar_url: string | null }>()
-  for (const u of users || []) userMap.set(u.id, u)
-
-  const compMap = new Map<string, string>()
-  for (const c of comps || []) compMap.set(c.user_id, c.name)
-
-  return rows.map(row => {
-    const reqUser = userMap.get(row.requester_id as string)
-    const tgtUser = userMap.get(row.requested_id as string)
-    return {
-      id: row.id as string,
-      requesterId: row.requester_id as string,
-      requestedId: row.requested_id as string,
-      status: row.status as Connection['status'],
-      createdAt: row.created_at as string,
-      respondedAt: (row.responded_at as string) || null,
-      requesterName: reqUser?.full_name,
-      requesterAvatar: reqUser?.avatar_url ?? null,
-      requesterCompany: compMap.get(row.requester_id as string),
-      requestedName: tgtUser?.full_name,
-      requestedAvatar: tgtUser?.avatar_url ?? null,
-      requestedCompany: compMap.get(row.requested_id as string),
-    }
-  })
-}
+// Helper: enrich connection rows with user/company info

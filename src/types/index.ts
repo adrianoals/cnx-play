@@ -105,8 +105,8 @@ export interface MatchHistoryItem extends DailyMatchRow {
   bothConfirmed: boolean
 }
 
-/** Conexão aceita — dados do parceiro para listagem */
-export interface AcceptedConnection {
+/** Item de listagem nas abas Recebidas/Enviadas — partner-centric com status */
+export interface ConnectionListItem {
   connectionId: string
   partnerId: string
   partnerName: string
@@ -114,7 +114,9 @@ export interface AcceptedConnection {
   partnerCompany: string
   partnerCategory: string
   partnerPhone: string | null
-  connectedAt: string
+  status: 'pending' | 'accepted' | 'rejected'
+  createdAt: string
+  respondedAt: string | null
 }
 
 /** Conexão do dia — dados completos do parceiro para exibição */
