@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,7 +19,10 @@ import { fetchCategories } from "@/services/category.service"
 import { fetchConnectionsMap, requestConnection, deleteConnection } from "@/services/connection.service"
 import type { Category, Connection } from "@/types"
 import Image from "next/image"
-import { Search, MapPin, UserPlus, X, Loader2, Building2, Clock, Users, Check, Pencil, Eye } from "lucide-react"
+import {
+  Search, MapPin, UserPlus, X, Loader2, Building2, Clock, Users, Check,
+  Pencil, Eye, ChevronLeft, ChevronRight,
+} from "lucide-react"
 
 interface SearchCompany {
   id: string
@@ -36,109 +39,214 @@ interface SearchCompany {
   isOwn: boolean
 }
 
+const ITEMS_PER_PAGE = 24
+const ALL_CATEGORIES = "Todos"
+
+type CompanyRow = {
+  id: string
+  name: string | null
+  user_id: string
+  location: string | null
+  description: string | null
+  gallery: string[] | null
+  categories: { id: string; name: string } | { id: string; name: string }[] | null
+  users:
+    | { full_name: string | null; email: string | null; avatar_url: string | null; status: string }
+    | { full_name: string | null; email: string | null; avatar_url: string | null; status: string }[]
+    | null
+}
+
+function mapRow(row: CompanyRow, scoreMap: Map<string, number>, currentUserId: string | null): SearchCompany {
+  const userRel = Array.isArray(row.users) ? row.users[0] : row.users
+  const catRel = Array.isArray(row.categories) ? row.categories[0] : row.categories
+  const userId = row.user_id
+  return {
+    id: row.id,
+    name: row.name || "",
+    ownerName: userRel?.full_name || "",
+    ownerEmail: userRel?.email || "",
+    ownerAvatar: userRel?.avatar_url ?? null,
+    userId,
+    categoryName: catRel?.name || "Diversos",
+    location: row.location || "Brasil",
+    description: row.description || "",
+    gallery: row.gallery || [],
+    score: scoreMap.get(userId) || 0,
+    isOwn: !!currentUserId && userId === currentUserId,
+  }
+}
+
 export default function SearchPage() {
   const router = useRouter()
   const { toast } = useToast()
   const searchParams = useSearchParams()
+
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "")
-  const [companies, setCompanies] = useState<SearchCompany[]>([])
+  const [debouncedTerm, setDebouncedTerm] = useState(searchTerm)
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES)
+  const [page, setPage] = useState(0)
+
   const [categories, setCategories] = useState<Category[]>([])
-  const [activeCategory, setActiveCategory] = useState("Todos")
+  const [pageCompanies, setPageCompanies] = useState<SearchCompany[]>([])
+  const [myCompanies, setMyCompanies] = useState<SearchCompany[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [connectionsMap, setConnectionsMap] = useState<Map<string, { connectionId: string; status: Connection['status']; iRequested: boolean }>>(new Map())
+  const [searching, setSearching] = useState(false)
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [myScore, setMyScore] = useState(0)
+  const [connectionsMap, setConnectionsMap] = useState<Map<string, { connectionId: string; status: Connection['status']; iRequested: boolean }>>(new Map())
+
   const [connecting, setConnecting] = useState<string | null>(null)
   const [confirmTarget, setConfirmTarget] = useState<SearchCompany | null>(null)
   const [detailsCompany, setDetailsCompany] = useState<SearchCompany | null>(null)
-  const [visibleCount, setVisibleCount] = useState(24)
 
+  // Debounce do termo de busca (400ms)
   useEffect(() => {
-    async function loadData() {
+    const t = setTimeout(() => setDebouncedTerm(searchTerm), 400)
+    return () => clearTimeout(t)
+  }, [searchTerm])
+
+  // Reset para página 0 quando filtros mudam
+  useEffect(() => {
+    setPage(0)
+  }, [debouncedTerm, activeCategory])
+
+  // Load inicial: usuário, score, categorias, connections, "minha(s) empresa(s)"
+  useEffect(() => {
+    async function loadInitial() {
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
+        if (user) setCurrentUserId(user.id)
 
-        // Fetch companies with joins (paginated at DB level)
-        const { data: companiesData, error: companiesError } = await supabase
-          .from("companies")
-          .select("id, name, user_id, location, description, gallery, categories(name), users!inner(full_name, email, avatar_url, status)")
-          .eq("users.status", "active")
-          .order("created_at", { ascending: false })
-
-        if (companiesError) throw companiesError
-
-        // Fetch scores from v_user_stats
-        const { data: statsData } = await supabase
-          .from("v_user_stats")
-          .select("user_id, score")
-
-        const scoreMap = new Map<string, number>()
-        for (const row of statsData || []) {
-          scoreMap.set(row.user_id as string, (row.score as number) || 0)
-        }
-
-        // Set my score
+        // Score do usuário logado
         if (user) {
-          setMyScore(scoreMap.get(user.id) || 0)
+          const { data: myStat } = await supabase
+            .from("v_user_stats")
+            .select("score")
+            .eq("user_id", user.id)
+            .maybeSingle()
+          setMyScore((myStat?.score as number) || 0)
         }
 
-        // Map all companies (including the current user's, marked as isOwn)
-        const mapped: SearchCompany[] = (companiesData || [])
-          .map((row: Record<string, unknown>) => {
-            const userRel = row.users as Record<string, unknown> | null
-            const catRel = row.categories as Record<string, unknown> | null
-            const userId = row.user_id as string
-            return {
-              id: row.id as string,
-              name: (row.name as string) || "",
-              ownerName: userRel ? ((userRel.full_name as string) || "") : "",
-              ownerEmail: userRel ? ((userRel.email as string) || "") : "",
-              ownerAvatar: userRel ? (userRel.avatar_url as string | null) : null,
-              userId,
-              categoryName: catRel ? ((catRel.name as string) || "Diversos") : "Diversos",
-              location: (row.location as string) || "Brasil",
-              description: (row.description as string) || "",
-              gallery: (row.gallery as string[]) || [],
-              score: scoreMap.get(userId) || 0,
-              isOwn: !!user && userId === user.id,
-            }
-          })
-
-        // Pin own companies at the top, others sorted by score desc
-        mapped.sort((a, b) => {
-          if (a.isOwn !== b.isOwn) return a.isOwn ? -1 : 1
-          return b.score - a.score
-        })
-        setCompanies(mapped)
-
-        // Fetch categories for filter badges
+        // Categorias (filtro)
         const cats = await fetchCategories()
         setCategories(cats)
 
-        // Fetch connections map
+        // Connections map (todas as conexões do usuário — pequeno volume)
         const cMap = await fetchConnectionsMap()
         setConnectionsMap(cMap)
+
+        // Minhas empresas (sempre fixas no topo, em todas as páginas)
+        if (user) {
+          const { data: minhas } = await supabase
+            .from("companies")
+            .select("id, name, user_id, location, description, gallery, categories(id, name), users!inner(full_name, email, avatar_url, status)")
+            .eq("user_id", user.id)
+            .eq("users.status", "active")
+
+          const myMapped = (minhas as unknown as CompanyRow[] | null || []).map(row =>
+            mapRow(row, new Map(), user.id)
+          )
+          setMyCompanies(myMapped)
+        }
       } catch (err) {
-        console.error("Error loading search data:", err)
-      } finally {
-        setLoading(false)
+        console.error("Error loading search initial data:", err)
       }
     }
-
-    loadData()
+    loadInitial()
   }, [])
 
-  const filteredCompanies = companies.filter(company => {
-    const term = searchTerm.toLowerCase()
-    const matchText =
-      company.name.toLowerCase().includes(term) ||
-      company.ownerName.toLowerCase().includes(term) ||
-      company.ownerEmail.toLowerCase().includes(term) ||
-      company.categoryName.toLowerCase().includes(term)
+  // Fetch da página atual (server-side: paginação + busca + filtro)
+  const fetchPage = useCallback(async () => {
+    setSearching(true)
+    try {
+      const supabase = createClient()
 
-    const matchCategory = activeCategory === "Todos" || company.categoryName === activeCategory
-    return matchText && matchCategory
-  })
+      // Sem filtros, na página 0, "minhas empresas" ocupam slots no topo —
+      // descontamos esse espaço da quantidade de "outras" buscadas, pra
+      // manter o total de cards constante (ITEMS_PER_PAGE) por página.
+      const noFilters = !debouncedTerm.trim() && activeCategory === ALL_CATEGORIES
+      const myCountInPage0 = noFilters ? myCompanies.length : 0
+      const slotsForOthers = page === 0 ? ITEMS_PER_PAGE - myCountInPage0 : ITEMS_PER_PAGE
+      const rangeStart = page === 0 ? 0 : (ITEMS_PER_PAGE - myCountInPage0) + (page - 1) * ITEMS_PER_PAGE
+      const rangeEnd = rangeStart + slotsForOthers - 1
+
+      let query = supabase
+        .from("companies")
+        .select(
+          "id, name, user_id, location, description, gallery, categories!inner(id, name), users!inner(full_name, email, avatar_url, status)",
+          { count: "exact" }
+        )
+        .eq("users.status", "active")
+
+      // Excluir minhas empresas dessa lista (elas vêm em myCompanies)
+      if (currentUserId) {
+        query = query.neq("user_id", currentUserId)
+      }
+
+      // Filtro de categoria
+      if (activeCategory !== ALL_CATEGORIES) {
+        const cat = categories.find(c => c.name === activeCategory)
+        if (cat) query = query.eq("category_id", cat.id)
+      }
+
+      // Busca textual em company.name (caso mais comum)
+      const term = debouncedTerm.trim()
+      if (term) {
+        query = query.ilike("name", `%${term}%`)
+      }
+
+      // Ordenação + paginação
+      query = query
+        .order("created_at", { ascending: false })
+        .range(rangeStart, rangeEnd)
+
+      const { data, error, count } = await query
+      if (error) throw error
+
+      const rows = (data as unknown as CompanyRow[] | null) || []
+
+      // Buscar scores apenas dos usuários na página atual
+      const userIds = [...new Set(rows.map(r => r.user_id))]
+      const scoreMap = new Map<string, number>()
+      if (userIds.length > 0) {
+        const { data: scores } = await supabase
+          .from("v_user_stats")
+          .select("user_id, score")
+          .in("user_id", userIds)
+        for (const s of scores || []) {
+          scoreMap.set(s.user_id as string, (s.score as number) || 0)
+        }
+      }
+
+      setPageCompanies(rows.map(r => mapRow(r, scoreMap, currentUserId)))
+      setTotalCount(count || 0)
+    } catch (err) {
+      console.error("Error fetching companies page:", err)
+      setPageCompanies([])
+      setTotalCount(0)
+    } finally {
+      setSearching(false)
+      setLoading(false)
+    }
+  }, [page, debouncedTerm, activeCategory, currentUserId, categories, myCompanies.length])
+
+  // Espera carregar categories (e o user) antes de buscar
+  useEffect(() => {
+    if (categories.length === 0) return
+    fetchPage()
+  }, [fetchPage, categories.length])
+
+  const showMyCompanies = page === 0 && !debouncedTerm && activeCategory === ALL_CATEGORIES
+  const noFiltersActive = !debouncedTerm && activeCategory === ALL_CATEGORIES
+  // Quando "minhas empresas" estão visíveis, contam junto pro total de páginas
+  const effectiveTotal = noFiltersActive ? totalCount + myCompanies.length : totalCount
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / ITEMS_PER_PAGE))
+  const displayed = useMemo(() => {
+    return showMyCompanies ? [...myCompanies, ...pageCompanies] : pageCompanies
+  }, [showMyCompanies, myCompanies, pageCompanies])
 
   const handleRequestConnection = async (company: SearchCompany) => {
     if (myScore < 1) {
@@ -270,7 +378,7 @@ export default function SearchPage() {
     return null
   }
 
-  const categoryBadges = ["Todos", ...categories.map(c => c.name)]
+  const categoryBadges = [ALL_CATEGORIES, ...categories.map(c => c.name)]
 
   if (loading) {
     return (
@@ -297,7 +405,7 @@ export default function SearchPage() {
             <Input
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Buscar por nome, empresa, e-mail ou categoria..."
+              placeholder="Buscar por nome da empresa..."
               className="pl-10 h-12 text-lg bg-card border-border shadow-sm rounded-xl"
             />
             {searchTerm && (
@@ -326,9 +434,16 @@ export default function SearchPage() {
         </div>
       </div>
 
+      {searching && (
+        <div className="flex items-center justify-center py-2 text-sm text-muted-foreground gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Buscando...
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredCompanies.length > 0 ? (
-          filteredCompanies.slice(0, visibleCount).map(company => (
+        {displayed.length > 0 ? (
+          displayed.map(company => (
             <div
               key={company.id}
               onClick={() => setDetailsCompany(company)}
@@ -387,45 +502,60 @@ export default function SearchPage() {
             </div>
           ))
         ) : (
-          <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              {searchTerm || activeCategory !== "Todos" ? (
-                <Search className="h-8 w-8 text-muted-foreground" />
-              ) : (
-                <Building2 className="h-8 w-8 text-muted-foreground" />
+          !searching && (
+            <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                {debouncedTerm || activeCategory !== ALL_CATEGORIES ? (
+                  <Search className="h-8 w-8 text-muted-foreground" />
+                ) : (
+                  <Building2 className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
+              <h3 className="text-xl font-semibold mb-2">
+                {debouncedTerm || activeCategory !== ALL_CATEGORIES
+                  ? "Nenhum resultado encontrado"
+                  : "Nenhuma empresa cadastrada"}
+              </h3>
+              <p className="text-muted-foreground max-w-md">
+                {debouncedTerm || activeCategory !== ALL_CATEGORIES
+                  ? "Tente outros termos ou limpe os filtros."
+                  : "Ainda não há empresas cadastradas na comunidade."}
+              </p>
+              {(debouncedTerm || activeCategory !== ALL_CATEGORIES) && (
+                <Button
+                  variant="link"
+                  onClick={() => { setSearchTerm(""); setActiveCategory(ALL_CATEGORIES) }}
+                  className="mt-4"
+                >
+                  Limpar filtros
+                </Button>
               )}
             </div>
-            <h3 className="text-xl font-semibold mb-2">
-              {searchTerm || activeCategory !== "Todos"
-                ? "Nenhum resultado encontrado"
-                : "Nenhuma empresa cadastrada"}
-            </h3>
-            <p className="text-muted-foreground max-w-md">
-              {searchTerm || activeCategory !== "Todos"
-                ? "Tente outros termos ou limpe os filtros."
-                : "Ainda não há empresas cadastradas na comunidade."}
-            </p>
-            {(searchTerm || activeCategory !== "Todos") && (
-              <Button
-                variant="link"
-                onClick={() => { setSearchTerm(""); setActiveCategory("Todos") }}
-                className="mt-4"
-              >
-                Limpar filtros
-              </Button>
-            )}
-          </div>
+          )
         )}
       </div>
 
-      {filteredCompanies.length > visibleCount && (
-        <div className="flex justify-center pt-4">
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
           <Button
             variant="outline"
-            onClick={() => setVisibleCount(prev => prev + 24)}
-            className="rounded-xl"
+            size="sm"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={page === 0 || searching}
           >
-            Carregar mais ({filteredCompanies.length - visibleCount} restantes)
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm text-muted-foreground px-3">
+            Página {page + 1} de {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={page >= totalPages - 1 || searching}
+          >
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       )}
