@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,10 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { usePagination } from "@/hooks/use-pagination"
 import { Pagination } from "@/components/ui/pagination"
 import {
-  fetchAllCompanies, createCompanyForUser, updateCompanyAdmin, deleteCompanyAdmin,
+  fetchCompaniesPage, fetchCompaniesStats, createCompanyForUser, updateCompanyAdmin, deleteCompanyAdmin,
   fetchAllUsers,
 } from "@/services/admin.service"
 import { fetchCategories } from "@/services/category.service"
@@ -25,6 +24,7 @@ import {
 } from "lucide-react"
 
 const MAX_GALLERY = 5
+const ITEMS_PER_PAGE = 10
 
 const emptyCompanyForm = {
   name: "",
@@ -44,11 +44,23 @@ export default function AdminEmpresasPage() {
   const { toast } = useToast()
 
   const [companies, setCompanies] = useState<AdminCompany[]>([])
+  const [totalCompanies, setTotalCompanies] = useState(0)
   const [loadingCompanies, setLoadingCompanies] = useState(true)
+  const [searching, setSearching] = useState(false)
   const [companySearch, setCompanySearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
 
   const [users, setUsers] = useState<User[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+
+  // Stats agregadas (queries separadas)
+  const [statsCompanies, setStatsCompanies] = useState({
+    totalCompanies: 0,
+    totalActiveUsers: 0,
+    usersWithCompany: 0,
+    usersWithMultipleCompanies: 0,
+  })
 
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
   const [companyForm, setCompanyForm] = useState(emptyCompanyForm)
@@ -57,44 +69,61 @@ export default function AdminEmpresasPage() {
   const [uploading, setUploading] = useState(false)
   const galleryInputRef = useRef<HTMLInputElement>(null)
 
+  // Debounce do termo de busca (400ms)
   useEffect(() => {
-    fetchAllCompanies()
-      .then(c => setCompanies(c))
-      .catch(err => {
-        toast({ title: "Erro ao carregar empresas", description: err.message, variant: "destructive" })
+    const t = setTimeout(() => setDebouncedSearch(companySearch), 400)
+    return () => clearTimeout(t)
+  }, [companySearch])
+
+  // Reset para página 1 quando busca muda
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearch])
+
+  // Load paginado das empresas
+  const loadCompanies = useCallback(async () => {
+    setSearching(true)
+    try {
+      const result = await fetchCompaniesPage({
+        page: currentPage,
+        perPage: ITEMS_PER_PAGE,
+        search: debouncedSearch,
       })
-      .finally(() => setLoadingCompanies(false))
+      setCompanies(result.companies)
+      setTotalCompanies(result.total)
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar empresas",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      })
+    } finally {
+      setSearching(false)
+      setLoadingCompanies(false)
+    }
+  }, [currentPage, debouncedSearch, toast])
 
-    fetchAllUsers()
-      .then(u => setUsers(u))
-      .catch(() => {})
+  useEffect(() => {
+    loadCompanies()
+  }, [loadCompanies])
 
-    fetchCategories()
-      .then(c => setCategories(c))
-      .catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Load inicial: stats + users (para dropdown) + categorias
+  const loadStats = useCallback(async () => {
+    try {
+      const stats = await fetchCompaniesStats()
+      setStatsCompanies(stats)
+    } catch {
+      // mantém defaults
+    }
   }, [])
 
-  const filteredCompanies = companies.filter(c => {
-    const term = companySearch.toLowerCase()
-    return (
-      c.name.toLowerCase().includes(term) ||
-      c.ownerName.toLowerCase().includes(term) ||
-      (c.cnpj || "").toLowerCase().includes(term)
-    )
-  })
+  useEffect(() => {
+    loadStats()
+    fetchAllUsers().then(setUsers).catch(() => {})
+    fetchCategories().then(setCategories).catch(() => {})
+  }, [loadStats])
 
-  // Ordenar por nome do responsável para agrupar empresas do mesmo dono
-  const sortedCompanies = [...filteredCompanies].sort((a, b) => {
-    const cmp = a.ownerName.localeCompare(b.ownerName)
-    if (cmp !== 0) return cmp
-    // Dentro do mesmo dono, principal primeiro
-    if (a.isPrimary && !b.isPrimary) return -1
-    if (!a.isPrimary && b.isPrimary) return 1
-    return a.name.localeCompare(b.name)
-  })
-
-  const { paginatedItems: paginatedCompanies, currentPage, totalPages, setCurrentPage } = usePagination(sortedCompanies)
+  const totalPages = Math.max(1, Math.ceil(totalCompanies / ITEMS_PER_PAGE))
 
   const openCreateCompany = () => {
     setEditingCompanyId(null)
@@ -133,7 +162,7 @@ export default function AdminEmpresasPage() {
     setSavingCompany(true)
     try {
       if (editingCompanyId) {
-        const updated = await updateCompanyAdmin(editingCompanyId, {
+        await updateCompanyAdmin(editingCompanyId, {
           name: companyForm.name,
           cnpj: companyForm.cnpj,
           categoryId: companyForm.categoryId || undefined,
@@ -145,10 +174,9 @@ export default function AdminEmpresasPage() {
           isPrimary: companyForm.isPrimary,
           gallery: companyForm.gallery,
         })
-        setCompanies(prev => prev.map(c => c.id === editingCompanyId ? updated : c))
         toast({ title: "Empresa atualizada", description: "Os dados foram salvos com sucesso.", className: "bg-green-600 border-green-500 text-white" })
       } else {
-        const created = await createCompanyForUser({
+        await createCompanyForUser({
           userId: companyForm.userId,
           name: companyForm.name,
           cnpj: companyForm.cnpj || undefined,
@@ -161,9 +189,10 @@ export default function AdminEmpresasPage() {
           isPrimary: companyForm.isPrimary,
           gallery: companyForm.gallery,
         })
-        setCompanies(prev => [created, ...prev])
         toast({ title: "Empresa cadastrada", description: "A empresa foi adicionada com sucesso.", className: "bg-green-600 text-white border-none" })
       }
+      await loadCompanies()
+      loadStats()
       setIsCompanyModalOpen(false)
     } catch (error) {
       toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao salvar empresa.", variant: "destructive" })
@@ -176,7 +205,8 @@ export default function AdminEmpresasPage() {
     if (window.confirm("Tem certeza que deseja excluir esta empresa permanentemente?")) {
       try {
         await deleteCompanyAdmin(id)
-        setCompanies(prev => prev.filter(c => c.id !== id))
+        await loadCompanies()
+        loadStats()
         toast({ title: "Empresa excluída", description: "A empresa foi removida do sistema.", variant: "destructive" })
       } catch (error) {
         toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao excluir.", variant: "destructive" })
@@ -188,18 +218,8 @@ export default function AdminEmpresasPage() {
     try { return new Date(dateStr).toLocaleDateString("pt-BR") } catch { return "N/A" }
   }
 
-  // Métricas
-  const activeUsers = users.filter(u => u.status === "active")
-  const usersWithCompany = new Set(companies.map(c => c.userId))
-  const usersWithCompanyCount = activeUsers.filter(u => usersWithCompany.has(u.id)).length
-  const usersWithoutCompanyCount = activeUsers.length - usersWithCompanyCount
-
-  // Usuários com mais de 1 empresa
-  const companiesPerUser = new Map<string, number>()
-  for (const c of companies) {
-    companiesPerUser.set(c.userId, (companiesPerUser.get(c.userId) || 0) + 1)
-  }
-  const usersMultipleCompanies = Array.from(companiesPerUser.values()).filter(v => v > 1).length
+  // Métricas (vêm do fetchCompaniesStats — query separada)
+  const usersWithoutCompanyCount = Math.max(0, statsCompanies.totalActiveUsers - statsCompanies.usersWithCompany)
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -218,14 +238,14 @@ export default function AdminEmpresasPage() {
               <UsersIcon className="h-4 w-4 text-blue-500" />
               <p className="text-xs text-muted-foreground font-medium">Usuarios aprovados</p>
             </div>
-            <p className="text-2xl font-bold">{activeUsers.length}</p>
+            <p className="text-2xl font-bold">{statsCompanies.totalActiveUsers}</p>
           </div>
           <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <UserCheck className="h-4 w-4 text-green-500" />
               <p className="text-xs text-muted-foreground font-medium">Com empresa</p>
             </div>
-            <p className="text-2xl font-bold">{usersWithCompanyCount}</p>
+            <p className="text-2xl font-bold">{statsCompanies.usersWithCompany}</p>
           </div>
           <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
@@ -239,11 +259,11 @@ export default function AdminEmpresasPage() {
               <Building className="h-4 w-4 text-amber-500" />
               <p className="text-xs text-muted-foreground font-medium">Total de empresas</p>
             </div>
-            <p className="text-2xl font-bold">{companies.length}</p>
+            <p className="text-2xl font-bold">{statsCompanies.totalCompanies}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              pertencentes a {usersWithCompanyCount} usuario(s)
-              {usersMultipleCompanies > 0 && (
-                <span> · {usersMultipleCompanies} com mais de uma</span>
+              pertencentes a {statsCompanies.usersWithCompany} usuario(s)
+              {statsCompanies.usersWithMultipleCompanies > 0 && (
+                <span> · {statsCompanies.usersWithMultipleCompanies} com mais de uma</span>
               )}
             </p>
           </div>
@@ -290,8 +310,8 @@ export default function AdminEmpresasPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedCompanies.length > 0 ? (
-                  paginatedCompanies.map(company => (
+                {companies.length > 0 ? (
+                  companies.map(company => (
                     <TableRow key={company.id} className="border-border hover:bg-secondary/30 transition-colors">
                       <TableCell>
                         <div className="flex flex-col">
@@ -359,15 +379,16 @@ export default function AdminEmpresasPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                      {companySearch ? "Nenhuma empresa encontrada." : "Nenhuma empresa cadastrada."}
+                      {debouncedSearch ? "Nenhuma empresa encontrada." : "Nenhuma empresa cadastrada."}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
             <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
-              <span>
-                Mostrando {sortedCompanies.length === 0 ? 0 : (currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, sortedCompanies.length)} de {sortedCompanies.length}
+              <span className="flex items-center gap-2">
+                {searching && <Loader2 className="h-3 w-3 animate-spin" />}
+                Mostrando {totalCompanies === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalCompanies)} de {totalCompanies}
               </span>
               <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>

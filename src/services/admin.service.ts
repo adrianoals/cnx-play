@@ -180,6 +180,82 @@ export async function fetchAllCompanies(): Promise<AdminCompany[]> {
   return (data || []).map(mapCompany)
 }
 
+export interface CompaniesPageResult {
+  companies: AdminCompany[]
+  total: number
+}
+
+/** Lista paginada de empresas com busca por nome/CNPJ (server-side). */
+export async function fetchCompaniesPage(opts: {
+  page: number // 1-indexed
+  perPage: number
+  search?: string
+}): Promise<CompaniesPageResult> {
+  const supabase = createClient()
+
+  let q = supabase
+    .from('companies')
+    .select('*, categories(name), users(full_name, email)', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  const term = opts.search?.trim()
+  if (term) {
+    // Busca em campos da tabela companies (name, cnpj). Para incluir
+    // ownerName seria preciso join filter, que não dá pra combinar
+    // facilmente em .or — fica como evolução futura.
+    q = q.or(`name.ilike.%${term}%,cnpj.ilike.%${term}%`)
+  }
+
+  const from = (opts.page - 1) * opts.perPage
+  const to = from + opts.perPage - 1
+  q = q.range(from, to)
+
+  const { data, error, count } = await q
+  if (error) throw new Error(error.message)
+
+  return {
+    companies: (data || []).map(mapCompany),
+    total: count || 0,
+  }
+}
+
+export interface CompaniesStats {
+  totalCompanies: number
+  totalActiveUsers: number
+  usersWithCompany: number
+  usersWithMultipleCompanies: number
+}
+
+/** Métricas agregadas para os summary cards do /admin/empresas. */
+export async function fetchCompaniesStats(): Promise<CompaniesStats> {
+  const supabase = createClient()
+
+  const [
+    { count: totalCompanies },
+    { count: totalActiveUsers },
+    { data: companyUsers },
+  ] = await Promise.all([
+    supabase.from('companies').select('id', { count: 'exact', head: true }),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+    supabase.from('companies').select('user_id'),
+  ])
+
+  // user_id distintos com empresa + quantos têm mais de uma
+  const counts = new Map<string, number>()
+  for (const row of companyUsers || []) {
+    counts.set(row.user_id as string, (counts.get(row.user_id as string) || 0) + 1)
+  }
+  const usersWithCompany = counts.size
+  const usersWithMultipleCompanies = Array.from(counts.values()).filter(v => v > 1).length
+
+  return {
+    totalCompanies: totalCompanies || 0,
+    totalActiveUsers: totalActiveUsers || 0,
+    usersWithCompany,
+    usersWithMultipleCompanies,
+  }
+}
+
 export async function createCompanyForUser(input: {
   userId: string
   name: string
