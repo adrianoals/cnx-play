@@ -16,6 +16,94 @@ export async function fetchAllUsers(): Promise<User[]> {
   return (data || []).map(mapProfile)
 }
 
+export type AdminUserStatusFilter = 'all' | 'pending' | 'active' | 'inactive'
+
+export interface UsersPageResult {
+  users: User[]
+  total: number
+  pendingCount: number
+}
+
+/** Lista paginada de usuários com busca e filtro de status (server-side). */
+export async function fetchUsersPage(opts: {
+  page: number // 1-indexed
+  perPage: number
+  search?: string
+  status?: AdminUserStatusFilter
+}): Promise<UsersPageResult> {
+  const supabase = createClient()
+
+  let q = supabase
+    .from('users')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  const term = opts.search?.trim()
+  if (term) {
+    q = q.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
+  }
+
+  if (opts.status && opts.status !== 'all') {
+    q = q.eq('status', opts.status)
+  }
+
+  const from = (opts.page - 1) * opts.perPage
+  const to = from + opts.perPage - 1
+  q = q.range(from, to)
+
+  const { data, error, count } = await q
+  if (error) throw new Error(error.message)
+
+  // Total pendentes (independente do filtro/busca atual)
+  const { count: pending } = await supabase
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'pending')
+
+  return {
+    users: (data || []).map(mapProfile),
+    total: count || 0,
+    pendingCount: pending || 0,
+  }
+}
+
+/** Últimos N usuários cadastrados — usado na lista "Novos Cadastros". */
+export async function fetchRecentUsers(limit = 5): Promise<User[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw new Error(error.message)
+  return (data || []).map(mapProfile)
+}
+
+/** Lista todos os usuários que batem o filtro/busca, sem paginação — usado para export CSV. */
+export async function fetchUsersForExport(opts: {
+  search?: string
+  status?: AdminUserStatusFilter
+}): Promise<User[]> {
+  const supabase = createClient()
+  let q = supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  const term = opts.search?.trim()
+  if (term) {
+    q = q.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
+  }
+  if (opts.status && opts.status !== 'all') {
+    q = q.eq('status', opts.status)
+  }
+
+  const { data, error } = await q
+  if (error) throw new Error(error.message)
+  return (data || []).map(mapProfile)
+}
+
 export async function updateUserProfile(
   id: string,
   updates: {

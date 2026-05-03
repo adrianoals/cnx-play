@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { usePagination } from "@/hooks/use-pagination"
 import { Pagination } from "@/components/ui/pagination"
 import { useAuthContext } from "@/providers/auth-provider"
 import { SUPER_ADMINS } from "@/lib/constants"
 import {
-  fetchAllUsers, updateUserProfile, deleteUserProfile, changeUserStatus, createUserViaApi,
+  fetchUsersPage, fetchRecentUsers, fetchUsersForExport,
+  updateUserProfile, deleteUserProfile, changeUserStatus, createUserViaApi,
+  type AdminUserStatusFilter,
 } from "@/services/admin.service"
 import type { User } from "@/types"
 import {
@@ -24,6 +25,8 @@ import {
   Phone, Fingerprint, Plus, MapPin,
   ShieldAlert, Lock, Loader2, Users,
 } from "lucide-react"
+
+const ITEMS_PER_PAGE = 10
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -44,9 +47,16 @@ export default function AdminUsersPage() {
 
   // ── Users state ──
   const [users, setUsers] = useState<User[]>([])
+  const [totalUsers, setTotalUsers] = useState(0)
+  const [pendingCount, setPendingCount] = useState(0)
+  const [recentUsers, setRecentUsers] = useState<User[]>([])
+
   const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("all")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [activeTab, setActiveTab] = useState<AdminUserStatusFilter>("all")
+  const [currentPage, setCurrentPage] = useState(1)
   const [loadingUsers, setLoadingUsers] = useState(true)
+  const [searching, setSearching] = useState(false)
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<(User & { address?: string }) | null>(null)
@@ -61,35 +71,54 @@ export default function AdminUsersPage() {
     phone: "", cpf: "", role: "user" as "user" | "admin", status: "active" as "active" | "pending" | "inactive",
   })
 
-  // ── Load data ──
+  // Debounce do termo de busca (400ms)
   useEffect(() => {
-    fetchAllUsers()
-      .then(u => setUsers(u))
-      .catch(err => {
-        toast({ title: "Erro ao carregar usuários", description: err.message, variant: "destructive" })
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 400)
+    return () => clearTimeout(t)
+  }, [searchTerm])
+
+  // Reset para página 1 quando filtros mudam
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearch, activeTab])
+
+  // ── Load data (server-side pagination) ──
+  const loadUsers = useCallback(async () => {
+    setSearching(true)
+    try {
+      const result = await fetchUsersPage({
+        page: currentPage,
+        perPage: ITEMS_PER_PAGE,
+        search: debouncedSearch,
+        status: activeTab,
       })
-      .finally(() => setLoadingUsers(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      setUsers(result.users)
+      setTotalUsers(result.total)
+      setPendingCount(result.pendingCount)
+    } catch (err) {
+      toast({
+        title: "Erro ao carregar usuários",
+        description: err instanceof Error ? err.message : "",
+        variant: "destructive",
+      })
+    } finally {
+      setSearching(false)
+      setLoadingUsers(false)
+    }
+  }, [currentPage, debouncedSearch, activeTab, toast])
+
+  useEffect(() => {
+    loadUsers()
+  }, [loadUsers])
+
+  // Carregamento separado dos "novos cadastros" (Top 5 mais recentes) — usado no modal
+  useEffect(() => {
+    fetchRecentUsers(5)
+      .then(setRecentUsers)
+      .catch(() => {})
   }, [])
 
-  // ── Users logic ──
-  const filteredUsers = users.filter(user => {
-    const term = searchTerm.toLowerCase()
-    const name = (user.name || user.fullName || "").toLowerCase()
-    const email = (user.email || "").toLowerCase()
-
-    const matchesSearch = name.includes(term) || email.includes(term)
-    const matchesTab = activeTab === "all" ? true : activeTab === "pending" ? user.status === "pending" : user.status === "active"
-    return matchesSearch && matchesTab
-  })
-
-  const { paginatedItems: paginatedUsers, currentPage, totalPages, setCurrentPage } = usePagination(filteredUsers)
-
-  const recentUsers = [...users].sort((a, b) => {
-    const dateA = new Date(a.createdAt || "2000-01-01")
-    const dateB = new Date(b.createdAt || "2000-01-01")
-    return dateB.getTime() - dateA.getTime()
-  }).slice(0, 5)
+  const totalPages = Math.max(1, Math.ceil(totalUsers / ITEMS_PER_PAGE))
 
   const handleDelete = async (id: string) => {
     const userToDelete = users.find(u => u.id === id)
@@ -106,7 +135,8 @@ export default function AdminUsersPage() {
     if (window.confirm("Tem certeza que deseja excluir este usuário permanentemente?")) {
       try {
         await deleteUserProfile(id)
-        setUsers(prev => prev.filter(u => u.id !== id))
+        await loadUsers()
+        fetchRecentUsers(5).then(setRecentUsers).catch(() => {})
         toast({ title: "Usuário excluído", description: "O usuário foi removido do sistema.", variant: "destructive" })
       } catch (error) {
         toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao excluir.", variant: "destructive" })
@@ -115,9 +145,12 @@ export default function AdminUsersPage() {
   }
 
   const handleStatusChange = async (id: string, newStatus: User["status"]) => {
+    // Capturar o usuário antes do reload (para enviar e-mail caso seja aprovação)
+    const approvedUser = newStatus === "active" ? users.find(u => u.id === id) : undefined
+
     try {
       await changeUserStatus(id, newStatus)
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u))
+      await loadUsers()
       toast({
         title: newStatus === "active" ? "Usuário Aprovado" : "Usuário Atualizado",
         description: `O status foi alterado para ${newStatus === "active" ? "Ativo" : newStatus === "inactive" ? "Inativo" : "Pendente"}.`,
@@ -125,17 +158,14 @@ export default function AdminUsersPage() {
       })
 
       // Send approval email when user is activated
-      if (newStatus === "active") {
-        const approvedUser = users.find(u => u.id === id)
-        if (approvedUser) {
-          fetch("/api/admin/approve-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: approvedUser.email, fullName: approvedUser.fullName || approvedUser.name }),
-          }).catch(() => {
-            // Email failure should not block the approval flow
-          })
-        }
+      if (approvedUser) {
+        fetch("/api/admin/approve-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: approvedUser.email, fullName: approvedUser.fullName || approvedUser.name }),
+        }).catch(() => {
+          // Email failure should not block the approval flow
+        })
       }
     } catch (error) {
       toast({ title: "Erro", description: error instanceof Error ? error.message : "Falha ao alterar status.", variant: "destructive" })
@@ -173,7 +203,7 @@ export default function AdminUsersPage() {
         role: editingUser.role,
         status: editingUser.status,
       })
-      setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...editingUser, fullName: editingUser.name } : u))
+      await loadUsers()
       setIsEditModalOpen(false)
       toast({ title: "Usuário atualizado", description: "As informações foram salvas com sucesso.", className: "bg-green-600 border-green-500 text-white" })
     } catch (error) {
@@ -195,7 +225,7 @@ export default function AdminUsersPage() {
 
     setCreatingUser(true)
     try {
-      const newUser = await createUserViaApi({
+      await createUserViaApi({
         email: newUserData.email,
         password: newUserData.password,
         fullName: newUserData.name,
@@ -204,7 +234,8 @@ export default function AdminUsersPage() {
         role: newUserData.role,
         status: newUserData.status,
       })
-      setUsers(prev => [newUser, ...prev])
+      await loadUsers()
+      fetchRecentUsers(5).then(setRecentUsers).catch(() => {})
       setIsCreateUserModalOpen(false)
       setNewUserData({ name: "", email: "", password: "", phone: "", cpf: "", role: "user", status: "active" })
       toast({ title: "Usuário Criado", description: "O usuário foi adicionado com sucesso.", className: "bg-green-600 text-white border-none" })
@@ -215,33 +246,39 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleExportCSV = () => {
-    const headers = ["ID", "Nome", "Email", "Telefone", "CPF", "Regiao", "Status", "Função", "Data Cadastro"]
-    const csvContent = [
-      headers.join(","),
-      ...filteredUsers.map(u =>
-        [
-          u.id,
-          `"${u.name || u.fullName}"`,
-          u.email,
-          u.phone || "",
-          u.cpf || "",
-          `"${u.address || ""}"`,
-          u.status,
-          u.role,
-          new Date(u.createdAt).toLocaleDateString("pt-BR"),
-        ].join(",")
-      ),
-    ].join("\n")
+  const handleExportCSV = async () => {
+    try {
+      // Busca todos os usuários que batem o filtro/busca, ignorando paginação
+      const allFiltered = await fetchUsersForExport({ search: debouncedSearch, status: activeTab })
+      const headers = ["ID", "Nome", "Email", "Telefone", "CPF", "Regiao", "Status", "Função", "Data Cadastro"]
+      const csvContent = [
+        headers.join(","),
+        ...allFiltered.map(u =>
+          [
+            u.id,
+            `"${u.name || u.fullName}"`,
+            u.email,
+            u.phone || "",
+            u.cpf || "",
+            `"${u.address || ""}"`,
+            u.status,
+            u.role,
+            new Date(u.createdAt).toLocaleDateString("pt-BR"),
+          ].join(",")
+        ),
+      ].join("\n")
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `usuarios_admin_${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.setAttribute("href", url)
+      link.setAttribute("download", `usuarios_admin_${new Date().toISOString().slice(0, 10)}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (err) {
+      toast({ title: "Erro ao exportar", description: err instanceof Error ? err.message : "", variant: "destructive" })
+    }
   }
 
   const formatDate = (dateStr: string) => {
@@ -267,9 +304,9 @@ export default function AdminUsersPage() {
         </Button>
         <Button onClick={() => setIsNewUsersModalOpen(true)} variant="secondary" className="hover:bg-secondary/80 hover:scale-[1.02] active:scale-[0.98] flex-1 md:flex-none transition-all cursor-pointer border border-border">
           <UserPlus className="mr-2 h-4 w-4" /> Novos Cadastros
-          {users.filter(u => u.status === "pending").length > 0 && (
+          {pendingCount > 0 && (
             <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
-              {users.filter(u => u.status === "pending").length}
+              {pendingCount}
             </span>
           )}
         </Button>
@@ -280,12 +317,12 @@ export default function AdminUsersPage() {
 
       {/* Users filters */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+        <Tabs defaultValue="all" value={activeTab} onValueChange={(v) => setActiveTab(v as AdminUserStatusFilter)} className="w-full md:w-auto">
           <TabsList>
             <TabsTrigger value="all">Todos</TabsTrigger>
             <TabsTrigger value="pending">
               Pendentes
-              {users.filter(u => u.status === "pending").length > 0 && (
+              {pendingCount > 0 && (
                 <span className="ml-2 w-2 h-2 rounded-full bg-amber-500 inline-block" />
               )}
             </TabsTrigger>
@@ -324,8 +361,8 @@ export default function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedUsers.length > 0 ? (
-                  paginatedUsers.map(user => (
+                {users.length > 0 ? (
+                  users.map(user => (
                     <TableRow key={user.id} className="border-border hover:bg-secondary/30 transition-colors">
                       <TableCell>
                         <div className="flex flex-col">
@@ -406,9 +443,10 @@ export default function AdminUsersPage() {
               </TableBody>
             </Table>
             <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
-              <span>
-                Mostrando {filteredUsers.length === 0 ? 0 : (currentPage - 1) * 10 + 1}–{Math.min(currentPage * 10, filteredUsers.length)} de {filteredUsers.length}
-                {" · "}{users.filter(u => u.status === "pending").length} aguardando aprovação
+              <span className="flex items-center gap-2">
+                {searching && <Loader2 className="h-3 w-3 animate-spin" />}
+                Mostrando {totalUsers === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalUsers)} de {totalUsers}
+                {" · "}{pendingCount} aguardando aprovação
               </span>
               <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
