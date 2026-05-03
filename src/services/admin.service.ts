@@ -512,30 +512,28 @@ export async function swapMatch(
     ])
 }
 
+/** Lista usuários ativos elegíveis para receber match em uma data.
+ *  Como o flow de marcação de disponibilidade foi descontinuado, retorna
+ *  todos os usuários ativos com empresa cadastrada que ainda não têm
+ *  match nesse dia (regra de 1 match/dia em createManualMatch).
+ *  O parâmetro `slot` foi mantido na assinatura para compatibilidade
+ *  com os call sites em /admin/conexoes — não filtra por slot. */
 export async function fetchAvailableUsersForDate(
   date: string,
   slot: '07:00' | '19:00'
 ): Promise<Array<{ id: string; name: string; company: string }>> {
+  void slot
   const supabase = createClient()
 
-  const slotCol = slot === '07:00' ? 'slot_07' : 'slot_19'
-
-  const { data: avail, error } = await supabase
-    .from('user_availability')
-    .select('user_id')
-    .eq('available_date', date)
-    .eq(slotCol, true)
-
-  if (error) throw new Error(error.message)
-  if (!avail || avail.length === 0) return []
-
-  const userIds = avail.map(a => a.user_id)
-
-  const { data: users } = await supabase
+  const { data: users, error: uErr } = await supabase
     .from('users')
     .select('id, full_name')
     .eq('status', 'active')
-    .in('id', userIds)
+
+  if (uErr) throw new Error(uErr.message)
+  if (!users || users.length === 0) return []
+
+  const userIds = users.map(u => u.id)
 
   const { data: companies } = await supabase
     .from('companies')
@@ -546,175 +544,23 @@ export async function fetchAvailableUsersForDate(
   const compMap = new Map<string, string>()
   for (const c of companies || []) compMap.set(c.user_id, c.name)
 
-  return (users || []).map(u => ({
-    id: u.id,
-    name: u.full_name,
-    company: compMap.get(u.id) || '',
-  }))
-}
+  // Excluir quem já tem match nesse dia (regra: 1 match/dia)
+  const { data: matches } = await supabase
+    .from('daily_matches')
+    .select('user_id')
+    .eq('match_date', date)
+    .in('user_id', userIds)
 
-// ── Admin Agendas ──────────────────────────────────────────────
+  const matchedIds = new Set((matches || []).map(m => m.user_id))
 
-export interface AdminUserWithAvailability {
-  id: string
-  name: string
-  company: string
-  slot07: boolean
-  slot19: boolean
-}
-
-export async function fetchUsersWithAvailabilityForDate(
-  date: string
-): Promise<AdminUserWithAvailability[]> {
-  const supabase = createClient()
-
-  // Users with companies (active only)
-  const { data: users, error: uErr } = await supabase
-    .from('users')
-    .select('id, full_name')
-    .eq('status', 'active')
-
-  if (uErr) throw new Error(uErr.message)
-
-  const { data: companies, error: cErr } = await supabase
-    .from('companies')
-    .select('user_id, name, is_primary')
-    .order('is_primary', { ascending: false })
-
-  if (cErr) throw new Error(cErr.message)
-
-  const compMap = new Map<string, string>()
-  for (const c of companies || []) compMap.set(c.user_id, c.name)
-
-  // Only users that have a company
-  const usersWithCompany = (users || []).filter(u => compMap.has(u.id))
-
-  // Availability for this date
-  const { data: avail } = await supabase
-    .from('user_availability')
-    .select('user_id, slot_07, slot_19')
-    .eq('available_date', date)
-
-  const availMap = new Map<string, { slot07: boolean; slot19: boolean }>()
-  for (const a of avail || []) {
-    availMap.set(a.user_id, { slot07: a.slot_07, slot19: a.slot_19 })
-  }
-
-  return usersWithCompany
+  return users
+    .filter(u => compMap.has(u.id) && !matchedIds.has(u.id))
     .map(u => ({
       id: u.id,
       name: u.full_name,
       company: compMap.get(u.id) || '',
-      slot07: availMap.get(u.id)?.slot07 ?? false,
-      slot19: availMap.get(u.id)?.slot19 ?? false,
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
-}
-
-export async function adminUpsertAvailability(
-  userId: string,
-  date: string,
-  slot07: boolean,
-  slot19: boolean
-): Promise<void> {
-  const supabase = createClient()
-
-  const { error } = await supabase
-    .from('user_availability')
-    .upsert(
-      { user_id: userId, available_date: date, slot_07: slot07, slot_19: slot19 },
-      { onConflict: 'user_id,available_date' }
-    )
-
-  if (error) throw new Error(error.message)
-}
-
-export async function adminEnableAllForDate(
-  date: string
-): Promise<void> {
-  const supabase = createClient()
-
-  // Get all active users with companies (any company counts)
-  const { data: companies } = await supabase
-    .from('companies')
-    .select('user_id')
-
-  const { data: users } = await supabase
-    .from('users')
-    .select('id')
-    .eq('status', 'active')
-
-  if (!companies || !users) return
-
-  const companyUserIds = new Set(companies.map(c => c.user_id))
-  const eligibleIds = users.filter(u => companyUserIds.has(u.id)).map(u => u.id)
-
-  const rows = eligibleIds.map(id => ({
-    user_id: id,
-    available_date: date,
-    slot_07: true,
-    slot_19: true,
-  }))
-
-  const { error } = await supabase
-    .from('user_availability')
-    .upsert(rows, { onConflict: 'user_id,available_date' })
-
-  if (error) throw new Error(error.message)
-}
-
-export async function fetchUserWeekAvailability(
-  userId: string,
-  weekStart: string
-): Promise<Array<{ date: string; slot07: boolean; slot19: boolean }>> {
-  const supabase = createClient()
-
-  const start = new Date(weekStart + 'T00:00:00')
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-  const weekEnd = end.toISOString().slice(0, 10)
-
-  const { data, error } = await supabase
-    .from('user_availability')
-    .select('available_date, slot_07, slot_19')
-    .eq('user_id', userId)
-    .gte('available_date', weekStart)
-    .lte('available_date', weekEnd)
-    .order('available_date')
-
-  if (error) throw new Error(error.message)
-
-  return (data || []).map(r => ({
-    date: r.available_date,
-    slot07: r.slot_07,
-    slot19: r.slot_19,
-  }))
-}
-
-export async function adminEnableWeekForUser(
-  userId: string,
-  weekStart: string
-): Promise<void> {
-  const supabase = createClient()
-
-  const rows = []
-  const start = new Date(weekStart + 'T00:00:00')
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(start)
-    d.setDate(d.getDate() + i)
-    rows.push({
-      user_id: userId,
-      available_date: d.toISOString().slice(0, 10),
-      slot_07: true,
-      slot_19: true,
-    })
-  }
-
-  const { error } = await supabase
-    .from('user_availability')
-    .upsert(rows, { onConflict: 'user_id,available_date' })
-
-  if (error) throw new Error(error.message)
 }
 
 // ── Usuários agrupados por empresa (v2) ───────────────────

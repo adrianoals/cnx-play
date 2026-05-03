@@ -103,33 +103,12 @@ export async function respondConnection(connectionId: string, accept: boolean): 
 }
 
 export async function deleteConnection(connectionId: string): Promise<void> {
-  // First get the connection to know both user IDs
-  const { data: conn, error: fetchErr } = await supabase()
-    .from('connections')
-    .select('requester_id, requested_id')
-    .eq('id', connectionId)
-    .single()
-
-  if (fetchErr) throw fetchErr
-
-  // Delete all messages between the two users
-  const me = await getMyId()
-  const otherId = conn.requester_id === me ? conn.requested_id : conn.requester_id
-
-  const { error: msgErr } = await supabase()
-    .from('messages')
-    .delete()
-    .or(`and(sender_id.eq.${me},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${me})`)
-
-  if (msgErr) throw msgErr
-
-  // Delete the connection
-  const { error: delErr } = await supabase()
+  const { error } = await supabase()
     .from('connections')
     .delete()
     .eq('id', connectionId)
 
-  if (delErr) throw delErr
+  if (error) throw error
 }
 
 export async function getConnectionStatus(

@@ -131,14 +131,6 @@ export interface TodayConnection {
   partnerPhone: string | null
 }
 
-export interface UserAvailability {
-  id: string
-  userId: string
-  availableDate: string
-  slot07: boolean
-  slot19: boolean
-}
-
 export interface Meeting {
   id: number
   company: string
