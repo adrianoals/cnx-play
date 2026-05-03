@@ -105,16 +105,7 @@ async function enrichPartnerCentric(
 ): Promise<ConnectionListItem[]> {
   if (rows.length === 0) return []
 
-  // Excluir conexões criadas automaticamente pelo match diário (created/responded < 5s)
-  const filtered = rows.filter(row => {
-    const created = new Date(row.created_at).getTime()
-    const responded = row.responded_at ? new Date(row.responded_at).getTime() : created
-    return Math.abs(responded - created) > 5000 || row.responded_at === null
-  })
-
-  if (filtered.length === 0) return []
-
-  const partnerIds = filtered.map(r => (r.requester_id === me ? r.requested_id : r.requester_id))
+  const partnerIds = rows.map(r => (r.requester_id === me ? r.requested_id : r.requester_id))
   const uniqueIds = [...new Set(partnerIds)]
 
   const { data: users } = await supabase()
@@ -139,7 +130,7 @@ async function enrichPartnerCentric(
     compMap.set(c.user_id, { name: c.name, categoryName: cat?.name || '', contactPhone: c.contact_phone })
   }
 
-  return filtered.map(row => {
+  return rows.map(row => {
     const partnerId = row.requester_id === me ? row.requested_id : row.requester_id
     const partner = userMap.get(partnerId)
     const comp = compMap.get(partnerId)

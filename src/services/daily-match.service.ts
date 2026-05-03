@@ -170,44 +170,6 @@ export async function fetchMatchHistory(): Promise<MatchHistoryItem[]> {
   })
 }
 
-/** Garante que existe uma conexão aceita entre o usuário logado e o parceiro do match */
-export async function ensureMatchConnection(partnerId: string): Promise<void> {
-  const me = await getMyId()
-
-  // Verificar se já existe conexão (qualquer status)
-  const { data: existing } = await supabase()
-    .from('connections')
-    .select('id, status')
-    .or(
-      `and(requester_id.eq.${me},requested_id.eq.${partnerId}),and(requester_id.eq.${partnerId},requested_id.eq.${me})`
-    )
-    .limit(1)
-    .maybeSingle()
-
-  if (existing) {
-    // Se já existe mas não está aceita, aceitar
-    if (existing.status !== 'accepted') {
-      await supabase()
-        .from('connections')
-        .update({ status: 'accepted', responded_at: new Date().toISOString() })
-        .eq('id', existing.id)
-    }
-    return
-  }
-
-  // Criar conexão já aceita (match diário = conexão automática)
-  const { error } = await supabase()
-    .from('connections')
-    .insert({
-      requester_id: me,
-      requested_id: partnerId,
-      status: 'accepted',
-      responded_at: new Date().toISOString(),
-    })
-
-  if (error) throw error
-}
-
 // ── Conexão do Dia (v2) ──────────────────────────────────
 
 /** Busca a conexão do dia atual com dados completos do parceiro */

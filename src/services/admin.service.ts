@@ -436,33 +436,9 @@ export async function createManualMatch(
       { user_id: userB, shown_user_id: userA, shown_date: date },
     ])
 
-  // Criar conexão aceita automaticamente
-  const { data: existingConn } = await supabase
-    .from('connections')
-    .select('id, status')
-    .or(
-      `and(requester_id.eq.${userA},requested_id.eq.${userB}),and(requester_id.eq.${userB},requested_id.eq.${userA})`
-    )
-    .limit(1)
-    .maybeSingle()
-
-  if (existingConn) {
-    if (existingConn.status !== 'accepted') {
-      await supabase
-        .from('connections')
-        .update({ status: 'accepted', responded_at: new Date().toISOString() })
-        .eq('id', existingConn.id)
-    }
-  } else {
-    await supabase
-      .from('connections')
-      .insert({
-        requester_id: userA,
-        requested_id: userB,
-        status: 'accepted',
-        responded_at: new Date().toISOString(),
-      })
-  }
+  // Match diário NÃO cria registro em `connections`. As tabelas são separadas:
+  // daily_matches/daily_match_history rastreiam o encontro do dia; `connections`
+  // só guarda solicitações iniciadas via /search.
 }
 
 export async function swapMatch(
