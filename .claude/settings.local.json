@@ -44,7 +44,10 @@
       "Bash(npm test:*)",
       "Bash(grep -r \"\\\\.from\\(\" src/services/*.ts)",
       "Bash(gh auth *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(rm plan.md sorteio.md update_full_texts.sql relacao-revista.md)",
+      "Bash(mkdir -p revista)",
+      "Bash(mv empresarios.md empresarios-resumido.md texto1.md texto2.md texto3.md revista/)"
     ]
   },
   "enableAllProjectMcpServers": true,
