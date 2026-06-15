@@ -1,6 +1,3 @@
-geral:
-claude --resume c5befe64-75fb-4d6c-bdf2-ee2c6ae7a8e6
+macbook air m5
 
-root:
-claude --resume 163ff8ee-e301-4534-9e83-a7397b0214f5   
-
+claude --resume f2790fb1-1ad1-47a4-ad57-fc462c469009
