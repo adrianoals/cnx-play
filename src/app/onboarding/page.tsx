@@ -43,7 +43,7 @@ export default function OnboardingPage() {
   const { user, setUser } = useAuthContext()
   const [step, setStep] = useState<Step | null>(null)
 
-  const { data: myCompanies = [], mutate: mutateCompanies } = useSWR<AdminCompany[]>(
+  const { data: myCompanies, mutate: mutateCompanies } = useSWR<AdminCompany[]>(
     user ? "onboarding-my-companies" : null,
     fetchMyCompanies,
   )
@@ -59,7 +59,9 @@ export default function OnboardingPage() {
   )
 
   useEffect(() => {
-    if (!user || step !== null || questionsDone === undefined) return
+    if (!user || step !== null) return
+    if (myCompanies === undefined || questionsDone === undefined) return
+
     const profileDone = !!(user.cpf?.trim() && user.birthDate?.trim() && user.address?.trim())
     const companyDone = myCompanies.length > 0
 
