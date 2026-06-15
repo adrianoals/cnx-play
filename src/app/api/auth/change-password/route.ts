@@ -33,18 +33,13 @@ export async function POST(request: Request) {
       )
     }
 
-    // Find user by email in auth.users
-    const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers()
-    if (listError) {
-      console.error("List users error:", listError)
-      return NextResponse.json({ error: "Erro interno." }, { status: 500 })
-    }
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("email", result.email.toLowerCase())
+      .single()
 
-    const authUser = authUsers.users.find(
-      (u) => u.email?.toLowerCase() === result.email.toLowerCase()
-    )
-
-    if (!authUser) {
+    if (profileError || !profile) {
       return NextResponse.json(
         { error: "Usuario nao encontrado." },
         { status: 404 }
@@ -52,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      authUser.id,
+      profile.id,
       { password }
     )
 
