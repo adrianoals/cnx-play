@@ -48,11 +48,11 @@ export default function RegisterPage() {
 
       toast({
         title: "Conta criada!",
-        description: "Agora escolha seu plano para ativar o acesso.",
+        description: "Complete seu perfil e cadastre sua empresa para finalizar.",
         className: "bg-green-600 text-white border-none",
       })
 
-      router.push("/payment")
+      router.push("/onboarding")
     } catch (error) {
       toast({
         variant: "destructive",

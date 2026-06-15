@@ -23,8 +23,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Auth guard: redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return
+    if (!user) {
       router.replace("/login")
+      return
+    }
+    if (user.status === "pending") {
+      router.replace("/onboarding")
     }
   }, [loading, user, router])
 
@@ -37,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? "US"
     : user.fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
 
-  if (loading || !user) {
+  if (loading || !user || user.status === "pending") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

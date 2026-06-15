@@ -12,9 +12,9 @@ import {
   fetchDashboardBundle,
 } from "@/services/dashboard.service"
 import {
-  Search, Trophy, ArrowRight, Clock,
+  Search, Trophy, ArrowRight,
   DollarSign, Plus, Loader2, HeartHandshake as Handshake,
-  TrendingUp, Video, AlertTriangle,
+  TrendingUp, Video,
   UserCircle, Crown, CheckCircle2, Link2, Phone, Building2 as Building2Icon, Tag,
 } from "lucide-react"
 
@@ -34,8 +34,6 @@ export default function DashboardPage() {
   const { user: currentUser } = useCurrentUser()
 
   const [showTutorial, setShowTutorial] = useState(false)
-
-  const [paymentStatus] = useState("active")
   const [newDeal, setNewDeal] = useState({ companyName: "", value: "", authorCompanyId: "" })
 
   const isActive = currentUser && currentUser.status !== "pending"
@@ -119,65 +117,6 @@ export default function DashboardPage() {
     }
   }
 
-
-  // Pending user view
-  if (currentUser?.status === "pending") {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="max-w-md w-full text-center space-y-6 bg-card p-8 rounded-3xl border border-border shadow-lg">
-          <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto">
-            <Clock className="h-10 w-10 text-amber-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold mb-2">Aprovação Pendente</h1>
-            <p className="text-muted-foreground">
-              Seu cadastro foi recebido. Para liberar o acesso, escolha um plano e efetue o pagamento. Após a confirmação, nossa equipe ativará sua conta.
-            </p>
-          </div>
-          <div className="bg-secondary p-4 rounded-xl border border-border text-sm text-left">
-            <p className="text-muted-foreground mb-2">Status atual:</p>
-            <div className="flex items-center gap-2 text-amber-500 font-semibold">
-              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-              Aguardando Pagamento e Ativação
-            </div>
-          </div>
-          <div className="flex flex-col gap-3">
-            <Button onClick={() => router.push("/payment")} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-              Escolher Plano e Pagar
-            </Button>
-            <Button onClick={() => window.open("https://wa.me/5511950222063", "_blank")} variant="outline" className="w-full">
-              Falar com Suporte
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Já pagou? Fale com o suporte para agilizar a ativação.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // Payment inactive view
-  if (paymentStatus !== "active") {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <div className="max-w-md w-full text-center space-y-6 bg-card p-8 rounded-3xl border border-border shadow-lg">
-          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
-            <AlertTriangle className="h-10 w-10 text-red-500" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold mb-2">Pagamento Pendente</h1>
-            <p className="text-muted-foreground">
-              Sua assinatura não está ativa. Para continuar acessando a plataforma, regularize seu pagamento.
-            </p>
-          </div>
-          <Button onClick={() => router.push("/payment")} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            Regularizar Agora
-          </Button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-8">
